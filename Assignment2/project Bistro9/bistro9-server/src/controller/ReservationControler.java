@@ -11,8 +11,7 @@ import data.TableReservation;
 
 public class ReservationControler 
 {
-	private static final String GET_ALL_RESERVATIONS = null;
-	private static final String UPDATE_RESERVATION_DETAILS = null;
+
 	private DataBaseController DBC=DataBaseController.getInstance();//התממשקות עם הדאטה בייס קונטרולר;
 	
 	public ReservationControler() 
