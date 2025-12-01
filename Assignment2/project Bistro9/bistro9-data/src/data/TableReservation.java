@@ -1,5 +1,5 @@
-package server;
-//antity
+package data;
+
 
 public class TableReservation 
 {

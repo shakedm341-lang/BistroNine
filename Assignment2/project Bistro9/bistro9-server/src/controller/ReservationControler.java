@@ -1,21 +1,26 @@
-package server;
+package controller;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
+
+import data.Message;
+import data.TableReservation;
 
 
 //controler
 
 public class ReservationControler 
 {
-	private DataBaseControler DBC=DataBaseController.getInstance();//התממשקות עם הדאטה בייס קונטרולר;
+	private static final String GET_ALL_RESERVATIONS = null;
+	private static final String UPDATE_RESERVATION_DETAILS = null;
+	private DataBaseController DBC=DataBaseController.getInstance();//התממשקות עם הדאטה בייס קונטרולר;
 	
 	public ReservationControler() 
 	{
 	
 	}
 	
-	public Object handleMessageFromServer(message msg) 
+	public Object handleMessageFromServer(Message msg) 
 	{
 		
 		switch (msg.command) //בדיקה איזה הודעה נשלחה מהשרת(איזה פעולה צריך לעשות)
@@ -32,7 +37,7 @@ public class ReservationControler
 		}
 	}
 		
-	private ArrayList<TableReservation> getAllReservations(message msg)
+	private ArrayList<TableReservation> getAllReservations(Message msg)
 	{
 		
     	ArrayList<String> reservationsListAsStr = new ArrayList<>();
@@ -61,9 +66,9 @@ public class ReservationControler
     	return reservationsListAsTableRes;//החזרה לשרת רשימת ההזמנות כרשימה של אובייקטי בזמנות שולחן 
 	}
 	
-	private boolean updateReservationDetails(message msg)
+	private boolean updateReservationDetails(Message msg)
 	{
-		ArrayList<String> list = msg.contant;//רשימה של מחרוזות שמכילה איזה הזמנה יש לעדכן ואת המידע שצריך לעדכן
+		ArrayList<String> list = (ArrayList<String>) msg.content;//רשימה של מחרוזות שמכילה איזה הזמנה יש לעדכן ואת המידע שצריך לעדכן
     	
 
     	//יצירת אובייקט חדש של הזמנת שולחן עם ההזמנה שרוצים לעדכן ועם הפרטים שיש לעדכן
