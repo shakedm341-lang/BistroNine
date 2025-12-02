@@ -3,10 +3,7 @@ package controller;
 import ocsf.client.AbstractClient;
 import java.io.*;
 
-import data.Command;
-import data.Message;
-import data.TypeMessage;
-
+import data.*;
 public class ClientController extends AbstractClient {
 
 	public ClientController(String host, int port) throws IOException {
