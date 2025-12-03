@@ -32,7 +32,7 @@ public class ServerPortFrameController {
 			((Node) event.getSource()).getScene().getWindow().hide(); 
 			
 			// Run the server in the background
-			ServerUI.runServer(p);
+			ServerMain.runServer(p);
 		}
 	}
 

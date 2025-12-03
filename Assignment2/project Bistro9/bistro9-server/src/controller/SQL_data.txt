@@ -1,0 +1,53 @@
+CREATE TABLE subscribers (
+    subscriberId VARCHAR(100),
+    firstName VARCHAR(100),
+    lastName VARCHAR(100),
+    phoneNumber VARCHAR(100), 
+    email VARCHAR(100),
+    password VARCHAR(100), 
+    
+    PRIMARY KEY (subscriberId)
+);
+
+CREATE TABLE tablereservations (
+    reservationID VARCHAR(100),
+    ReservationDate VARCHAR(100),
+    numberOfDiners VARCHAR(100),
+    confirmationCode VARCHAR(100),
+    subscriberId VARCHAR(100),    
+    DateOfMakeReservation VARCHAR(100),
+    
+    PRIMARY KEY (reservationID),
+    FOREIGN KEY (subscriberId) REFERENCES subscribers(subscriberId)
+);
+
+INSERT INTO subscribers (subscriberId, firstName, lastName, phoneNumber, email, password)
+VALUES 
+('1', 'John', 'Doe', '050-1000001', 'john.doe@email.com', 'Pass123'),
+('2', 'Jane', 'Smith', '052-2000002', 'jane.smith@email.com', 'Secure456'),
+('3', 'Michael', 'Brown', '054-3000003', 'mike.brown@email.com', 'Mikey789'),
+('4', 'Emily', 'Davis', '053-4000004', 'emily.d@email.com', 'EmPass321'),
+('5', 'David', 'Wilson', '050-5000005', 'david.w@email.com', 'WilPass654');
+
+INSERT INTO tablereservations (reservationID, ReservationDate, numberOfDiners, confirmationCode, subscriberId, DateOfMakeReservation)
+VALUES 
+('1', '2024-05-01 19:00', '2', '888111', '1', '2024-04-28 10:00'),
+('2', '2024-05-02 20:00', '4', '888112', '2', '2024-04-29 11:30'),
+('3', '2024-05-03 18:30', '2', '888113', '3', '2024-05-01 09:00'),
+('4', '2024-05-04 21:00', '5', '888114', '4', '2024-05-01 14:20'),
+('5', '2024-05-05 13:00', '3', '888115', '5', '2024-05-02 16:45'),
+('6', '2024-05-10 19:30', '6', '888116', '1', '2024-05-05 12:00'),
+('7', '2024-05-12 20:00', '2', '888117', '2', '2024-05-08 08:30'),
+('8', '2024-05-15 19:00', '4', '888118', '3', '2024-05-10 10:15'),
+('9', '2024-05-18 20:30', '2', '888119', '4', '2024-05-12 17:00'),
+('10', '2024-05-20 18:00', '8', '888120', '5', '2024-05-15 09:45'),
+('11', '2024-06-01 19:15', '3', '888121', '1', '2024-05-25 13:20'),
+('12', '2024-06-05 20:45', '5', '888122', '2', '2024-06-01 15:00'),
+('13', '2024-06-10 21:00', '2', '888123', '3', '2024-06-05 11:10'),
+('14', '2024-06-12 12:30', '4', '888124', '4', '2024-06-08 14:50'),
+('15', '2024-06-15 19:00', '6', '888125', '5', '2024-06-10 10:00'),
+('16', '2024-06-20 20:00', '2', '888126', '1', '2024-06-15 18:30'),
+('17', '2024-06-25 18:45', '3', '888127', '2', '2024-06-20 12:00'),
+('18', '2024-06-28 19:30', '7', '888128', '3', '2024-06-22 09:20'),
+('19', '2024-07-01 20:15', '2', '888129', '4', '2024-06-28 16:10'),
+('20', '2024-07-05 13:00', '10', '888130', '5', '2024-07-01 11:45');
