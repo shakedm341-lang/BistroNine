@@ -8,5 +8,6 @@
 	</classpathentry>
 	<classpathentry combineaccessrules="false" kind="src" path="/OCSF"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/bistro9-data"/>
+	<classpathentry kind="lib" path="C:/Users/ororb/OneDrive - Braude College of Engineering/Desktop/שיטות הנדסיות/תרגולים/תרגול 3/Ex-03-WorkbenchJDBC/mysql-connector-j-9.5.0.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

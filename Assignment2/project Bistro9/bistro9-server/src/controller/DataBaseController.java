@@ -30,7 +30,7 @@ public class DataBaseController {
 		try {
 			connectionToDB = DriverManager.getConnection(
 					"jdbc:mysql://localhost:3306/sys?allowLoadLocalInfile=true&serverTimezone=Asia/Jerusalem&useSSL=false",
-					"root", "braude2025");
+					"root", "Aa123456");
 			System.out.println("SQL connection succeed");
 		} catch (SQLException ex) {
 			System.out.println("SQLException: " + ex.getMessage());
@@ -102,7 +102,7 @@ public class DataBaseController {
 
 		PreparedStatement ps = null;
 		try {
-			String sql = "UPDATE tablereservations SET date = ?, numberOfDiners = ? WHERE reservationID = ?";
+			String sql = "UPDATE tablereservations SET ReservationDate = ?, numberOfDiners = ? WHERE reservationID = ?";
 
 			ps = connectionToDB.prepareStatement(sql);
 			ps.setString(1, t.getReservationDate());
