@@ -16,13 +16,13 @@ public class ServerUI extends Application {
 	@Override
 	public void start(Stage primaryStage) throws Exception {
 	    // 1. Load the FXML
-	    Parent root = FXMLLoader.load(getClass().getResource("ServerPort.fxml"));
+	    Parent root = FXMLLoader.load(getClass().getResource("serverPort.fxml"));
 	    
 	    // 2. Create the Scene
 	    Scene scene = new Scene(root);
 	    
 	    // 3. ADD THIS LINE TO LOAD CSS:
-	    scene.getStylesheets().add(getClass().getResource("ServerPort.css").toExternalForm());
+	    scene.getStylesheets().add(getClass().getResource("serverPort.css").toExternalForm());
 	    
 	    // 4. Show the stage
 	    primaryStage.setTitle("Server Connection");
