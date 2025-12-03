@@ -2,9 +2,13 @@ package controller;
 
 import ocsf.client.AbstractClient;
 import java.io.*;
+import java.util.ArrayList;
 
 import data.*;
+import gui.ReservtionBoundry;
 public class ClientController extends AbstractClient {
+	
+	public static ReservtionBoundry reservationBoundary; 
 
 	public ClientController(String host, int port) throws IOException {
 		super(host, port);
@@ -12,7 +16,24 @@ public class ClientController extends AbstractClient {
 	}
 
 	protected void handleMessageFromServer(Object msg) {
-		System.out.println("I get message: " + msg.toString());
+		 Message message = (Message) msg;
+	        
+	        switch (message.command) {
+	            case GET_ALL_RESERVATIONS:
+	                if (reservationBoundary != null) {
+	                    ArrayList<TableReservation> list = (ArrayList<TableReservation>) message.content;
+	                    reservationBoundary.updateReservationTable(list);
+	                }
+	                break;
+	                
+	            case UPDATE_RESERVATION_DETAILS:
+	            		                if (reservationBoundary != null) {
+	                    Boolean success = (Boolean) message.content;
+	                    reservationBoundary.showUpdateMessage(success);
+	                }
+	                break;
+	                
+	        }
 	}
 
 	public void handleMessageFromBoundary(TypeMessage type, Object content, Command command) {
