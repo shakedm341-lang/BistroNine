@@ -44,8 +44,8 @@ public class ServerController extends AbstractServer {
 
 			switch (message.type) {
 			case RESERVATION:
-				ArrayList<String> resList = (ArrayList<String>) reservationsController.handleMessageFromServer(message);
-				message.content = resList;
+				Object respond = (Object) reservationsController.handleMessageFromServer(message);
+				message.content = respond;
 				try {
 					client.sendToClient(message);
 				} catch (IOException e) {
