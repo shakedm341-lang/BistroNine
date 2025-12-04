@@ -78,6 +78,27 @@ public class ServerController extends AbstractServer {
 	protected void serverStopped() {
 		System.out.println("Server has stopped listening for connections.");
 	}
-
+	/**
+	 * Hook method called each time a client disconnects.
+	 * @param client the connection with the client.
+	 */
+	@Override
+	protected void clientConnected(ConnectionToClient client) {
+		super.clientConnected(client);
+		System.out.println("----------------------------------------");
+		System.out.println("Client connection successful!");
+		
+		// Extracting and printing the IP
+		String clientIp = client.getInetAddress().getHostAddress();
+		System.out.println("Client IP: " + clientIp);
+		
+		
+		System.out.println("----------------------------------------");
+	}
+	
+	
+	
+	
+	
 	
 }
