@@ -14,18 +14,18 @@ public class DataBaseController {
 	private static DataBaseController instance;
 	private Connection connectionToDB;
 
-	// Private constructor for Singleton
+	// Private constructor for Singleton for one connection to DB
 	private DataBaseController() {
 		createConnectionToDB();
 	}
-
+	//Returns the only object opened from this class
 	public static DataBaseController getInstance() {
 		if (instance == null) {
 			instance = new DataBaseController();
 		}
 		return instance;
 	}
-
+	//Communicates with the DB
 	public void createConnectionToDB() {
 		try {
 			connectionToDB = DriverManager.getConnection(
@@ -51,12 +51,12 @@ public class DataBaseController {
 		PreparedStatement ps = null;
 		ResultSet rs = null;
 
-		try {
+		try {//Creating a query that returns all orders in the DB
 			String query = "SELECT * FROM tablereservations";
 			ps = connectionToDB.prepareStatement(query);
 			rs = ps.executeQuery();
 
-			while (rs.next()) {
+			while (rs.next()) {//Inserts order details as strings into the order list
 				String reservation = new String();
 
 				StringBuilder sb = new StringBuilder();
@@ -90,7 +90,7 @@ public class DataBaseController {
 			}
 		}
 
-		return reservationsList;
+		return reservationsList;//Returns the list of orders to the reservationController as a list of strings
 	}
 
 	/**
@@ -101,7 +101,7 @@ public class DataBaseController {
 			return false;
 
 		PreparedStatement ps = null;
-		try {
+		try {//Create a query to update existing order details
 			String sql = "UPDATE tablereservations SET ReservationDate = ?, numberOfDiners = ? WHERE reservationID = ?";
 
 			ps = connectionToDB.prepareStatement(sql);
@@ -110,11 +110,11 @@ public class DataBaseController {
 			ps.setInt(3, t.getReservationId());
 
 			int rowsAffected = ps.executeUpdate();
-			return rowsAffected > 0;
+			return rowsAffected > 0;//Returns whether the update was successful or not to the reservationController 
 
 		} catch (SQLException e) {
 			e.printStackTrace();
-			return false;
+			return false;//Returns whether the update was successful or not to the reservationController 
 		} finally {
 			try {
 				if (ps != null)

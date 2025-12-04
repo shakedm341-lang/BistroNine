@@ -12,7 +12,7 @@ import data.TableReservation;
 public class ReservationControler 
 {
 
-	private DataBaseController DBC=DataBaseController.getInstance();//התממשקות עם הדאטה בייס קונטרולר;
+	private DataBaseController DBC=DataBaseController.getInstance();//Interfacing with the DB Controller
 	
 	public ReservationControler() 
 	{
@@ -22,7 +22,7 @@ public class ReservationControler
 	public Object handleMessageFromServer(Message msg) 
 	{
 		
-		switch (msg.command) //בדיקה איזה הודעה נשלחה מהשרת(איזה פעולה צריך לעשות)
+		switch (msg.command) //Checking the type of message sent from the server (what action should be performed in the DB Controller)
 		{
 	    case GET_ALL_RESERVATIONS:
 	    	return getAllReservations(msg);
@@ -42,14 +42,14 @@ public class ReservationControler
     	ArrayList<String> reservationsListAsStr = new ArrayList<>();
     	ArrayList<TableReservation> reservationsListAsTableRes = new ArrayList<>();
     	
-    	reservationsListAsStr = DBC.getAllReservationsQuery();//יצירת שאילתה חדשה בדאטה בייס שמחזירה את כל ההזמנות הקיימות כרשימה של מחרוזות(כל מחרוזת זו שורה בטבלה)
+    	reservationsListAsStr = DBC.getAllReservationsQuery();//Create a new query in the database that returns all existing orders as a list of strings (each string is a row in the table)
     	
-    	for (String resAsStr : reservationsListAsStr)//לולאה שמבצעת המרה של רשימת המחרוזות לרשימת אובייקטי הזמנת שולחן
+    	for (String resAsStr : reservationsListAsStr)//loop that converts the list of strings to a list of table reservation objects
     	{
-    	    //פיצול המחרוזת לעמודות של הטבלה מהדאטה בייס בכדי לקחת את הנתונים שהועברו
+    	    //Splitting the string into the columns of the table from the database to take the transferred data
     	    String[] dataRes = resAsStr.split(",");
     	    
-    	    //יצירת אובייקט הזמנת שולחן עם הנתונים שהתקבלו מהדאטה בייס
+    	    //Creating a table reservation object with the data received from the DB
     	    TableReservation resAsTableRes = new TableReservation();
     	    resAsTableRes.setReservationId(dataRes[0]);
     	    resAsTableRes.setReservationDate(dataRes[1]);
@@ -58,101 +58,29 @@ public class ReservationControler
     	    resAsTableRes.setSubscriberId(dataRes[4]);
     	    resAsTableRes.setDateOfMakeReservation(dataRes[5]);
     	    
-    	    //הוספת האובייקט שיצרנו לרשימת ההזמנות מסוג הזמנת שולחן
+    	    //Adding the object we created to the list of table reservation type orders
     	    reservationsListAsTableRes.add(resAsTableRes);
     	}
     	
-    	return reservationsListAsTableRes;//החזרה לשרת רשימת ההזמנות כרשימה של אובייקטי בזמנות שולחן 
+    	return reservationsListAsTableRes;// Returning the order list to the server as a list of table order objects
 	}
 	
 	private boolean updateReservationDetails(Message msg)
 	{
-		ArrayList<String> list = (ArrayList<String>) msg.content;//רשימה של מחרוזות שמכילה איזה הזמנה יש לעדכן ואת המידע שצריך לעדכן
+		ArrayList<String> list = (ArrayList<String>) msg.content;//list of strings containing the order from which the information to be updated should be updated.
     	
 
-    	//יצירת אובייקט חדש של הזמנת שולחן עם ההזמנה שרוצים לעדכן ועם הפרטים שיש לעדכן
+    	//Create a new table reservation antity with the reservation you want to update and the details to be updated.
     	TableReservation res = new TableReservation();
 	    res.setReservationId(list.get(0));
 	    res.setReservationDate(list.get(1));
 	    res.setNumberOfDiners(list.get(2));
 
-	    //מעדכן את פרטי ההזמנה בדאטה בייס
-	    //החזרה לשרת האם פעולת העדכון התבצע כראוי או לא
+	    //Updates the order details in the DB
+	    //Return to the server whether the update operation was performed correctly or not
 	    return DBC.updateReservationDetailsQuery(res); 
 	    
 	}
 	
-	/*public void  GetAllReservations() 
-	{
-		
-	}
-	
-	public void updateReservation() 
-	{
-		
-	}
-	
-	public void createReservation() 
-	{
-		
-	}
-	
-	public void cencelReservation() 
-	{
-		
-	}
-	
-	public void getReservation() 
-	{
-		
-	}
-	
-	public void saveReservation() 
-	{
-		
-	}
-	
-	public void getTimesData() 
-	{
-		
-	}
-	
-	public void returnTimeOfMakingReservation() 
-	{
-		LocalDate todayDate = LocalDate.now().toString();
-		
-        LocalTime nowTime = LocalTime.now().toString(); 
-        
-        String dateString = todayDate.toString();
-        String timeString = nowTime.toString();
-        
-        return dateString + "," + timeString;
-	}
-	
-	public void viewReservation() 
-	{
-		
-	}
-	
-	public void sendMessageToCustomer() 
-	{
-		
-	}
-	
-	
-	public void viewVisits() 
-	{
-		
-	}
-	
-	public void returnStatusOfReservation() 
-	{
-		
-	}
-	
-	public static void main(String[] args) 
-	{
-		
-	}*/
 
 }
