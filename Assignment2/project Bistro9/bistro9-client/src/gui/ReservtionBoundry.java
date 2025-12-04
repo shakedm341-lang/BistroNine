@@ -76,19 +76,19 @@ public class ReservtionBoundry {
 
 
 	}
-
+	// Method to set the client controller reference
 	public void setClient(ClientController client) {
 		this.client = client;
 		ClientController.reservationBoundary = this;
 	}
-	
+	// Method to update the table data from server response
 	 public void updateReservationTable(ArrayList<TableReservation> reservationsFromServer) {
-		 Platform.runLater(new Runnable() {
+		 Platform.runLater(new Runnable() {// Ensure UI updates are run on the JavaFX Application Thread
 	            @Override
 	            public void run() {
-	                orderList.clear(); 
-	                orderList.addAll(reservationsFromServer);
-	                orderTable.refresh();
+	                orderList.clear(); // Clear existing data
+	                orderList.addAll(reservationsFromServer);// Add new data
+	                orderTable.refresh();// Refresh the table view
 	                System.out.println("GUI updated with " + reservationsFromServer.size() + " orders.");
 	            }
 	        });
@@ -97,6 +97,7 @@ public class ReservtionBoundry {
 
 
 	@FXML
+	// Method to refresh table data from server
 	void refreshTable(ActionEvent event) {
 
 		System.out.println("Refreshing table data...");
@@ -105,6 +106,7 @@ public class ReservtionBoundry {
 	}
 
 	@FXML
+	// Method to handle update button click
 	void updateOrder(ActionEvent event) {
 		// Validate required fields: order ID, date and guests
 		if (orderIdField.getText().isEmpty() || dateField.getText().isEmpty() || guestsField.getText().isEmpty()) {
@@ -146,7 +148,7 @@ public class ReservtionBoundry {
             }
         });
     }
-
+	// Helper method to show alert dialogs
 	public void showAlert(String title, String content) {
 		Alert alert = new Alert(AlertType.INFORMATION);
 		alert.setTitle(title);

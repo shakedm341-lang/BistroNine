@@ -20,7 +20,8 @@ public class ConnectToServerController {
 
 	@FXML
 	private TextField portTxt;
-
+	
+	// Reference to the client controller
 	private ClientController client;
 
 	@FXML
@@ -37,11 +38,12 @@ public class ConnectToServerController {
 
 		try {
 			int port = Integer.parseInt(portStr);
-
+			
+			// Attempt to create the client connection
 			client = new ClientController(ip, port);
-
+			
 			System.out.println("Connected successfully to " + ip);
-
+			// Load the Reservation GUI
 			FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/ReservationGui.fxml"));
 			Parent root = loader.load();
 
