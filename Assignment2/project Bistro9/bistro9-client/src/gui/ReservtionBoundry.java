@@ -1,5 +1,6 @@
 package gui;
 
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -73,18 +74,7 @@ public class ReservtionBoundry {
 		// Set the data into the table
 		orderTable.setItems(orderList);
 
-		// Load mock data for testing purposes
-		// loadMockData();
 
-		// When a row is selected, populate the edit fields so the user can update
-		// easily
-//        orderTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSel, newSel) -> {
-//            if (newSel != null) {
-//                orderIdField.setText(String.valueOf(newSel.getReservationId()));
-//                dateField.setText(newSel.getReservationDate());
-//                guestsField.setText(String.valueOf(newSel.getNumberOfDiners()));
-//            }
-//        });
 	}
 
 	public void setClient(ClientController client) {
@@ -93,44 +83,18 @@ public class ReservtionBoundry {
 	}
 	
 	 public void updateReservationTable(ArrayList<TableReservation> reservationsFromServer) {
-	        orderList.clear(); 
-	        orderList.addAll(reservationsFromServer); 
-	        orderTable.refresh(); 
-	        System.out.println("GUI updated with " + reservationsFromServer.size() + " orders.");
+		 Platform.runLater(new Runnable() {
+	            @Override
+	            public void run() {
+	                orderList.clear(); 
+	                orderList.addAll(reservationsFromServer);
+	                orderTable.refresh();
+	                System.out.println("GUI updated with " + reservationsFromServer.size() + " orders.");
+	            }
+	        });
 	    }
 
-//    /**
-//     * Generates mock data so we can verify the UI without a server.
-//     */
-//    private void loadMockData() {
-//        orderList.clear();
-//
-//        TableReservation r1 = new TableReservation();
-//        r1.setReservationId("101");
-//        r1.setReservationDate("2025-01-01 19:00");
-//        r1.setNumberOfDiners("4");
-//        r1.setConfirmationCode("5551");
-//        r1.setSubscriberId("1");
-//        r1.setDateOfMakeReservation("2024-12-20");
-//
-//        TableReservation r2 = new TableReservation();
-//        r2.setReservationId("102");
-//        r2.setReservationDate("2025-01-02 20:00");
-//        r2.setNumberOfDiners("2");
-//        r2.setConfirmationCode("5552");
-//        r2.setSubscriberId("2");
-//        r2.setDateOfMakeReservation("2024-12-21");
-//
-//        TableReservation r3 = new TableReservation();
-//        r3.setReservationId("103");
-//        r3.setReservationDate("2025-01-03 18:30");
-//        r3.setNumberOfDiners("6");
-//        r3.setConfirmationCode("5553");
-//        r3.setSubscriberId("3");
-//        r3.setDateOfMakeReservation("2024-12-22");
-//
-//        orderList.addAll(r1, r2, r3);
-//    }
+
 
 	@FXML
 	void refreshTable(ActionEvent event) {
@@ -166,22 +130,24 @@ public class ReservtionBoundry {
 	}
 
 
-	
+	// Method to show update result message
 	public void showUpdateMessage(Boolean isSuccess) {
-        if (isSuccess) {
-            showAlert("Update Status", "Reservation updated successfully!");
-            
-            refreshTable(null); 
-            
-            orderIdField.clear();
-            dateField.clear();
-            guestsField.clear();
-        } else {
-            showAlert("Update Status", "Failed to update reservation. ");
-        }
+		
+		// Ensure UI updates are run on the JavaFX Application Thread
+		Platform.runLater(() -> {// Use Platform.runLater to ensure this runs on the JavaFX Application Thread
+            if (isSuccess) {
+                showAlert("Update Status", "Reservation updated successfully!");
+                refreshTable(null); // Auto-refresh table after success
+                orderIdField.clear();
+                dateField.clear();
+                guestsField.clear();
+            } else {
+                showAlert("Update Status", "Failed to update reservation.");
+            }
+        });
     }
 
-	private void showAlert(String title, String content) {
+	public void showAlert(String title, String content) {
 		Alert alert = new Alert(AlertType.INFORMATION);
 		alert.setTitle(title);
 		alert.setHeaderText(null);
