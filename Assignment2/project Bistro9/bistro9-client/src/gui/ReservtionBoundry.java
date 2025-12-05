@@ -13,7 +13,9 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
 
-
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 
 import controller.ClientController;
@@ -108,11 +110,40 @@ public class ReservtionBoundry {
 	@FXML
 	// Method to handle update button click
 	void updateOrder(ActionEvent event) {
-		// Validate required fields: order ID, date and guests
-		if (orderIdField.getText().isEmpty() || dateField.getText().isEmpty() || guestsField.getText().isEmpty()) {
-			showAlert("Input Error", "Please fill all fields (Order ID, Date, Guests).");
-			return;
-		}
+		// 1. Validate required fields: order ID, date and guests
+	    if (orderIdField.getText().isEmpty() || dateField.getText().isEmpty() || guestsField.getText().isEmpty()) {
+	        showAlert("Input Error", "Please fill all fields (Order ID, Date, Guests).");
+	        return;
+	    }
+
+	    // 2. Validate Guests (Not negative)
+	    try {
+	        int guests = Integer.parseInt(guestsField.getText());
+	        if (guests < 0) {
+	            showAlert("Input Error", "Number of guests cannot be negative.");
+	            return;
+	        }
+	    } catch (NumberFormatException e) {
+	        showAlert("Input Error", "Guests field must contain a valid number.");
+	        return;
+	    }
+
+	    // 3. Validate Date (Not in the past)
+	    try {
+	    	
+	       //define the format of the date
+	        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+	        LocalDate inputDate = LocalDate.parse(dateField.getText(), formatter);
+	        
+	        // Check if the date is in the past
+	        if (inputDate.isBefore(LocalDate.now())) {
+	            showAlert("Input Error", "The date cannot be in the past.");
+	            return;
+	        }
+	    } catch (DateTimeParseException e) {
+	        showAlert("Input Error", "Invalid date format. Please use yyyy-MM-dd.");
+	        return;
+	    }
 
 		ArrayList<String> params = new ArrayList<>();
 
