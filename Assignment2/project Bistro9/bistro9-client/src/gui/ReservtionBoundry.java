@@ -14,6 +14,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -110,9 +111,9 @@ public class ReservtionBoundry {
 	@FXML
 	// Method to handle update button click
 	void updateOrder(ActionEvent event) {
-		// 1. Validate required fields: order ID, date and guests
+		// 1. Validate required fields
 	    if (orderIdField.getText().isEmpty() || dateField.getText().isEmpty() || guestsField.getText().isEmpty()) {
-	        showAlert("Input Error", "Please fill all fields (Order ID, Date, Guests).");
+	        showAlert("Input Error", "Please fill all fields.");
 	        return;
 	    }
 
@@ -128,20 +129,22 @@ public class ReservtionBoundry {
 	        return;
 	    }
 
-	    // 3. Validate Date (Not in the past)
+	    // 3. Validate Date AND Time (Not in the past)
 	    try {
-	    	
-	       //define the format of the date
-	        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-	        LocalDate inputDate = LocalDate.parse(dateField.getText(), formatter);
+	        // הגדרת הפורמט כולל שעות ודקות
+	        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 	        
-	        // Check if the date is in the past
-	        if (inputDate.isBefore(LocalDate.now())) {
-	            showAlert("Input Error", "The date cannot be in the past.");
+	        // המרה ל-LocalDateTime במקום LocalDate
+	        LocalDateTime inputDateTime = LocalDateTime.parse(dateField.getText(), formatter);
+	        
+	        // בדיקה מול הזמן הנוכחי המדויק
+	        if (inputDateTime.isBefore(LocalDateTime.now())) {
+	            showAlert("Input Error", "The date and time cannot be in the past.");
 	            return;
 	        }
 	    } catch (DateTimeParseException e) {
-	        showAlert("Input Error", "Invalid date format. Please use yyyy-MM-dd.");
+	        // הודעת שגיאה שמסבירה למשתמש בדיוק איך לכתוב
+	        showAlert("Input Error", "Invalid format. Please use 'yyyy-MM-dd HH:mm' (e.g., 2025-05-22 14:30).");
 	        return;
 	    }
 
