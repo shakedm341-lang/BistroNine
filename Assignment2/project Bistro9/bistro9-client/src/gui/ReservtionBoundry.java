@@ -131,19 +131,19 @@ public class ReservtionBoundry {
 
 	    // 3. Validate Date AND Time (Not in the past)
 	    try {
-	        // הגדרת הפורמט כולל שעות ודקות
+	        
 	        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 	        
-	        // המרה ל-LocalDateTime במקום LocalDate
+	        
 	        LocalDateTime inputDateTime = LocalDateTime.parse(dateField.getText(), formatter);
 	        
-	        // בדיקה מול הזמן הנוכחי המדויק
+	       
 	        if (inputDateTime.isBefore(LocalDateTime.now())) {
 	            showAlert("Input Error", "The date and time cannot be in the past.");
 	            return;
 	        }
 	    } catch (DateTimeParseException e) {
-	        // הודעת שגיאה שמסבירה למשתמש בדיוק איך לכתוב
+	        
 	        showAlert("Input Error", "Invalid format. Please use 'yyyy-MM-dd HH:mm' (e.g., 2025-05-22 14:30).");
 	        return;
 	    }
