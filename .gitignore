@@ -1,0 +1,29 @@
+# Eclipse Build Output
+# Ignore all bin/ directories at any depth in the project structure
+bin/
+# Ignore target/ directory used by Maven/Gradle
+target/
+
+# Eclipse Specific Files
+# Ignore local settings directories
+.settings/
+# Ignore Eclipse metadata folders
+.metadata
+# Ignore temporary files created by Eclipse
+.temp
+*.tmp
+*.bak
+# Ignore launch configurations
+*.launch
+# Ignore Eclipse local history files
+.history/
+
+# Operating System Files
+# Ignore macOS metadata files
+.DS_Store
+# Ignore Windows thumbnail databases
+Thumbs.db
+
+# Maven/Gradle generated files
+pom.xml.tag
+pom.xml.bak

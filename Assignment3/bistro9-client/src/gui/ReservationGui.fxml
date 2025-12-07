@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<!-- 
+    Controller linked to: gui.ReservationBoundry 
+-->
+<VBox alignment="TOP_CENTER" spacing="10.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gui.ReservtionBoundry">
+   <children>
+      <Label text="Order Management">
+         <font>
+            <Font name="System Bold" size="20.0" />
+         </font>
+         <VBox.margin>
+            <Insets bottom="10.0" top="10.0" />
+         </VBox.margin>
+      </Label>
+      
+      <!-- Table View Section -->
+      <TableView fx:id="orderTable" prefHeight="300.0" prefWidth="700.0">
+        <columns>
+          <TableColumn fx:id="orderNumCol" prefWidth="75.0" text="Order #" />
+          <TableColumn fx:id="orderDateCol" prefWidth="120.0" text="Order Date" />
+            <TableColumn fx:id="guestsCol" prefWidth="75.0" text="Guests" />
+            <TableColumn fx:id="confirmCodeCol" prefWidth="100.0" text="Confirm Code" />
+            <TableColumn fx:id="subscriberCol" prefWidth="100.0" text="Subscriber ID" />
+            <TableColumn fx:id="placedDateCol" prefWidth="150.0" text="Placed On" />
+        </columns>
+      </TableView>
+      
+      <!-- Actions Section -->
+      <HBox alignment="CENTER_RIGHT" spacing="10.0">
+         <children>
+            <Button mnemonicParsing="false" onAction="#refreshTable" text="Reload Data" />
+         </children>
+         <VBox.margin>
+            <Insets right="10.0" />
+         </VBox.margin>
+      </HBox>
+      
+      <!-- Update Section -->
+      <VBox style="-fx-border-color: #cccccc; -fx-border-radius: 5; -fx-padding: 10;">
+         <children>
+            <Label text="Edit Selected Order" underline="true">
+               <font>
+                  <Font name="System Bold" size="14.0" />
+               </font>
+               <VBox.margin>
+                  <Insets bottom="10.0" />
+               </VBox.margin>
+            </Label>
+            <HBox alignment="CENTER_LEFT" spacing="15.0">
+               <children>
+                  <VBox spacing="5.0">
+                     <children>
+                        <Label text="Order ID:" />
+                        <TextField fx:id="orderIdField" prefWidth="150.0" promptText="Order ID" />
+                     </children>
+                  </VBox>
+                  <VBox spacing="5.0">
+                     <children>
+                        <Label text="New Order Date:" />
+                        <TextField fx:id="dateField" promptText="YYYY-MM-DD HH:MM" />
+                     </children>
+                  </VBox>
+                  <VBox spacing="5.0">
+                     <children>
+                        <Label text="Num of Guests:" />
+                        <TextField fx:id="guestsField" prefWidth="80.0" promptText="Number" />
+                     </children>
+                  </VBox>
+                  <Button fx:id="updateBtn" mnemonicParsing="false" onAction="#updateOrder" prefHeight="30.0" prefWidth="100.0" style="-fx-background-color: #2196F3; -fx-text-fill: white;" text="Update">
+                     <HBox.margin>
+                        <Insets top="20.0" />
+                     </HBox.margin>
+                     <font>
+                        <Font name="System Bold" size="12.0" />
+                     </font>
+                  </Button>
+               </children>
+            </HBox>
+         </children>
+         <VBox.margin>
+            <Insets top="10.0" />
+         </VBox.margin>
+      </VBox>
+   </children>
+   <padding>
+      <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+   </padding>
+</VBox>
