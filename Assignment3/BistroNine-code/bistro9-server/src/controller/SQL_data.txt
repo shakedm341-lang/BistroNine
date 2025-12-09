@@ -1,8 +1,15 @@
+-- 1. Create a new database for your project
+CREATE DATABASE IF NOT EXISTS restaurant_db;
+
+-- 2. Select this database to use it
+USE restaurant_db;
+
+-- 3. Now run your table creation
 CREATE TABLE subscribers (
     subscriberId INT,          
     firstName VARCHAR(100),
     lastName VARCHAR(100),
-    phoneNumber VARCHAR(100),  
+    phoneNumber VARCHAR(100),   
     email VARCHAR(100),
     password VARCHAR(100), 
     
@@ -21,8 +28,7 @@ CREATE TABLE tablereservations (
     FOREIGN KEY (subscriberId) REFERENCES subscribers(subscriberId)
 );
 
- 
-
+-- 4. Insert the data
 INSERT INTO subscribers (subscriberId, firstName, lastName, phoneNumber, email, password)
 VALUES 
 (1, 'John', 'Doe', '050-1000001', 'john.doe@email.com', 'Pass123'),
@@ -30,7 +36,6 @@ VALUES
 (3, 'Michael', 'Brown', '054-3000003', 'mike.brown@email.com', 'Mikey789'),
 (4, 'Emily', 'Davis', '053-4000004', 'emily.d@email.com', 'EmPass321'),
 (5, 'David', 'Wilson', '050-5000005', 'david.w@email.com', 'WilPass654');
-
 
 INSERT INTO tablereservations (reservationID, ReservationDate, numberOfDiners, confirmationCode, subscriberId, DateOfMakeReservation)
 VALUES 
