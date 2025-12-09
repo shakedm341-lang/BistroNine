@@ -13,115 +13,82 @@ public class DataBaseController {
 
 	private static DataBaseController instance;
 	private Connection connectionToDB;
+	private static String dbPassword; 
 
-	// Private constructor for Singleton for one connection to DB
+	// Private constructor calls the connection method
 	private DataBaseController() {
 		createConnectionToDB();
 	}
-	//Returns the only object opened from this class
-	public static DataBaseController getInstance() {
+
+	/**
+	 * NEW METHOD: Initializes the singleton with the password.
+	 * Renamed to initiateDBC to avoid confusion with network clients.
+	 */
+	public static void initiateDBC(String password) {
+		dbPassword = password;
 		if (instance == null) {
 			instance = new DataBaseController();
 		}
+	}
+
+	public static DataBaseController getInstance() {
 		return instance;
 	}
-	//Communicates with the DB
+
 	public void createConnectionToDB() {
 		try {
+			Class.forName("com.mysql.cj.jdbc.Driver");
+			
+			// I added '&allowPublicKeyRetrieval=true' inside this long string.
+			// This tells the driver it's okay to request the key from the server.
 			connectionToDB = DriverManager.getConnection(
-					"jdbc:mysql://localhost:3306/sys?allowLoadLocalInfile=true&serverTimezone=Asia/Jerusalem&useSSL=false",
-					"root", "Aa123456");
+					"jdbc:mysql://localhost:3306/restaurant_db?allowLoadLocalInfile=true&allowPublicKeyRetrieval=true&serverTimezone=Asia/Jerusalem&useSSL=false",
+					"root", dbPassword);
+					
 			System.out.println("SQL connection succeed");
 		} catch (SQLException ex) {
 			System.out.println("SQLException: " + ex.getMessage());
 			System.out.println("SQLState: " + ex.getSQLState());
 			System.out.println("VendorError: " + ex.getErrorCode());
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 
-	/**
-	 * Gets all reservations from the DB.
-	 */
+	
 	public ArrayList<String> getAllReservationsQuery() {
 		ArrayList<String> reservationsList = new ArrayList<>();
-
-		if (connectionToDB == null)
-			return reservationsList;
-
+		if (connectionToDB == null) return reservationsList;
+		
 		PreparedStatement ps = null;
 		ResultSet rs = null;
-
-		try {//Creating a query that returns all orders in the DB
+		try {
 			String query = "SELECT * FROM tablereservations";
 			ps = connectionToDB.prepareStatement(query);
 			rs = ps.executeQuery();
-
-			while (rs.next()) {//Inserts order details as strings into the order list
-				String reservation = new String();
-
+			while (rs.next()) {
 				StringBuilder sb = new StringBuilder();
-
-				sb.append(rs.getString("reservationID"));
-				sb.append(",");
-				sb.append(rs.getString("ReservationDate"));
-				sb.append(",");
-				sb.append(rs.getString("numberOfDiners"));
-				sb.append(",");
-				sb.append(rs.getString("confirmationCode"));
-				sb.append(",");
-				sb.append(rs.getString("subscriberId"));
-				sb.append(",");
+				sb.append(rs.getString("reservationID")).append(",");
+				sb.append(rs.getString("ReservationDate")).append(",");
+				sb.append(rs.getString("numberOfDiners")).append(",");
+				sb.append(rs.getString("confirmationCode")).append(",");
+				sb.append(rs.getString("subscriberId")).append(",");
 				sb.append(rs.getString("DateOfMakeReservation"));
-
-				reservation = sb.toString();
-
-				reservationsList.add(reservation);
+				reservationsList.add(sb.toString());
 			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		} finally {
-			try {
-				if (rs != null)
-					rs.close();
-				if (ps != null)
-					ps.close();
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
-		}
-
-		return reservationsList;//Returns the list of orders to the reservationController as a list of strings
+		} catch (SQLException e) { e.printStackTrace(); }
+		return reservationsList;
 	}
 
-	/**
-	 * Updates the Date and NumberOfDiners for a specific ID.
-	 */
 	public boolean updateReservationDetailsQuery(TableReservation t) {
-		if (connectionToDB == null)
-			return false;
-
-		PreparedStatement ps = null;
-		try {//Create a query to update existing order details
+		if (connectionToDB == null) return false;
+		try {
 			String sql = "UPDATE tablereservations SET ReservationDate = ?, numberOfDiners = ? WHERE reservationID = ?";
-
-			ps = connectionToDB.prepareStatement(sql);
+			PreparedStatement ps = connectionToDB.prepareStatement(sql);
 			ps.setString(1, t.getReservationDate());
 			ps.setInt(2, t.getNumberOfDiners());
 			ps.setInt(3, t.getReservationId());
-
-			int rowsAffected = ps.executeUpdate();
-			return rowsAffected > 0;//Returns whether the update was successful or not to the reservationController 
-
-		} catch (SQLException e) {
-			e.printStackTrace();
-			return false;//Returns whether the update was successful or not to the reservationController 
-		} finally {
-			try {
-				if (ps != null)
-					ps.close();
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
-		}
+			return ps.executeUpdate() > 0;
+		} catch (SQLException e) { e.printStackTrace(); return false; }
 	}
 }

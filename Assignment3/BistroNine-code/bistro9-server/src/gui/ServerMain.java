@@ -15,27 +15,17 @@ public class ServerMain extends Application {
 
 	@Override
 	public void start(Stage primaryStage) throws Exception {
-	    // 1. Load the FXML
-	    Parent root = FXMLLoader.load(getClass().getResource("serverPort.fxml"));
-	    
-	    // 2. Create the Scene
-	    Scene scene = new Scene(root);
-	    
-	    // 3. ADD THIS LINE TO LOAD CSS:
-	    scene.getStylesheets().add(getClass().getResource("serverPort.css").toExternalForm());
-	    
-	    // 4. Show the stage
-	    primaryStage.setTitle("Server Connection");
-	    primaryStage.setScene(scene);
-	    primaryStage.show();
+		Parent root = FXMLLoader.load(getClass().getResource("serverPort.fxml"));
+		Scene scene = new Scene(root);
+		scene.getStylesheets().add(getClass().getResource("serverPort.css").toExternalForm());
+		primaryStage.setTitle("Server Connection");
+		primaryStage.setScene(scene);
+		primaryStage.show();
 	}
 	
-	/**
-	 * This method is called by the Controller when the user clicks "Done".
-	 * It hides the GUI and starts the OCSF server logic.
-	 */
-	public static void runServer(String p) {
-		int port = 0; // Port to listen on
+	// Added dbPassword parameter
+	public static void runServer(String p, String dbPassword) {
+		int port = 0; 
 
 		try {
 			port = Integer.parseInt(p);
@@ -44,11 +34,11 @@ public class ServerMain extends Application {
 			port = 5555; 
 		}
 
-		// Create the server instance
-		ServerController sv = new ServerController(port);
+		// Pass password to ServerController
+		ServerController sv = new ServerController(port, dbPassword);
 
 		try {
-			sv.listen(); // Start listening for connections
+			sv.listen(); 
 		} catch (Exception ex) {
 			System.out.println("ERROR - Could not listen for clients!");
 			ex.printStackTrace();
