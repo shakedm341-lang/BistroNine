@@ -1,6 +1,8 @@
 package controller;
 
 import java.io.*;
+import java.lang.reflect.Field; // Import for Reflection
+import java.net.Socket;
 import data.*; 
 import ocsf.server.*;
 import gui.ServerDashboardController;
@@ -64,50 +66,72 @@ public class ServerController extends AbstractServer {
 	protected void clientConnected(ConnectionToClient client) {
 		super.clientConnected(client);
 		
-		// 1. Get info safely while connected
-		if (client.getInetAddress() != null) {
-			String clientIp = client.getInetAddress().getHostAddress();
-			String hostName = client.getInetAddress().getHostName();
+		String clientIp = client.getInetAddress().getHostAddress();
+		String hostName = client.getInetAddress().getHostName();
+		
+		// 1. Get the port using Reflection (works on all OCSF versions)
+		String clientPort = getClientPortUsingReflection(client);
+		
+		// 2. SAVE the info
+		client.setInfo("IP", clientIp);
+		client.setInfo("Host", hostName);
+		client.setInfo("Port", clientPort);
+		
+		System.out.println("Client Connected: " + clientIp + ":" + clientPort);
+
+		// 3. Update GUI
+		if (serverUI != null) {
+			final String finalIp = clientIp;
+			final String finalHost = hostName;
+			final String finalPort = clientPort;
 			
-			// 2. SAVE the info into the client object so we can read it later if it disconnects
-			client.setInfo("IP", clientIp);
-			client.setInfo("Host", hostName);
-			
-			System.out.println("Client Connected: " + clientIp);
-	
-			// 3. Update GUI
-			if (serverUI != null) {
-				Platform.runLater(() -> {
-					serverUI.addClient(clientIp, hostName);
-				});
-			}
+			Platform.runLater(() -> {
+				serverUI.addClient(finalIp, finalHost, finalPort);
+			});
 		}
 	}
 
 	@Override
 	synchronized protected void clientDisconnected(ConnectionToClient client) {
-		// 1. Retrieve the saved IP instead of asking the closed socket
 		String clientIp = (String) client.getInfo("IP");
+		String clientPort = (String) client.getInfo("Port");
 		
 		System.out.println("Client Disconnected: " + clientIp);
 		
 		if (serverUI != null && clientIp != null) {
 			Platform.runLater(() -> {
-				serverUI.updateClientStatus(clientIp, "Disconnected");
+				serverUI.updateClientStatus(clientIp, clientPort, "Disconnected");
 			});
 		}
 	}
 	
 	@Override
 	synchronized protected void clientException(ConnectionToClient client, Throwable exception) {
-		// 1. Retrieve the saved IP
 		String clientIp = (String) client.getInfo("IP");
+		String clientPort = (String) client.getInfo("Port");
 		
-		// If the connection failed before we even saved the IP, we can't update the GUI
 		if (clientIp != null && serverUI != null) {
 			Platform.runLater(() -> {
-				serverUI.updateClientStatus(clientIp, "Aborted");
+				serverUI.updateClientStatus(clientIp, clientPort, "Aborted");
 			});
 		}
+	}
+	
+	// --- New Helper Method ---
+	private String getClientPortUsingReflection(ConnectionToClient client) {
+		try {
+			// Access the private variable 'clientSocket' inside ConnectionToClient
+			Field field = client.getClass().getDeclaredField("clientSocket");
+			field.setAccessible(true); // Make it accessible even though it's private
+			Socket socket = (Socket) field.get(client);
+			
+			if (socket != null) {
+				return String.valueOf(socket.getPort());
+			}
+		} catch (Exception e) {
+			// If reflection fails, fallback to "Unknown"
+			System.out.println("Could not read private socket: " + e.getMessage());
+		}
+		return "Unknown";
 	}
 }

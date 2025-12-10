@@ -18,47 +18,47 @@ public class ServerDashboardController {
     @FXML
     private TableColumn<ConnectedClient, String> hostCol;
     @FXML
+    private TableColumn<ConnectedClient, String> portCol; // New Column
+    @FXML
     private TableColumn<ConnectedClient, String> statusCol;
     @FXML
     private Button btnExit;
 
-    // List to hold the table data
     private ObservableList<ConnectedClient> clientList = FXCollections.observableArrayList();
 
     @FXML
     public void initialize() {
-        // Link the columns to the ConnectedClient properties
         ipCol.setCellValueFactory(new PropertyValueFactory<>("clientIp"));
         hostCol.setCellValueFactory(new PropertyValueFactory<>("hostName"));
+        portCol.setCellValueFactory(new PropertyValueFactory<>("clientPort")); // Bind Port
         statusCol.setCellValueFactory(new PropertyValueFactory<>("status"));
 
-        // Set the list into the table
         clientTable.setItems(clientList);
     }
 
-    // Called by ServerController when a client connects
-    public void addClient(String ip, String host) {
-        // Check if client already exists (optional, but good for safety)
-    	for (ConnectedClient c : clientList) {
-    		if (c.getClientIp().equals(ip)) {
-    			c.setStatus("Connected");
-    			clientTable.refresh();
-    			return;
-    		}
-    	}
-        ConnectedClient client = new ConnectedClient(ip, host, "Connected");
+    // Updated to accept Port
+    public void addClient(String ip, String host, String port) {
+        // Check if client (IP + Port combination) already exists
+        for (ConnectedClient c : clientList) {
+            if (c.getClientIp().equals(ip) && c.getClientPort().equals(port)) {
+                c.setStatus("Connected");
+                clientTable.refresh();
+                return;
+            }
+        }
+        ConnectedClient client = new ConnectedClient(ip, host, port, "Connected");
         clientList.add(client);
     }
     
-    // Called by ServerController when status changes
-    public void updateClientStatus(String ip, String newStatus) {
-    	for(ConnectedClient c : clientList) {
-    		if(c.getClientIp().equals(ip)) {
-    			c.setStatus(newStatus);
-    			clientTable.refresh();
-    			break;
-    		}
-    	}
+    // Updated to identify by IP AND Port
+    public void updateClientStatus(String ip, String port, String newStatus) {
+        for(ConnectedClient c : clientList) {
+            if(c.getClientIp().equals(ip) && c.getClientPort().equals(port)) {
+                c.setStatus(newStatus);
+                clientTable.refresh();
+                break;
+            }
+        }
     }
 
     public void getExitBtn(ActionEvent event) {
