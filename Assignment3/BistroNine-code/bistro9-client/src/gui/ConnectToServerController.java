@@ -43,15 +43,15 @@ public class ConnectToServerController {
 			client = new ClientController(ip, port);
 			
 			System.out.println("Connected successfully to " + ip);
-			// Load the Reservation GUI
-			FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/ReservationGui.fxml"));
+			FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/MainSelection.fxml"));
 			Parent root = loader.load();
 
-			// Pass the client to the Reservation controller
-			ReservtionBoundry reservationController = loader.getController();
-			reservationController.setClient(client);
+			// Pass the client to the MainSelection controller
+			MainSelectionController selectionController = loader.getController();
+			selectionController.setClient(client);
 
 			Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+			stage.setTitle("BistroNine Client - Main Menu");
 			Scene scene = new Scene(root);
 			stage.setScene(scene);
 			stage.show();

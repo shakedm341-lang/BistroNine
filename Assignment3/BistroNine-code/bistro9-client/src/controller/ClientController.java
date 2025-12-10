@@ -5,13 +5,13 @@ import java.io.*;
 import java.util.ArrayList;
 
 import data.*;
-import gui.ReservtionBoundry;
+import gui.UpdateReservtionBoundry;
 
 public class ClientController extends AbstractClient {
 	
 	//define variables
 	public static boolean awaitResponse = false;
-	public static ReservtionBoundry reservationBoundary;
+	public static UpdateReservtionBoundry reservationBoundary;
 	
 	//constructor
 	public ClientController(String host, int port) throws IOException {

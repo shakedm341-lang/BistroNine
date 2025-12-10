@@ -18,7 +18,7 @@ public class ClientMain extends Application {
             Scene scene = new Scene(root);
             
            // Set the stage title and scene
-            primaryStage.setTitle("Bistro Client - Connection");
+            primaryStage.setTitle("BistroNine Client - Connection to Server");
             primaryStage.setScene(scene);
             
             // Make the window non-resizable

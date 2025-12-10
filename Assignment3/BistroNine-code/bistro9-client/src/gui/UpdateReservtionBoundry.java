@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import controller.ClientController;
 import data.*;
 
-public class ReservtionBoundry {
+public class UpdateReservtionBoundry {
 
 	@FXML
 	private TableView<TableReservation> orderTable;
