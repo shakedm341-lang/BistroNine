@@ -9,33 +9,39 @@ import gui.UpdateReservtionBoundry;
 
 public class ClientController extends AbstractClient {
 	
-	//define variables
+	// Define variables
 	public static boolean awaitResponse = false;
 	public static UpdateReservtionBoundry reservationBoundary;
 	
-	//constructor
+	// Constructor
 	public ClientController(String host, int port) throws IOException {
 		super(host, port);
 		openConnection();
 	}
 
 	@Override
-	//handle message from server
+	// Handle message from server
 	protected void handleMessageFromServer(Object msg) {
-		Message message = (Message) msg;
-		
-		//define commands
-		switch (message.command) {
-		case GET_ALL_RESERVATIONS:
-			handleGetAllReservations(message);
-			break;
-
-		case UPDATE_RESERVATION_DETAILS:
-			handleUpdateReservationResponse(message);
-			break;
+		// Strict check: We only support byte[] (Kryo)
+		if (msg instanceof byte[]) {
+			// Deserialize the byte array back to a Message object
+			Message message = (Message) KryoUtil.deserialize((byte[]) msg);
 			
-		default:
-			break;
+			// Define commands
+			switch (message.command) {
+			case GET_ALL_RESERVATIONS:
+				handleGetAllReservations(message);
+				break;
+
+			case UPDATE_RESERVATION_DETAILS:
+				handleUpdateReservationResponse(message);
+				break;
+				
+			default:
+				break;
+			}
+		} else {
+			System.out.println("Client received non-byte[] message. Ignored.");
 		}
 	}
 	
@@ -44,7 +50,7 @@ public class ClientController extends AbstractClient {
 		if (reservationBoundary != null) {
 			@SuppressWarnings("unchecked")
 			ArrayList<TableReservation> list = (ArrayList<TableReservation>) message.content;
-			reservationBoundary.updateReservationTable(list); //update table in boundary
+			reservationBoundary.updateReservationTable(list); // Update table in boundary
 		}
 	}
 
@@ -52,11 +58,11 @@ public class ClientController extends AbstractClient {
 	private void handleUpdateReservationResponse(Message message) {
 		if (reservationBoundary != null) {
 			Boolean success = (Boolean) message.content;
-			reservationBoundary.showUpdateMessage(success); //update message in boundary
+			reservationBoundary.showUpdateMessage(success); // Update message in boundary
 		}
 	}
 
-	//handle message from boundary
+	// Handle message from boundary
 	public void handleMessageFromBoundary(TypeMessage type, Object content, Command command) {
 		Message msg = new Message();
 		msg.type = type;
@@ -68,11 +74,15 @@ public class ClientController extends AbstractClient {
 			if (!isConnected()) {
 				openConnection();
 			}
-			sendToServer(msg); //send message to server
+			
+			// STRICT: Serialize to byte[] before sending
+			byte[] data = KryoUtil.serialize(msg);
+			sendToServer(data); 
+			
 		} catch (IOException e) {
 			e.printStackTrace();
 			System.out.println("Could not send message to server: Terminating client." + e);
-			quit(); //quit client
+			quit(); // Quit client
 		}
 	}
 

@@ -1,7 +1,7 @@
 package controller;
 
 import java.io.*;
-import data.Message;
+import data.*; // Imported KryoUtil via 'data.*'
 import ocsf.server.*;
 
 public class ServerController extends AbstractServer {
@@ -22,8 +22,10 @@ public class ServerController extends AbstractServer {
 
 	@Override
 	public void handleMessageFromClient(Object msg, ConnectionToClient client) {
-		if (msg instanceof Message) {
-			Message message = (Message) msg;
+		// Strict check: We only support byte[] (Kryo)
+		if (msg instanceof byte[]) {
+			// Deserialize
+			Message message = (Message) KryoUtil.deserialize((byte[]) msg);
 
 			switch (message.type) {
 			case RESERVATION:
@@ -34,6 +36,8 @@ public class ServerController extends AbstractServer {
 				System.out.println("Unknown command received: " + message.type);
 				break;
 			}
+		} else {
+			System.out.println("Server received non-byte[] message. Ignored.");
 		}
 	}
 
@@ -47,7 +51,9 @@ public class ServerController extends AbstractServer {
 		
 		// Send back to client
 		try {
-			client.sendToClient(message);
+			// STRICT: Serialize to byte[] before sending back
+			byte[] data = KryoUtil.serialize(message);
+			client.sendToClient(data);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
