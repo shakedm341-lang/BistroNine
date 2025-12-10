@@ -26,10 +26,28 @@ public class MainSelectionController {
 
     @FXML
     void enterTerminalMode(ActionEvent event) {
-        try {
+        
             
-            System.out.println("Entering Terminal Mode...");
+            //System.out.println("Entering Terminal Mode...");
+            //for test, we load the updateReservationBoundry directly
             
+            try {
+                System.out.println("Entering Terminal Mode (Test: Update Reservation)...");
+
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/ReservationGui.fxml"));
+                Parent root = loader.load();
+
+                UpdateReservtionBoundry controller = loader.getController();
+
+                controller.setClient(this.client);
+
+                switchScene(event, root, "BistroNine Client - Update Reservation");
+
+            } catch (Exception e) {
+                System.out.println("Error loading Update Reservation Screen:");
+                e.printStackTrace();
+            }
+			
             // TODO: Load TerminalMenu.fxml
             /* FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/TerminalMenu.fxml"));
             Parent root = loader.load();
@@ -38,9 +56,7 @@ public class MainSelectionController {
             switchScene(event, root);
             */
             
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        
     }
 
     @FXML
