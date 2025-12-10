@@ -49,7 +49,7 @@ public class ServerController extends AbstractServer {
 	protected void serverStopped() {
 		System.out.println("Server has stopped listening for connections.");
 	}
-	//a 
+	
 	@Override
 	protected void clientConnected(ConnectionToClient client) {
 		super.clientConnected(client);
