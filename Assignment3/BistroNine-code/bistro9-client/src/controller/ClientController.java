@@ -18,29 +18,44 @@ public class ClientController extends AbstractClient {
 		super(host, port);
 		openConnection();
 	}
+
 	@Override
 	//handle message from server
 	protected void handleMessageFromServer(Object msg) {
 		Message message = (Message) msg;
 		
-         //define commands
+		//define commands
 		switch (message.command) {
 		case GET_ALL_RESERVATIONS:
-			if (reservationBoundary != null) {
-				ArrayList<TableReservation> list = (ArrayList<TableReservation>) message.content;
-				reservationBoundary.updateReservationTable(list);//update table in boundary
-			}
+			handleGetAllReservations(message);
 			break;
 
 		case UPDATE_RESERVATION_DETAILS:
-			if (reservationBoundary != null) {//update message in boundary
-				Boolean success = (Boolean) message.content;
-				reservationBoundary.showUpdateMessage(success);
-			}
+			handleUpdateReservationResponse(message);
 			break;
-
+			
+		default:
+			break;
 		}
 	}
+	
+	// Helper method for handling the list of reservations
+	private void handleGetAllReservations(Message message) {
+		if (reservationBoundary != null) {
+			@SuppressWarnings("unchecked")
+			ArrayList<TableReservation> list = (ArrayList<TableReservation>) message.content;
+			reservationBoundary.updateReservationTable(list); //update table in boundary
+		}
+	}
+
+	// Helper method for handling the update response
+	private void handleUpdateReservationResponse(Message message) {
+		if (reservationBoundary != null) {
+			Boolean success = (Boolean) message.content;
+			reservationBoundary.showUpdateMessage(success); //update message in boundary
+		}
+	}
+
 	//handle message from boundary
 	public void handleMessageFromBoundary(TypeMessage type, Object content, Command command) {
 		Message msg = new Message();
@@ -49,20 +64,23 @@ public class ClientController extends AbstractClient {
 		msg.command = command;
 
 		try {
-			openConnection();// in order to send more than one message
-			sendToServer(msg);//send message to server
+			// Ensure connection is open before sending
+			if (!isConnected()) {
+				openConnection();
+			}
+			sendToServer(msg); //send message to server
 		} catch (IOException e) {
 			e.printStackTrace();
 			System.out.println("Could not send message to server: Terminating client." + e);
-			quit();//quit client
+			quit(); //quit client
 		}
-
 	}
 
 	public void quit() {
 		try {
 			closeConnection();
 		} catch (IOException e) {
+			e.printStackTrace();
 		}
 		System.exit(0);
 	}

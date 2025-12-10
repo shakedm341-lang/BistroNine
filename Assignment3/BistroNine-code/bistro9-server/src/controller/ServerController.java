@@ -13,32 +13,43 @@ public class ServerController extends AbstractServer {
 	public ServerController(int port, String dbPassword) {
 		super(port);
 		
-		// 1. Initialize the Database Connection first using the new name
+		// 1. Initialize the Database Connection first
 		DataBaseController.initiateDBC(dbPassword);
 		
-		// 2. Initialize the Logic Controller (now safe to access DB)
+		// 2. Initialize the Logic Controller
 		this.reservationsController = new ReservationControler();
 	}
 
+	@Override
 	public void handleMessageFromClient(Object msg, ConnectionToClient client) {
 		if (msg instanceof Message) {
 			Message message = (Message) msg;
 
 			switch (message.type) {
 			case RESERVATION:
-				Object respond = (Object) reservationsController.handleMessageFromServer(message);
-				message.content = respond;
-				try {
-					client.sendToClient(message);
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
+				handleReservationRequest(message, client);
 				break;
 
 			default:
-				System.out.println("Unknown command received.");
+				System.out.println("Unknown command received: " + message.type);
 				break;
 			}
+		}
+	}
+
+	// Helper method to handle reservation logic
+	private void handleReservationRequest(Message message, ConnectionToClient client) {
+		// Delegate logic to the specific controller
+		Object response = reservationsController.handleMessageFromServer(message);
+		
+		// Prepare response
+		message.content = response;
+		
+		// Send back to client
+		try {
+			client.sendToClient(message);
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 	}
 
@@ -49,7 +60,7 @@ public class ServerController extends AbstractServer {
 	protected void serverStopped() {
 		System.out.println("Server has stopped listening for connections.");
 	}
-	
+
 	@Override
 	protected void clientConnected(ConnectionToClient client) {
 		super.clientConnected(client);
