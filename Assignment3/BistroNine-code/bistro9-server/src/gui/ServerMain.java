@@ -15,6 +15,7 @@ public class ServerMain extends Application {
 
 	@Override
 	public void start(Stage primaryStage) throws Exception {
+		// Load the Initial Login Screen
 		Parent root = FXMLLoader.load(getClass().getResource("serverPort.fxml"));
 		Scene scene = new Scene(root);
 		scene.getStylesheets().add(getClass().getResource("serverPort.css").toExternalForm());
@@ -23,7 +24,7 @@ public class ServerMain extends Application {
 		primaryStage.show();
 	}
 	
-	// Added dbPassword parameter
+	// This method is called by ServerPortFrameController when 'Done' is clicked
 	public static void runServer(String p, String dbPassword) {
 		int port = 0; 
 
@@ -33,14 +34,31 @@ public class ServerMain extends Application {
 			System.out.println("Invalid port, using default 5555");
 			port = 5555; 
 		}
-
-		// Pass password to ServerController
-		ServerController sv = new ServerController(port, dbPassword);
+		
+		final int finalPort = port;
 
 		try {
-			sv.listen(); 
+			// 1. Create the New Window (Dashboard)
+			Stage dashboardStage = new Stage();
+			FXMLLoader loader = new FXMLLoader(ServerMain.class.getResource("/gui/ServerDashboard.fxml"));
+			Parent root = loader.load();
+			
+			// 2. Get the Controller so we can pass it to the Server
+			ServerDashboardController dashboardController = loader.getController();
+			
+			Scene scene = new Scene(root);
+			dashboardStage.setTitle("Server Dashboard");
+			dashboardStage.setScene(scene);
+			
+			// 3. Show the new window
+			dashboardStage.show();
+			
+			// 4. Start the Server logic
+			ServerController sv = new ServerController(finalPort, dbPassword, dashboardController);
+			sv.listen();
+			
 		} catch (Exception ex) {
-			System.out.println("ERROR - Could not listen for clients!");
+			System.out.println("ERROR - Could not start server or load dashboard!");
 			ex.printStackTrace();
 		}
 	}
