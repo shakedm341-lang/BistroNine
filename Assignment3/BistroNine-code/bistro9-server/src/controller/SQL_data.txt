@@ -18,11 +18,11 @@ CREATE TABLE subscribers (
 
 CREATE TABLE tablereservations (
     reservationID INT,              
-    ReservationDate DATETIME,       
+    reservationDate DATETIME,       
     numberOfDiners INT,             
     confirmationCode INT,           
     subscriberId INT,               
-    DateOfMakeReservation DATETIME, 
+    dateOfMakeReservation DATETIME, 
     
     PRIMARY KEY (reservationID),
     FOREIGN KEY (subscriberId) REFERENCES subscribers(subscriberId)

@@ -1,16 +1,17 @@
 package data;
 
 import java.io.Serializable;
+import java.sql.Timestamp;
 
-public class TableReservation implements Serializable {
+public class TableReservation  {
 	private static final long serialVersionUID = 1L;
 
 	private int reservationId;
-	private String ReservationDate;
+	private Timestamp ReservationDate;
 	private int numberOfDiners;
 	private int confirmationCode;
 	private int subscriberId;
-	private String DateOfMakeReservation;
+	private Timestamp DateOfMakeReservation;
 
 	public TableReservation() {
 
@@ -20,47 +21,47 @@ public class TableReservation implements Serializable {
 		return reservationId;
 	}
 
-	public void setReservationId(String reservationId) {
-		this.reservationId = Integer.parseInt(reservationId);
+	public void setReservationId(int reservationId) {
+		this.reservationId = reservationId;
 	}
 
-	public String getReservationDate() {
+	public Timestamp getReservationDate() {
 		return ReservationDate;
 	}
 
-	public void setReservationDate(String reservationDate) {
-		ReservationDate = reservationDate;
+	public void setReservationDate(Timestamp timestamp) {
+		ReservationDate = timestamp;
 	}
 
 	public int getNumberOfDiners() {
 		return numberOfDiners;
 	}
 
-	public void setNumberOfDiners(String numberOfDiners) {
-		this.numberOfDiners = Integer.parseInt(numberOfDiners);
+	public void setNumberOfDiners(int numberOfDiners) {
+		this.numberOfDiners = numberOfDiners;
 	}
 
 	public int getConfirmationCode() {
 		return confirmationCode;
 	}
 
-	public void setConfirmationCode(String confirmationCode) {
-		this.confirmationCode = Integer.parseInt(confirmationCode);
+	public void setConfirmationCode(int confirmationCode) {
+		this.confirmationCode = confirmationCode;
 	}
 
 	public int getSubscriberId() {
 		return subscriberId;
 	}
 
-	public void setSubscriberId(String subscriberId) {
-		this.subscriberId = Integer.parseInt(subscriberId);
+	public void setSubscriberId(int subscriberId) {
+		this.subscriberId = subscriberId;
 	}
 
-	public String getDateOfMakeReservation() {
+	public Timestamp getDateOfMakeReservation() {
 		return DateOfMakeReservation;
 	}
 
-	public void setDateOfMakeReservation(String dateOfMakeReservation) {
+	public void setDateOfMakeReservation(Timestamp dateOfMakeReservation) {
 		DateOfMakeReservation = dateOfMakeReservation;
 	}
 }
