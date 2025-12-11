@@ -1,5 +1,6 @@
 package controller;
 
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -28,7 +29,9 @@ public class DataBaseController {
     private static final int MAX_POOL_SIZE = 10;//Max num of connections to the DB in the "connection pool"
     private static final long MAX_IDLE_TIME = 5000;//Max time a connection can "sit in the connection pool" without being used
     private static final long CHECK_INTERVAL = 2;//How often does the "pool cleaner" run and delete unused connections in the "connection pool"?
-
+    private final int NO_TABLE_FOUND = -1;//When no suitable table is found in the database.
+    
+    
     private BlockingQueue<PooledConnection> connectionPool;//The "connection pool"
     private ScheduledExecutorService cleanerService;//The "Pool Cleaner"
 
@@ -230,5 +233,193 @@ public class DataBaseController {
             if (ps != null) try { ps.close(); } catch (SQLException e) {}
             releaseConnection(pConn);
         }
+    }
+    
+    /**
+     * Verifies the login credentials of a subscriber against the database.
+     * This method returns an ArrayList instead of a boolean to match
+     * the return type expected by the CustomerController.
+     * @param s The subscriber object containing the username and password to check.
+     * @return An ArrayList&lt;Object&gt; containing a single boolean value: 
+     * [true] if the credentials are correct, [false] otherwise.
+     */
+    public ArrayList<Object> checkLoginDetails(data.Subscriber s) {
+        PooledConnection pConn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        boolean exists = false;
+
+        try {
+            pConn = getConnection();
+            if (pConn == null) { 
+            	// Return a list containing false in case of connection failure
+            	ArrayList<Object> errorList = new ArrayList<>();
+        		errorList.add(false);
+        		return errorList;
+            }
+            // Selects the user matching both username and password
+            String query = "SELECT * FROM subscribers WHERE username = ? AND password = ?";
+            
+            ps = pConn.getConnection().prepareStatement(query);
+            ps.setString(1, s.getUsername()); 
+            ps.setString(2, s.getPassword());
+            
+            rs = ps.executeQuery();
+            
+            if (rs.next()) {
+                exists = true;
+            }    
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            if (rs != null) try { rs.close(); } catch (SQLException e) {}
+            if (ps != null) try { ps.close(); } catch (SQLException e) {}
+            releaseConnection(pConn);
+        }
+        ArrayList<Object> resultList = new ArrayList<>();
+        resultList.add(exists);
+        return resultList;    
+    } 
+    
+    /**
+     * Checks if there is any table available for the specified number of diners at the given time.
+     * This method returns an ArrayList instead of a boolean to match
+     * the return type expected by the CustomerController.
+     * @param numberOfDiners The number of guests.
+     * @param reservationTime The requested date and time for the reservation.
+     * @return An ArrayList containing [true] if a suitable table is found, 
+     * or [false] otherwise.
+     */
+    public ArrayList<Object> checkingTableAvailability(int numberOfDiners, java.sql.Timestamp reservationTime) {
+        int tableId = catchTable(numberOfDiners, reservationTime);
+        boolean isAvailable = (tableId != NO_TABLE_FOUND);
+        ArrayList<Object> resultList = new ArrayList<>();
+        resultList.add(isAvailable);
+        return resultList; 
+    }
+    
+    
+    /**
+     * Searches for a specific Table ID that meets the capacity requirements 
+     * and is not already reserved at the requested time.
+     * @param numberOfDiners The minimum capacity required for the table.
+     * @param reservationTime The time of the reservation to check availability for.
+     * @return The ID of an available table, or -1 if no suitable table is found.
+     */
+    public int catchTable(int numberOfDiners, java.sql.Timestamp reservationTime) {
+        PooledConnection pConn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        int foundTableId = -1;
+
+        try {
+            pConn = getConnection();
+            if (pConn == null)
+            	return -1;
+
+            // Logic: Find a table with sufficient capacity that is NOT present in the reservations 
+            // table for the exact same time.
+            String query = "SELECT tableID FROM tables " +
+                           "WHERE capacity >= ? " +
+                           "AND tableID NOT IN " +
+                           "(SELECT tableID FROM tablereservations WHERE reservationDate = ?)";
+
+            ps = pConn.getConnection().prepareStatement(query);
+            ps.setInt(1, numberOfDiners);
+            ps.setTimestamp(2, reservationTime);
+
+            rs = ps.executeQuery();
+
+            if (rs.next()) {
+                foundTableId = rs.getInt("tableID");
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            if (rs != null) try { rs.close(); } catch (SQLException e) {}
+            if (ps != null) try { ps.close(); } catch (SQLException e) {}
+            releaseConnection(pConn);
+        }
+        return foundTableId;
+    }
+    
+    /**
+     * Inserts a new reservation record into the database.
+     * @param t The TableReservation object containing all reservation details.
+     * @return true if the reservation was successfully saved to the database, false otherwise.
+     */
+    public boolean createNewReservation(data.TableReservation t) {
+        PooledConnection pConn = null;
+        PreparedStatement ps = null;
+        boolean success = false;
+
+        try {
+            pConn = getConnection();
+            if (pConn == null) return false;
+            
+            // Inserts the new reservation details into the database
+            String query = "INSERT INTO tablereservations "
+            		+ "(reservationDate, numberOfDiners, confirmationCode, subscriberId, tableID, dateOfMakeReservation)"
+            		+ " VALUES (?, ?, ?, ?, ?, ?)";
+            
+            ps = pConn.getConnection().prepareStatement(query);
+            ps.setTimestamp(1, t.getReservationDate());
+            ps.setInt(2, t.getNumberOfDiners());
+            ps.setInt(3, t.getConfirmationCode()); 
+            ps.setInt(4, t.getSubscriberId());     
+            ps.setInt(5, t.getTableId());          
+            ps.setTimestamp(6, new java.sql.Timestamp(System.currentTimeMillis())); // Current server time
+
+            int rowsAffected = ps.executeUpdate();
+            if (rowsAffected > 0) {
+                success = true;
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            if (ps != null) try { ps.close(); } catch (SQLException e) {}
+            releaseConnection(pConn);
+        }
+        return success;
+    } 
+    
+    /**
+     * Checks if a specific confirmation code already exists in the database.
+     * Used to ensure that generated confirmation codes are unique.
+     * @param code The confirmation code to check.
+     * @return true if the code already exists, false if it is unique.
+     */
+    public boolean checkIfConfCodeExistsInDB(int code) {
+        PooledConnection pConn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        boolean exists = false;
+
+        try {
+            pConn = getConnection();
+            if (pConn == null) return false;
+
+            // Selects the reservation ID matching the provided confirmation code
+            String query = "SELECT reservationID FROM tablereservations WHERE confirmationCode = ?";
+            
+            ps = pConn.getConnection().prepareStatement(query);
+            ps.setInt(1, code);
+            
+            rs = ps.executeQuery();
+            
+            if (rs.next()) {
+                exists = true;
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            if (rs != null) try { rs.close(); } catch (SQLException e) {}
+            if (ps != null) try { ps.close(); } catch (SQLException e) {}
+            releaseConnection(pConn);
+        }
+        return exists;
     }
 }

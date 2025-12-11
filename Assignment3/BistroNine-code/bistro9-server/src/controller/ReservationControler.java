@@ -266,7 +266,7 @@ public class ReservationControler
 	 * @return An ArrayList of Timestamps representing available dates and times for
 	 *         the requested number of diners and reservation date.
 	 */
-	private ArrayList<Timestamp> checkingTableAvailability(Message msg)
+	private ArrayList<Object> checkingTableAvailability(Message msg)
 	{
 	
 		@SuppressWarnings("unchecked") 
