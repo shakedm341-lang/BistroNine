@@ -1,17 +1,20 @@
 package data;
 
-import java.io.Serializable;
 import java.sql.Timestamp;
 
-public class TableReservation  {
-	private static final long serialVersionUID = 1L;
-
+public class TableReservation  
+{
+	
 	private int reservationId;
 	private Timestamp ReservationDate;
 	private int numberOfDiners;
 	private int confirmationCode;
 	private int subscriberId;
 	private Timestamp DateOfMakeReservation;
+	private Timestamp arrivalTime;
+	private Timestamp leavingTime;
+	private int tableId;
+	
 
 	public TableReservation() {
 
@@ -64,4 +67,28 @@ public class TableReservation  {
 	public void setDateOfMakeReservation(Timestamp dateOfMakeReservation) {
 		DateOfMakeReservation = dateOfMakeReservation;
 	}
+	public Timestamp getArrivalTime() {
+		return arrivalTime;
+	}
+
+	public void setArrivalTime(Timestamp arrivalTime) {
+		this.arrivalTime = arrivalTime;
+	}
+	public Timestamp getLeavingTime() {
+		return leavingTime;
+	}
+
+	public void setLeavingTime(Timestamp leavingTime) {
+		this.leavingTime = leavingTime;
+	}
+
+	public int getTableId() {
+		return tableId;
+	}
+
+	public void setTableId(int tableId) {
+		this.tableId = tableId;
+	}
+
+	
 }

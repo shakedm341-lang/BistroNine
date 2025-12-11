@@ -4,29 +4,50 @@ CREATE DATABASE IF NOT EXISTS restaurant_db;
 -- 2. Select this database to use it
 USE restaurant_db;
 
+
+
+
 -- 3. Now run your table creation
-CREATE TABLE subscribers (
-    subscriberId INT,          
-    firstName VARCHAR(100),
-    lastName VARCHAR(100),
+CREATE TABLE customer (
+    id INT NOT NULL,          
+    firstName VARCHAR(100) NOT NULL,
+    lastName VARCHAR(100) NOT NULL,
     phoneNumber VARCHAR(100),   
     email VARCHAR(100),
+    type  ENUM('customer', 'subscriber', 'restaurant representative', 'restaurant manager') NOT NULL,
+    subscriberId INT  ,
+    personalInfo VARCHAR(1000),
+    username VARCHAR(100) UNIQUE,
     password VARCHAR(100), 
     
-    PRIMARY KEY (subscriberId)
+    PRIMARY KEY (id)
+);
+CREATE TABLE restaurant_tables (
+    tableId INT AUTO_INCREMENT ,
+    seatsNumber INT NOT NULL, 
+    location ENUM('inside', 'bar', 'outside') NOT NULL, 
+    status ENUM('available', 'reserved', 'occupied') NOT NULL,
+    
+    PRIMARY KEY (tableId)
+);
+CREATE TABLE table_reservations (
+    reservationID INT AUTO_INCREMENT,              
+    reservationDate DATETIME NOT NULL,       
+    numberOfDiners INT NOT NULL,             
+    confirmationCode INT NOT NULL ,           
+    subscriberId INT NOT NULL,               
+    dateOfMakeReservation DATETIME DEFAULT CURRENT_TIMESTAMP, 
+    arrivalTime DATETIME, 
+	leavingTime DATETIME,
+	tableId INT,
+
+    PRIMARY KEY (reservationID),
+    FOREIGN KEY (subscriberId) REFERENCES customer(id),
+    FOREIGN KEY (tableId) REFERENCES restaurant_tables(tableId)
 );
 
-CREATE TABLE tablereservations (
-    reservationID INT,              
-    reservationDate DATETIME,       
-    numberOfDiners INT,             
-    confirmationCode INT,           
-    subscriberId INT,               
-    dateOfMakeReservation DATETIME, 
-    
-    PRIMARY KEY (reservationID),
-    FOREIGN KEY (subscriberId) REFERENCES subscribers(subscriberId)
-);
+
+
 
 -- 4. Insert the data
 INSERT INTO subscribers (subscriberId, firstName, lastName, phoneNumber, email, password)

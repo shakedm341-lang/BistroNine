@@ -3,12 +3,11 @@ import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Random;
 
 import data.Message;
+import data.Table;
 import data.TableReservation;
-
-
-//controler
 
 public class ReservationControler 
 {
@@ -40,13 +39,26 @@ public class ReservationControler
 	    	
 	    case UPDATE_RESERVATION_DETAILS:
 	    	return updateReservationDetails(msg);
+	    
+	    case CREATE_NEW_RESERVATION:
+	    	return createNewReservation(msg);
+	    		
+	    case CHECK_TABLE_AVAILABILITY:
+	    	return checkingTableAvailability(msg);
 	    	
 	    default:
 	        System.out.println("Unknown task received.");
 	        return null;
 		}
 	}
-		
+
+	/**
+	 * Retrieves all table reservations from the database.
+	 *
+	 * @param msg The message requesting all reservations.
+	 * @return An ArrayList of TableReservation objects representing all
+	 *         reservations in the database.
+	 */
 	private ArrayList<TableReservation> getAllReservations(Message msg)
 	{
 		
@@ -167,6 +179,121 @@ public class ReservationControler
 	    return DBC.updateReservationDetailsQuery(res); 
 	    
 	}
+
+	/**
+	 * Creates a new table reservation in the database based on the information
+	 * provided in the message.
+	 *
+	 * @param msg The message containing the reservation details to be created. The
+	 *            content of the message is expected to be an ArrayList<Object> with
+	 *            the following order: [reservationDate (Timestamp), numberOfDiners
+	 *            (Integer)]
+	 * @return true if the reservation was created successfully, false otherwise.
+	 */
+	private boolean createNewReservation(Message msg)
+	{
+		
+		@SuppressWarnings("unchecked") 
+		ArrayList<Object> list = (ArrayList<Object>) msg.content;//get the reservation details from the message content
+		
+		TableReservation newRes = new TableReservation();//Creating a new reservation object
+		Random rand = new Random();//Random object to generate a random confirmation code
+		
+		//Setting the reservation date from the list we got from the message content
+		if (list.get(0) instanceof Timestamp) 
+		{
+			newRes.setReservationDate((Timestamp) list.get(0));
+		} else 
+		{
+	    	  System.out.println("Error: Index 0 is not a Timestamp!");
+	    	  return false;
+		}
+		
+    	//Setting number of diners from the list we got from the message content
+		if (list.get(1) instanceof Integer) {
+			newRes.setNumberOfDiners((int) list.get(1));
+		} else 
+		{
+		    	  System.out.println("Error: Index 1 is not a Integer!");
+		    	  return false;
+		}
+		//Setting subscriber ID from the list we got from the message content
+		if (list.get(2) instanceof Integer) {
+			newRes.setSubscriberId((int) list.get(2));
+		} 
+		else if (list.get(2) == null) 
+		{
+            newRes.setSubscriberId(-1); // Assuming -1 indicates a customer without a subscription
+        }
+		else 
+		{
+		    System.out.println("Error: Index 2 is not a Integer!");
+		    return false;
+		}
+		
+		
+		
+        int code=0;
+        boolean exists=true;
+
+        
+        while (exists)
+        {
+        	code = 100000 + rand.nextInt(900000);
+        	exists = DBC.checkIfConfCodeExistsInDB(code);//Check if the generated code already exists in the DB
+        }
+
+        newRes.setConfirmationCode(code);//Set the unique confirmation code to the reservation
+
+	    newRes.setDateOfMakeReservation(new Timestamp(System.currentTimeMillis()));
+
+		newRes.setTableId(DBC.catchTable(newRes.getNumberOfDiners(), newRes.getReservationDate()));//Assigning a table ID to the reservation based on the number of diners and reservation date
+		
+
+		
+		return DBC.createNewReservation(newRes);//Return to server that the reservation was created successfully
+		
+	}
+	
+	/**
+	 * Checks the availability of tables for a given number of diners and
+	 * reservation date.
+	 *
+	 * @param msg The message containing the details for checking table
+	 *            availability. The content of the message is expected to be an
+	 *            ArrayList<Object> with the following order: [numberOfDiners
+	 *            (Integer), reservationDate (Timestamp)]
+	 * @return An ArrayList of Timestamps representing available dates and times for
+	 *         the requested number of diners and reservation date.
+	 */
+	private ArrayList<Timestamp> checkingTableAvailability(Message msg)
+	{
+	
+		@SuppressWarnings("unchecked") 
+		ArrayList<Object> list = (ArrayList<Object>) msg.content;//get the reservation details from the message content
+		int numberOfDiners = 0;
+		Timestamp reservationDate = null;
+	
+		//Setting number of diners from the list we got from the message content
+		if (list.get(0) instanceof Integer) {
+				  numberOfDiners=(int) list.get(0);
+		} else {
+		    	  System.out.println("Error: Index 0 is not a String!");
+		    	  return null;
+		}
+		    	
+		//Setting reservation date from the list we got from the message content
+		if (list.get(1) instanceof Timestamp) {
+			reservationDate=(Timestamp) list.get(1);
+		} else {
+		    	  System.out.println("Error: Index 1 is not a String!");
+		    	  return null;
+		}
+		
+		
+		return DBC.checkingTableAvailability(numberOfDiners, reservationDate);//Return to server the list of available dates and times for the requested number of diners and reservation date;
+	}
+	
 	
 
 }
