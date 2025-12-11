@@ -72,56 +72,88 @@ public class ReservationControler
     		
     		TableReservation resAsTableRes = new TableReservation();//Create a new TableReservation 
     	    
-    	    //Set reservation ID
+    	    //Set reservation ID in the TableReservation object
     		if (resAsList.get(0) instanceof Integer) 
     		{
                 resAsTableRes.setReservationId((Integer) resAsList.get(0));
             } else {
-                System.out.println("Error: Index 0 (ID) is not an Integer! It is: " + resAsList.get(0).getClass().getSimpleName());
+                System.out.println("Error: Index 0 is not a Integer!");
                 return null; 
             }
 
-            //Set reservation date
+            //Set reservation date in the TableReservation object
             if (resAsList.get(1) instanceof Timestamp) {
                 resAsTableRes.setReservationDate((Timestamp) resAsList.get(1));
             } else {
-                System.out.println("Error: Index 1 (Date) is not a Timestamp!");
+                System.out.println("Error: Index 1 is not a Timestamp!");
                 return null;
             }
 
-            //Set number of diners
+            //Set number of diners in the TableReservation object
             if (resAsList.get(2) instanceof Integer) {
                 resAsTableRes.setNumberOfDiners((Integer) resAsList.get(2));
             } else {
-                System.out.println("Error: Index 2 (Diners) is not an Integer!");
+                System.out.println("Error: Index 2 is not a Integer!");
                 return null;
             }
 
-            //Set confirmation code
+            //Set confirmation code in the TableReservation object
             if (resAsList.get(3) instanceof Integer) {
                 resAsTableRes.setConfirmationCode((Integer) resAsList.get(3));
             } else {
-                System.out.println("Error: Index 3 (Code) is not an Integer!");
+                System.out.println("Error: Index 3 is not a Integer!");
                 return null;
             }
 
-            //Set subscriber ID
+            //Set phone Number in the TableReservation object
             if (resAsList.get(4) instanceof Integer) {
-                resAsTableRes.setSubscriberId((Integer) resAsList.get(4));
+                resAsTableRes.setPhoneNumber((Integer) resAsList.get(4));
             } else {
-                System.out.println("Error: Index 4 (SubID) is not an Integer!");
+                System.out.println("Error: Index 4 is not a Integer!");
                 return null;
             }
 
-            //Set date of make reservation
+            //Set date of make reservation in the TableReservation object
             if (resAsList.get(5) instanceof Timestamp) {
                 resAsTableRes.setDateOfMakeReservation((Timestamp) resAsList.get(5));
             } else {
-                System.out.println("Error: Index 5 (MakeDate) is not a Timestamp!");
+                System.out.println("Error: Index 5 is not a Timestamp!");
                 return null;
             }
     	    
+          //Set arrival time in the TableReservation object
+            if (resAsList.get(6) instanceof Timestamp) {
+                resAsTableRes.setArrivalTime((Timestamp) resAsList.get(6));
+            } else {
+                System.out.println("Error: Index 6 is not a Timestamp!");
+                return null;
+            }
+            
+          //Set leaving Time in the TableReservation object
+            if (resAsList.get(7) instanceof Timestamp) {
+                resAsTableRes.setLeavingTime((Timestamp) resAsList.get(7));
+            } else {
+                System.out.println("Error: Index 7 is not a Timestamp!");
+                return null;
+            }
     	    
+          //Set table id in the TableReservation object
+            if (resAsList.get(8) instanceof Integer) {
+                resAsTableRes.setTableId((Integer) resAsList.get(8));
+            } else {
+                System.out.println("Error: Index 8 is not a Integer!");
+                return null;
+            }
+            
+          //Set status  in the Subscriber object
+    		if (resAsList.get(9) instanceof String) {
+    			resAsTableRes.setStatus((String) resAsList.get(9));
+        	} else {
+        	    System.out.println("Error: Index 9 is not a String!");
+        	    return null;
+        	}
+            
+            
     	    reservationsListAsTableRes.add(resAsTableRes);//Add the reservation to the list of reservations as TableReservation 
     	}
     	
@@ -129,14 +161,13 @@ public class ReservationControler
 	}
 
 	/**
-	 * Updates the reservation details in the database based on the information
-	 * provided in the message.
+	 * Updates the details of an existing table reservation in the database.
 	 *
-	 * @param msg The message containing the reservation details to be updated. The
+	 * @param msg The message containing the updated reservation details. The
 	 *            content of the message is expected to be an ArrayList<Object> with
 	 *            the following order: [reservationId (Integer), reservationDate
 	 *            (Timestamp), numberOfDiners (Integer)]
-	 * @return true if the update operation was successful, false otherwise.
+	 * @return true if the update was successful, false otherwise.
 	 */
 	private boolean updateReservationDetails(Message msg)
 	{
@@ -148,11 +179,10 @@ public class ReservationControler
     	TableReservation res = new TableReservation();
     	
     	//Set reservation ID from the list
-    	
 		if (list.get(0) instanceof Integer) {
     	    res.setReservationId((int) list.get(0));
     	} else {
-    	    System.out.println("Error: Index 0 is not a String!");
+    	    System.out.println("Error: Index 0 is not a Integer!");
     	    return false;
     	}
     	
@@ -160,7 +190,7 @@ public class ReservationControler
     	if (list.get(1) instanceof Timestamp) {
     	    res.setReservationDate((Timestamp) list.get(1));
     	} else {
-    	    System.out.println("Error: Index 1 is not a String!");
+    	    System.out.println("Error: Index 1 is not a Timestamp!");
     	    return false;
     	}
     	
@@ -168,7 +198,7 @@ public class ReservationControler
     	if (list.get(2) instanceof Integer) {
     	    res.setNumberOfDiners((int) list.get(2));
     	} else {
-    	    System.out.println("Error: Index 2 is not a String!");
+    	    System.out.println("Error: Index 2 is not a Integer!");
     	    return false;
     	}
     	
@@ -184,10 +214,10 @@ public class ReservationControler
 	 * Creates a new table reservation in the database based on the information
 	 * provided in the message.
 	 *
-	 * @param msg The message containing the reservation details to be created. The
-	 *            content of the message is expected to be an ArrayList<Object> with
-	 *            the following order: [reservationDate (Timestamp), numberOfDiners
-	 *            (Integer)]
+	 * @param msg The message containing the reservation details. The content of the
+	 *            message is expected to be an ArrayList<Object> with the following
+	 *            order: [reservationDate (Timestamp), numberOfDiners (Integer),
+	 *            phoneNumber (Integer)]
 	 * @return true if the reservation was created successfully, false otherwise.
 	 */
 	private boolean createNewReservation(Message msg)
@@ -198,6 +228,9 @@ public class ReservationControler
 		
 		TableReservation newRes = new TableReservation();//Creating a new reservation object
 		Random rand = new Random();//Random object to generate a random confirmation code
+		
+		
+		//reservation id is auto generated in the DB
 		
 		//Setting the reservation date from the list we got from the message content
 		if (list.get(0) instanceof Timestamp) 
@@ -217,23 +250,8 @@ public class ReservationControler
 		    	  System.out.println("Error: Index 1 is not a Integer!");
 		    	  return false;
 		}
-		//Setting subscriber ID from the list we got from the message content
-		if (list.get(2) instanceof Integer) {
-			newRes.setSubscriberId((int) list.get(2));
-		} 
-		else if (list.get(2) == null) 
-		{
-            newRes.setSubscriberId(-1); // Assuming -1 indicates a customer without a subscription
-        }
-		else 
-		{
-		    System.out.println("Error: Index 2 is not a Integer!");
-		    return false;
-		}
 		
-		
-		
-        int code=0;
+		int code=0;
         boolean exists=true;
 
         
@@ -245,10 +263,24 @@ public class ReservationControler
 
         newRes.setConfirmationCode(code);//Set the unique confirmation code to the reservation
 
-	    newRes.setDateOfMakeReservation(new Timestamp(System.currentTimeMillis()));
-
+		
+		//Setting phone Number from the list we got from the message content
+		if (list.get(2) instanceof Integer) {
+			newRes.setPhoneNumber((int) list.get(2));
+		} 
+		else 
+		{
+		    System.out.println("Error: Index 2 is not a Integer!");
+		    return false;
+		}
+		
+		//date of make reservation is auto generated in the DB
+		
+        //arrival time and leaving time are set  as null at the beginning
+		
 		newRes.setTableId(DBC.catchTable(newRes.getNumberOfDiners(), newRes.getReservationDate()));//Assigning a table ID to the reservation based on the number of diners and reservation date
 		
+		//status of reservation is auto generated in the DB
 
 		
 		return DBC.createNewReservation(newRes);//Return to server that the reservation was created successfully
@@ -256,8 +288,7 @@ public class ReservationControler
 	}
 	
 	/**
-	 * Checks the availability of tables for a given number of diners and
-	 * reservation date.
+	 * Checks table availability for a given number of diners and reservation date.
 	 *
 	 * @param msg The message containing the details for checking table
 	 *            availability. The content of the message is expected to be an
@@ -266,7 +297,7 @@ public class ReservationControler
 	 * @return An ArrayList of Timestamps representing available dates and times for
 	 *         the requested number of diners and reservation date.
 	 */
-	private ArrayList<Object> checkingTableAvailability(Message msg)
+	private ArrayList<Timestamp> checkingTableAvailability(Message msg)
 	{
 	
 		@SuppressWarnings("unchecked") 
@@ -278,7 +309,7 @@ public class ReservationControler
 		if (list.get(0) instanceof Integer) {
 				  numberOfDiners=(int) list.get(0);
 		} else {
-		    	  System.out.println("Error: Index 0 is not a String!");
+		    	  System.out.println("Error: Index 0 is not a Integer!");
 		    	  return null;
 		}
 		    	
@@ -286,7 +317,7 @@ public class ReservationControler
 		if (list.get(1) instanceof Timestamp) {
 			reservationDate=(Timestamp) list.get(1);
 		} else {
-		    	  System.out.println("Error: Index 1 is not a String!");
+		    	  System.out.println("Error: Index 1 is not a Timestamp!");
 		    	  return null;
 		}
 		

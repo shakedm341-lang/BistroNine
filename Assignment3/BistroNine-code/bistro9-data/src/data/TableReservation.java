@@ -5,17 +5,19 @@ import java.sql.Timestamp;
 public class TableReservation  
 {
 	
-	private int reservationId;
+	private int reservationId;//giveing by DB auto increment
 	private Timestamp ReservationDate;
 	private int numberOfDiners;
 	private int confirmationCode;
-	private int subscriberId;
-	private Timestamp DateOfMakeReservation;
+	private int phoneNumber;
+	private Timestamp DateOfMakeReservation;//giveing by DB auto CURRENT_TIMESTAMP
 	private Timestamp arrivalTime;
 	private Timestamp leavingTime;
 	private int tableId;
+	private String status;//reset as active in DB
 	
 
+	
 	public TableReservation() {
 
 	}
@@ -52,13 +54,6 @@ public class TableReservation
 		this.confirmationCode = confirmationCode;
 	}
 
-	public int getSubscriberId() {
-		return subscriberId;
-	}
-
-	public void setSubscriberId(int subscriberId) {
-		this.subscriberId = subscriberId;
-	}
 
 	public Timestamp getDateOfMakeReservation() {
 		return DateOfMakeReservation;
@@ -88,6 +83,22 @@ public class TableReservation
 
 	public void setTableId(int tableId) {
 		this.tableId = tableId;
+	}
+
+	public int getPhoneNumber() {
+		return phoneNumber;
+	}
+
+	public void setPhoneNumber(int phoneNumber) {
+		this.phoneNumber = phoneNumber;
+	}
+
+	public String getStatus() {
+		return status;
+	}
+
+	public void setStatus(String status) {
+		this.status = status;
 	}
 
 	

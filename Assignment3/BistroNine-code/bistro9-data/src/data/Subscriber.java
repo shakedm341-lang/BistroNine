@@ -2,20 +2,27 @@ package data;
 
 public class Subscriber extends Customer
 {
+	private int id;
 	private int subscriberId;
+	private String firstName;
+	private String lastName;
+	//phoneNumber
+	private String type;//'subscriber', 'restaurant representative', 'restaurant manager
 	private String personalInfo;
 	private String username;
 	private String password;
-
+ 	
+	
+	
 	public Subscriber()
 	{
 		super();
 	}
 
-	public int getsubscriberId() {
+	public int getSubscriberId() {
 		return subscriberId;
 	}
-	public void setsubscriberId(int subscriberId) {
+	public void setSubscriberId(int subscriberId) {
 		this.subscriberId = subscriberId;
 	}
 	
@@ -38,6 +45,38 @@ public class Subscriber extends Customer
 	}
 	public void setPassword(String password) {
 		this.password = password;
+	}
+
+	public int getId() {
+		return id;
+	}
+
+	public void setId(int id) {
+		this.id = id;
+	}
+
+	public String getFirstName() {
+		return firstName;
+	}
+
+	public void setFirstName(String firstName) {
+		this.firstName = firstName;
+	}
+
+	public String getLastName() {
+		return lastName;
+	}
+
+	public void setLastName(String lastName) {
+		this.lastName = lastName;
+	}
+
+	public String getType() {
+		return type;
+	}
+
+	public void setType(String type) {
+		this.type = type;
 	}
 
 }

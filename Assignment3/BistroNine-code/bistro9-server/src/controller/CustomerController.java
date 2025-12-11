@@ -42,8 +42,8 @@ public class CustomerController
 	/**
 	 * Checks the login details of a subscriber.
 	 *
-	 * @param msg The message containing the login details (username and password).
-	 * @return The Subscriber object if the login details are valid; null otherwise.
+	 * @param msg The message containing the username and password.
+	 * @return The Subscriber object if login is successful, null otherwise.
 	 */
 	private Subscriber checkLoginDetails(Message msg)
 	{
@@ -75,7 +75,7 @@ public class CustomerController
     	}
     	else
     	{
-    		//Set subscriber details in the Subscriber object
+    		//Set id in the Subscriber object
     		if (res.get(0) instanceof Integer) 
     		{
     			sub.setId((Integer) res.get(0));
@@ -84,68 +84,69 @@ public class CustomerController
                 System.out.println("Error: Index 0  is not an Integer! " );
                 return null; 
             }
-    		//Set subscriber details in the Subscriber object
-			if (res.get(1) instanceof String) {
-				sub.setfirstName((String) res.get(1));
-			} else {
-				System.out.println("Error: Index 1  is not a String!");
-				return null;
-			}
-			//Set subscriber details in the Subscriber object
+    		//set SubscriberId in the Subscriber object
+    		if (res.get(1) instanceof Integer) 
+    		{
+    			sub.setSubscriberId((Integer) res.get(1));
+    			
+            } else {
+                System.out.println("Error: Index 1  is not an Integer! " );
+                return null; 
+            }
+    		
+    		//Set First name in the Subscriber object
 			if (res.get(2) instanceof String) {
-				sub.setlastName((String) res.get(2));
+				sub.setFirstName((String) res.get(2));
 			} else {
 				System.out.println("Error: Index 2  is not a String!");
 				return null;
 			}
-			//Set subscriber details in the Subscriber object
+			
+			//Set Last name in the Subscriber object
 			if (res.get(3) instanceof String) {
-				sub.setphoneNumber((String) res.get(3));
+				sub.setLastName((String) res.get(3));
 			} else {
 				System.out.println("Error: Index 3  is not a String!");
 				return null;
 			}
-			//Set subscriber details in the Subscriber object
+			
+			//Set Phone number in the Subscriber object
 			if (res.get(4) instanceof String) {
-				sub.setEmail((String) res.get(4));
+				sub.setPhoneNumber((String) res.get(4));
 			} else {
 				System.out.println("Error: Index 4  is not a String!");
 				return null;
 			}
-			//Set subscriber details in the Subscriber object
+			
+			//Set type in the Subscriber object
 			if (res.get(5) instanceof String) {
 				sub.setType((String) res.get(5));
 			} else {
 				System.out.println("Error: Index 5  is not a String!");
 				return null;
 			}
-			//Set subscriber details in the Subscriber object
-			if (res.get(6) instanceof Integer) {
-				sub.setsubscriberId((Integer) res.get(6));
-
+			
+			//Set PersonalInfo in the Subscriber object
+			if (res.get(6) instanceof String) {
+				sub.setPersonalInfo((String) res.get(6));
 			} else {
-				System.out.println("Error: Index 6  is not an Integer! ");
+				System.out.println("Error: Index 6  is not a String!");
 				return null;
 			}
-			//Set subscriber details in the Subscriber object
+			
+			//Set Username in the Subscriber object
 			if (res.get(7) instanceof String) {
-				sub.setPersonalInfo((String) res.get(7));
+				sub.setUsername((String) res.get(7));
 			} else {
 				System.out.println("Error: Index 7  is not a String!");
 				return null;
 			}
-			//Set subscriber details in the Subscriber object
+			
+			//Set Password in the Subscriber object
 			if (res.get(8) instanceof String) {
-				sub.setUsername((String) res.get(8));
+				sub.setPassword((String) res.get(8));
 			} else {
 				System.out.println("Error: Index 8  is not a String!");
-				return null;
-			}
-			//Set subscriber details in the Subscriber object
-			if (res.get(9) instanceof String) {
-				sub.setPassword((String) res.get(9));
-			} else {
-				System.out.println("Error: Index 9  is not a String!");
 				return null;
 			}
 			
