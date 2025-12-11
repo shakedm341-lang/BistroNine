@@ -11,7 +11,11 @@ import javafx.application.Platform;
 public class ServerController extends AbstractServer {
 	
 	final public static int DEFAULT_PORT = 5555;
+	
+	// references for the controllers:
+	// initialized in the constructor.
 	private ReservationControler reservationsController;
+	private CustomerController customerController;
 	
 	private ServerDashboardController serverUI;
 
@@ -21,6 +25,7 @@ public class ServerController extends AbstractServer {
 		
 		DataBaseController.initiateDBC(dbPassword);
 		this.reservationsController = new ReservationControler();
+		this.customerController = new CustomerController();
 	}
 
 	@Override
@@ -32,6 +37,11 @@ public class ServerController extends AbstractServer {
 			case RESERVATION:
 				handleReservationRequest(message, client);
 				break;
+				
+			case CUSTOMER:
+				handleCustomerRequest(message, client);
+				break;
+				
 			default:
 				System.out.println("Unknown command received: " + message.type);
 				break;
@@ -43,6 +53,17 @@ public class ServerController extends AbstractServer {
 
 	private void handleReservationRequest(Message message, ConnectionToClient client) {
 		Object response = reservationsController.handleMessageFromServer(message);
+		message.content = response;
+		try {
+			byte[] data = KryoUtil.serialize(message);
+			client.sendToClient(data);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private void handleCustomerRequest(Message message, ConnectionToClient client) {
+		Object response = customerController.handleMessageFromServer(message);
 		message.content = response;
 		try {
 			byte[] data = KryoUtil.serialize(message);
