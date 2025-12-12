@@ -2,18 +2,16 @@ package data;
 
 public class Subscriber extends Customer
 {
-	private int id;
-	private int subscriberId;
+	private int subscriberId;//number of subscriber,give by DB auto increment
+	// customerId;   //number of customer
 	private String firstName;
 	private String lastName;
-	//phoneNumber
 	private String type;//'subscriber', 'restaurant representative', 'restaurant manager
 	private String personalInfo;
 	private String username;
 	private String password;
  	
-	
-	
+
 	public Subscriber()
 	{
 		super();
@@ -47,13 +45,6 @@ public class Subscriber extends Customer
 		this.password = password;
 	}
 
-	public int getId() {
-		return id;
-	}
-
-	public void setId(int id) {
-		this.id = id;
-	}
 
 	public String getFirstName() {
 		return firstName;

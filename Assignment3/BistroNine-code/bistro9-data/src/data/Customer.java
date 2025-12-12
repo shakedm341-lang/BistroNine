@@ -2,9 +2,10 @@ package data;
 
 public class Customer 
 {
+	private int customerId;//give by DB auto increment
 	private String phoneNumber;
 	private String email;
-	
+		
 	
 	public Customer() 
 	{
@@ -12,7 +13,7 @@ public class Customer
 	}
 
 
-	public String getPhoneNum() {
+	public String getPhoneNumber() {
 		return phoneNumber;
 	}
 
@@ -25,6 +26,16 @@ public class Customer
 
 	public void setEmail(String email) {
 		this.email = email;
+	}
+
+
+	public int getCustomerId() {
+		return customerId;
+	}
+
+
+	public void setCustomerId(int customerId) {
+		this.customerId = customerId;
 	}
 	
 

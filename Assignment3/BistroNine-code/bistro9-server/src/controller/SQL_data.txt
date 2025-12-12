@@ -10,25 +10,27 @@ USE restaurant_db;
 
 CREATE TABLE customer
 (
-	phoneNumber VARCHAR(100) NOT NULL,
-    email VARCHAR(100),
+	customerId INT AUTO_INCREMENT, 
+    phoneNumber VARCHAR(100) UNIQUE, 
+    email VARCHAR(100) UNIQUE,       
     
-    PRIMARY KEY (phoneNumber)
+    
+    CONSTRAINT check_contact_info CHECK (phoneNumber IS NOT NULL OR email IS NOT NULL),
+    PRIMARY KEY (customerId)
 );
 
-CREATE TABLE subscriber (
-    id INT NOT NULL,          
-    subscriberId INT  ,
+CREATE TABLE subscriber (        
+    subscriberId INT AUTO_INCREMENT,--number of subscriber
+    customerId INT NOT NULL UNIQUE,--number of customer
     firstName VARCHAR(100) NOT NULL,
-    lastName VARCHAR(100) NOT NULL,
-    phoneNumber VARCHAR(100) NOT NULL UNIQUE,   
+    lastName VARCHAR(100) NOT NULL,   
     type  ENUM('subscriber', 'restaurant representative', 'restaurant manager') NOT NULL,
     personalInfo VARCHAR(1000),
     username VARCHAR(100) UNIQUE,
     password VARCHAR(100), 
     
-    PRIMARY KEY (id),
-    FOREIGN KEY (phoneNumber) REFERENCES customer(phoneNumber) ON UPDATE CASCADE
+    PRIMARY KEY (subscriberId),
+    FOREIGN KEY (customerId) REFERENCES customer(customerId) ON UPDATE CASCADE
 );
 CREATE TABLE restaurant_tables (
     tableId INT AUTO_INCREMENT ,
@@ -40,18 +42,18 @@ CREATE TABLE restaurant_tables (
 );
 CREATE TABLE table_reservations (
     reservationID INT AUTO_INCREMENT,              
-    reservationDate DATETIME NOT NULL,       
+    tableId INT,
     numberOfDiners INT NOT NULL,             
     confirmationCode INT NOT NULL ,           
-    phoneNumber VARCHAR(100) NOT NULL,              
+    customerId INT NOT NULL,  
+    reservationDate DATETIME NOT NULL,            
     dateOfMakeReservation DATETIME DEFAULT CURRENT_TIMESTAMP, 
     arrivalTime DATETIME, 
 	leavingTime DATETIME,
-	tableId INT,
-	status ENUM('active', 'cancelled', 'completed') NOT NULL ,
+	status ENUM('active', 'cancelled', 'completed') NOT NULL DEFAULT 'active',
 	
     PRIMARY KEY (reservationID),
-    FOREIGN KEY (phoneNumber) REFERENCES customer(phoneNumber) ON UPDATE CASCADE,
+    FOREIGN KEY (customerId) REFERENCES customer(customerId) ON UPDATE CASCADE,
     FOREIGN KEY (tableId) REFERENCES restaurant_tables(tableId)
 );
 

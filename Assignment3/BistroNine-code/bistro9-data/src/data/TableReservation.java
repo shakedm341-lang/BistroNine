@@ -6,17 +6,17 @@ public class TableReservation
 {
 	
 	private int reservationId;//giveing by DB auto increment
-	private Timestamp ReservationDate;
+	private int tableId;
 	private int numberOfDiners;
 	private int confirmationCode;
-	private int phoneNumber;
+	private int customerId;
+	private Timestamp ReservationDate;
 	private Timestamp DateOfMakeReservation;//giveing by DB auto CURRENT_TIMESTAMP
 	private Timestamp arrivalTime;
 	private Timestamp leavingTime;
-	private int tableId;
 	private String status;//reset as active in DB
 	
-
+       
 	
 	public TableReservation() {
 
@@ -85,13 +85,7 @@ public class TableReservation
 		this.tableId = tableId;
 	}
 
-	public int getPhoneNumber() {
-		return phoneNumber;
-	}
-
-	public void setPhoneNumber(int phoneNumber) {
-		this.phoneNumber = phoneNumber;
-	}
+	
 
 	public String getStatus() {
 		return status;
@@ -99,6 +93,14 @@ public class TableReservation
 
 	public void setStatus(String status) {
 		this.status = status;
+	}
+
+	public int getCustomerId() {
+		return customerId;
+	}
+
+	public void setCustomerId(int customerId) {
+		this.customerId = customerId;
 	}
 
 	

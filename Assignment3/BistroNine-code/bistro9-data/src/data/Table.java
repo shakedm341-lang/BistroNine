@@ -2,11 +2,12 @@ package data;
 
 public class Table 
 {
-	private int tableId  ;
+	private int tableId  ;//give by DB auto increment
 	private int seatsNumber ;
 	private String location ; //inside, bar, outside
 	private String status ; //available, reserved, occupied
    
+	
 	public Table() 
 	{
 	}

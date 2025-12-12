@@ -5,6 +5,7 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Random;
 
+import data.Customer;
 import data.Message;
 import data.Table;
 import data.TableReservation;
@@ -37,8 +38,8 @@ public class ReservationControler
 	    case GET_ALL_RESERVATIONS:
 	    	return getAllReservations(msg);
 	    	
-	    case UPDATE_RESERVATION_DETAILS:
-	    	return updateReservationDetails(msg);
+	    /*case UPDATE_RESERVATION_DETAILS:
+	    	return updateReservationDetails(msg);*/
 	    
 	    case CREATE_NEW_RESERVATION:
 	    	return createNewReservation(msg);
@@ -62,10 +63,22 @@ public class ReservationControler
 	private ArrayList<TableReservation> getAllReservations(Message msg)
 	{
 		
-		ArrayList<ArrayList<Object>> allReservations = new ArrayList<>();
-    	ArrayList<TableReservation> reservationsListAsTableRes = new ArrayList<>();
+		ArrayList<ArrayList<Object>> allReservations = new ArrayList<>();//List to hold all reservations from the DB as a list of lists of objects
+    	ArrayList<TableReservation> reservationsListAsTableRes = new ArrayList<>();//List to hold all reservations as TableReservation objects
     	
-    	allReservations = DBC.getAllReservationsQuery();//Get all reservations from the DB as a list of lists of objects
+    	@SuppressWarnings("unchecked") 
+		ArrayList<Object> list = (ArrayList<Object>) msg.content;//get the reservation details from the message content
+    	int customerId=0;
+    	// Setting subscriber ID from the list we got from the message content
+    				if (list.get(0) instanceof Integer) {
+    					 customerId = (int) list.get(0);
+    				} else {
+    					System.out.println("Error: Index 0 is not a Integer!");
+    					return null;
+    				}
+    	
+    	
+    	allReservations = DBC.getAllReservationsQuery(customerId);//Get all reservations from the DB as a list of lists of objects
     	
     	for (ArrayList<Object> resAsList : allReservations)
     	{//For each reservation in the list of reservations
@@ -81,15 +94,15 @@ public class ReservationControler
                 return null; 
             }
 
-            //Set reservation date in the TableReservation object
-            if (resAsList.get(1) instanceof Timestamp) {
-                resAsTableRes.setReservationDate((Timestamp) resAsList.get(1));
+    		//Set table id in the TableReservation object
+            if (resAsList.get(1) instanceof Integer) {
+                resAsTableRes.setTableId((Integer) resAsList.get(1));
             } else {
-                System.out.println("Error: Index 1 is not a Timestamp!");
+                System.out.println("Error: Index 1 is not a Integer!");
                 return null;
             }
-
-            //Set number of diners in the TableReservation object
+    		
+          //Set number of diners in the TableReservation object
             if (resAsList.get(2) instanceof Integer) {
                 resAsTableRes.setNumberOfDiners((Integer) resAsList.get(2));
             } else {
@@ -104,46 +117,53 @@ public class ReservationControler
                 System.out.println("Error: Index 3 is not a Integer!");
                 return null;
             }
-
-            //Set phone Number in the TableReservation object
+            
+          //Set customer Id in the TableReservation object
             if (resAsList.get(4) instanceof Integer) {
-                resAsTableRes.setPhoneNumber((Integer) resAsList.get(4));
+                resAsTableRes.setCustomerId((Integer) resAsList.get(4));
             } else {
                 System.out.println("Error: Index 4 is not a Integer!");
                 return null;
             }
-
-            //Set date of make reservation in the TableReservation object
+            
+    		
+            //Set reservation date in the TableReservation object
             if (resAsList.get(5) instanceof Timestamp) {
-                resAsTableRes.setDateOfMakeReservation((Timestamp) resAsList.get(5));
+                resAsTableRes.setReservationDate((Timestamp) resAsList.get(5));
             } else {
                 System.out.println("Error: Index 5 is not a Timestamp!");
                 return null;
             }
-    	    
-          //Set arrival time in the TableReservation object
+
+            
+
+            
+
+            //Set date of make reservation in the TableReservation object
             if (resAsList.get(6) instanceof Timestamp) {
-                resAsTableRes.setArrivalTime((Timestamp) resAsList.get(6));
+                resAsTableRes.setDateOfMakeReservation((Timestamp) resAsList.get(6));
             } else {
                 System.out.println("Error: Index 6 is not a Timestamp!");
                 return null;
             }
-            
-          //Set leaving Time in the TableReservation object
+    	    
+          //Set arrival time in the TableReservation object
             if (resAsList.get(7) instanceof Timestamp) {
-                resAsTableRes.setLeavingTime((Timestamp) resAsList.get(7));
+                resAsTableRes.setArrivalTime((Timestamp) resAsList.get(7));
             } else {
                 System.out.println("Error: Index 7 is not a Timestamp!");
                 return null;
             }
-    	    
-          //Set table id in the TableReservation object
-            if (resAsList.get(8) instanceof Integer) {
-                resAsTableRes.setTableId((Integer) resAsList.get(8));
+            
+          //Set leaving Time in the TableReservation object
+            if (resAsList.get(8) instanceof Timestamp) {
+                resAsTableRes.setLeavingTime((Timestamp) resAsList.get(8));
             } else {
-                System.out.println("Error: Index 8 is not a Integer!");
+                System.out.println("Error: Index 8 is not a Timestamp!");
                 return null;
             }
+    	    
+          
             
           //Set status  in the Subscriber object
     		if (resAsList.get(9) instanceof String) {
@@ -160,6 +180,7 @@ public class ReservationControler
     	return reservationsListAsTableRes;//Return to server the list of reservations as TableReservation 
 	}
 
+	
 	/**
 	 * Updates the details of an existing table reservation in the database.
 	 *
@@ -169,7 +190,7 @@ public class ReservationControler
 	 *            (Timestamp), numberOfDiners (Integer)]
 	 * @return true if the update was successful, false otherwise.
 	 */
-	private boolean updateReservationDetails(Message msg)
+	/*private boolean updateReservationDetails(Message msg)
 	{
 
 		@SuppressWarnings("unchecked") 
@@ -208,19 +229,19 @@ public class ReservationControler
 	    //Return to the server whether the update operation was performed correctly or not
 	    return DBC.updateReservationDetailsQuery(res); 
 	    
-	}
+	}*/
 
 	/**
-	 * Creates a new table reservation in the database based on the information
-	 * provided in the message.
+	 * Creates a new table reservation in the database.
 	 *
 	 * @param msg The message containing the reservation details. The content of the
 	 *            message is expected to be an ArrayList<Object> with the following
-	 *            order: [reservationDate (Timestamp), numberOfDiners (Integer),
-	 *            phoneNumber (Integer)]
-	 * @return true if the reservation was created successfully, false otherwise.
+	 *            order: [Location 0 :typeCustomer (String),Location 1,2: if customer: phone number(String) and/or email(String) if subscribers:customerId ,
+	 *            Location 3: numberOfDiners (Integer),Location 4: reservationDate (Timestamp)] 
+	 *   
+	 * @return The confirmation code (Integer) of the new reservation if the creation succeeded, null otherwise.
 	 */
-	private boolean createNewReservation(Message msg)
+	private Integer  createNewReservation(Message msg)
 	{
 		
 		@SuppressWarnings("unchecked") 
@@ -228,28 +249,95 @@ public class ReservationControler
 		
 		TableReservation newRes = new TableReservation();//Creating a new reservation object
 		Random rand = new Random();//Random object to generate a random confirmation code
+		String typeCustomer= new String();
+		int customerId=-1;
+
 		
+		//Setting customer type from the list we got from the message content
+		if (list.get(0) instanceof String) 
+		{
+			typeCustomer = (String) list.get(0);
+		} else 
+		{
+	    	  System.out.println("Error: Index 0 is not a String!");
+	    	  return null;
+		}
+		
+		
+		if (typeCustomer.equals("customer")) 
+		{
+			Customer cust = new Customer();
+			// Setting phone Number from the list we got from the message content
+			if (list.get(1) instanceof String) 
+			{
+				cust.setPhoneNumber((String) list.get(1))  ;
+				if (list.get(2) instanceof String) {
+					cust.setEmail((String) list.get(2));// Setting email from the list we got from the message content
+				} else {
+					System.out.println("Error: Index 2 is not a String!");
+					return null;
+				}
+				
+			}
+			else if (list.get(1)==null)//if the phone number is null
+			{
+				if (list.get(2) instanceof String) 
+				{
+					cust.setEmail((String) list.get(2))  ;//Setting email from the list we got from the message content
+					cust.setPhoneNumber(null);
+				}
+				else {
+					System.out.println("Error: Index 2 is not a String!");
+					return null;
+				}
+			}
+			else 
+			{
+				System.out.println("Error: Index 1 is not a String!");
+				return null;
+			}
+			//return customer ID from the DB . if cust not exists he created in the DB and return his ID else return his ID
+			customerId=DBC.getCustomerId(cust);//Getting customer ID from the DB based on the phone number or email provided
+		}
+
+		else if (typeCustomer.equals("subscriber")) 
+		{
+			// Setting subscriber ID from the list we got from the message content
+			if (list.get(1) instanceof Integer) {
+				customerId = (int) list.get(1);
+			} else {
+				System.out.println("Error: Index 1 is not a Integer!");
+				return null;
+			}
+		}
 		
 		//reservation id is auto generated in the DB
+
+		//Setting number of diners from the list we got from the message content
+		if (list.get(3) instanceof Integer) 
+		{
+					newRes.setNumberOfDiners((int) list.get(3));
+		} else 
+		{
+				    System.out.println("Error: Index 3 is not a Integer!");
+				    return null;
+		}
+		
 		
 		//Setting the reservation date from the list we got from the message content
-		if (list.get(0) instanceof Timestamp) 
+		if (list.get(4) instanceof Timestamp) 
 		{
-			newRes.setReservationDate((Timestamp) list.get(0));
+				newRes.setReservationDate((Timestamp) list.get(4));
 		} else 
 		{
-	    	  System.out.println("Error: Index 0 is not a Timestamp!");
-	    	  return false;
+			    System.out.println("Error: Index 4 is not a Timestamp!");
+			    return null;
 		}
 		
-    	//Setting number of diners from the list we got from the message content
-		if (list.get(1) instanceof Integer) {
-			newRes.setNumberOfDiners((int) list.get(1));
-		} else 
-		{
-		    	  System.out.println("Error: Index 1 is not a Integer!");
-		    	  return false;
-		}
+		//Setting table ID based on number of diners and reservation date
+		newRes.setTableId(DBC.catchTable(newRes.getNumberOfDiners(), newRes.getReservationDate()));//Assigning a table ID to the reservation based on the number of diners and reservation date
+				
+		
 		
 		int code=0;
         boolean exists=true;
@@ -263,27 +351,22 @@ public class ReservationControler
 
         newRes.setConfirmationCode(code);//Set the unique confirmation code to the reservation
 
+		newRes.setCustomerId(customerId);//Setting customer ID to the reservation
+	
 		
-		//Setting phone Number from the list we got from the message content
-		if (list.get(2) instanceof Integer) {
-			newRes.setPhoneNumber((int) list.get(2));
-		} 
-		else 
-		{
-		    System.out.println("Error: Index 2 is not a Integer!");
-		    return false;
-		}
 		
 		//date of make reservation is auto generated in the DB
 		
         //arrival time and leaving time are set  as null at the beginning
-		
-		newRes.setTableId(DBC.catchTable(newRes.getNumberOfDiners(), newRes.getReservationDate()));//Assigning a table ID to the reservation based on the number of diners and reservation date
-		
+
 		//status of reservation is auto generated in the DB
 
+		if (DBC.createNewReservation(newRes))//Return that the reservation was created successfully
+		{
+			return newRes.getConfirmationCode();//Return to server the confirmation code of the new reservation);
+		}
 		
-		return DBC.createNewReservation(newRes);//Return to server that the reservation was created successfully
+		return null;
 		
 	}
 	

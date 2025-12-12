@@ -1,12 +1,15 @@
 package controller;
 
 
+import java.sql.Timestamp;
+import java.sql.Statement;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executors;
@@ -14,6 +17,10 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+
+
+import data.Customer;
+import data.Subscriber;
 import data.TableReservation;
 
 public class DataBaseController {
@@ -158,11 +165,9 @@ public class DataBaseController {
     The system's queries in the DB
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
-    /**
-	 * * Retrieves all table reservations from the database.
-	 *  @return A list of strings representing the reservations.
-	 */
-    public ArrayList<ArrayList<Object>> getAllReservationsQuery() 
+    
+    //הושלם
+    public ArrayList<ArrayList<Object>> getAllReservationsQuery(int customerId) 
     {
     	
     	ArrayList<ArrayList<Object>> allReservations = new ArrayList<>();
@@ -178,36 +183,40 @@ public class DataBaseController {
             	return null;
             }
 
-            String query = "SELECT * FROM tablereservations";//The SQL query to be executed
+            String query = "SELECT * FROM table_reservations WHERE customerId = ?";//The SQL query to be executed
             
             ps = pConn.getConnection().prepareStatement(query);
+            ps.setInt(1, customerId);
             rs = ps.executeQuery();
             
             
             while (rs.next()) 
             {//Loop through the result set and build the reservation strings
-            	ArrayList<Object> reservations = new ArrayList<>();
-            	reservations.add(rs.getInt("reservationID"));
-            	reservations.add(rs.getTimestamp("reservationDate"));
-            	reservations.add(rs.getInt("numberOfDiners"));
-            	reservations.add(rs.getInt("confirmationCode"));
-            	reservations.add(rs.getInt("subscriberId"));
-            	reservations.add(rs.getTimestamp("dateOfMakeReservation"));
+            	ArrayList<Object> reservation = new ArrayList<>();
+            	reservation.add(rs.getInt("reservationID"));
+                reservation.add(rs.getInt("tableId")); 
+                reservation.add(rs.getInt("numberOfDiners"));
+                reservation.add(rs.getInt("confirmationCode"));
+                reservation.add(rs.getInt("customerId"));
+                reservation.add(rs.getTimestamp("reservationDate"));
+                reservation.add(rs.getTimestamp("dateOfMakeReservation"));
+                reservation.add(rs.getTimestamp("arrivalTime")); 
+                reservation.add(rs.getTimestamp("leavingTime")); 
+                reservation.add(rs.getString("status")); 
             
-            	allReservations.add(reservations);
+            	allReservations.add(reservation);
 
             }
         } catch (SQLException e) {
             e.printStackTrace();
         } finally {
-            if (rs != null) try { rs.close(); } catch (SQLException e) {}
-            if (ps != null) try { ps.close(); } catch (SQLException e) {}
+        	closeResources(ps, rs);
             releaseConnection(pConn); 
         }
         return allReservations;
     }
 
-    public boolean updateReservationDetailsQuery(TableReservation t) {
+    /*public boolean updateReservationDetailsQuery(TableReservation t) {
         PooledConnection pConn = null;//The connection from the "connection pool"
         PreparedStatement ps = null;//The SQL statement to be executed
 
@@ -233,52 +242,66 @@ public class DataBaseController {
             if (ps != null) try { ps.close(); } catch (SQLException e) {}
             releaseConnection(pConn);
         }
-    }
+    }*/
     
-    /**
-     * Verifies the login credentials of a subscriber against the database.
-     * This method returns an ArrayList instead of a boolean to match
-     * the return type expected by the CustomerController.
-     * @param s The subscriber object containing the username and password to check.
-     * @return An ArrayList&lt;Object&gt; containing a single boolean value: 
-     * [true] if the credentials are correct, [false] otherwise.
-     */
-    public ArrayList<Object> checkLoginDetails(data.Subscriber s) {
+	/**
+	 * Checks the login details of a subscriber against the database.
+	 * 
+	 * @param sub The Subscriber object containing the username and password to
+	 *            check.
+	 * @return The Subscriber object with full details if credentials are correct,
+	 *         null otherwise.
+	 */
+    //הושלם
+    public Subscriber checkLoginDetails(Subscriber sub) {
         PooledConnection pConn = null;
         PreparedStatement ps = null;
         ResultSet rs = null;
-        boolean exists = false;
-
+                
         try {
             pConn = getConnection();
-            if (pConn == null) { 
-            	// Return a list containing false in case of connection failure
-            	ArrayList<Object> errorList = new ArrayList<>();
-        		errorList.add(false);
-        		return errorList;
+            if (pConn == null) 
+            { 
+        		return null;
             }
+            
             // Selects the user matching both username and password
-            String query = "SELECT * FROM subscribers WHERE username = ? AND password = ?";
+            String query = "SELECT s.subscriberId, s.customerId, s.firstName, s.lastName, s.type, " +
+                    "s.personalInfo, s.username, s.password, c.phoneNumber, c.email " +
+                    "FROM subscriber s " +
+                    "JOIN customer c ON s.customerId = c.customerId " +
+                    "WHERE s.username = ? AND s.password = ?";
+            
             
             ps = pConn.getConnection().prepareStatement(query);
-            ps.setString(1, s.getUsername()); 
-            ps.setString(2, s.getPassword());
+            ps.setString(1, sub.getUsername()); 
+            ps.setString(2, sub.getPassword());
             
             rs = ps.executeQuery();
             
-            if (rs.next()) {
-                exists = true;
+            if (rs.next()) 
+            {
+            	sub.setSubscriberId(rs.getInt("subscriberId"));
+            	sub.setCustomerId(rs.getInt("customerId"));
+            	sub.setFirstName(rs.getString("firstName"));
+                sub.setLastName(rs.getString("lastName"));
+                sub.setType(rs.getString("type"));
+                sub.setPersonalInfo(rs.getString("personalInfo"));
+                sub.setUsername(rs.getString("username"));
+                sub.setPassword(rs.getString("password"));
+                sub.setPhoneNumber(rs.getString("phoneNumber"));
+                sub.setEmail(rs.getString("email"));
+                return sub; // Credentials are correct
             }    
         } catch (SQLException e) {
             e.printStackTrace();
         } finally {
-            if (rs != null) try { rs.close(); } catch (SQLException e) {}
-            if (ps != null) try { ps.close(); } catch (SQLException e) {}
+        	closeResources(ps, rs);
             releaseConnection(pConn);
         }
-        ArrayList<Object> resultList = new ArrayList<>();
-        resultList.add(exists);
-        return resultList;    
+        
+        
+        return null;  // Credentials are incorrect  
     } 
     
     /**
@@ -290,12 +313,79 @@ public class DataBaseController {
      * @return An ArrayList containing [true] if a suitable table is found, 
      * or [false] otherwise.
      */
-    public ArrayList<Object> checkingTableAvailability(int numberOfDiners, java.sql.Timestamp reservationTime) {
-        int tableId = catchTable(numberOfDiners, reservationTime);
-        boolean isAvailable = (tableId != NO_TABLE_FOUND);
-        ArrayList<Object> resultList = new ArrayList<>();
-        resultList.add(isAvailable);
-        return resultList; 
+    //לא הושלם
+    public ArrayList<Timestamp> checkingTableAvailability(int numberOfDiners, Timestamp reservationTime) {
+    	ArrayList<Timestamp> availableSlots = new ArrayList<>();
+        PooledConnection pConn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        
+        int startHour = 12;
+        int endHour = 23;
+        
+        try {
+            pConn = getConnection();
+            if (pConn == null) return availableSlots;
+
+            
+            String query = "SELECT count(*) FROM restaurant_tables t " +
+                           "WHERE t.seatsNumber >= ? " +
+                           "AND t.tableId NOT IN ( " +
+                           "    SELECT r.tableId FROM table_reservations r " +
+                           "    WHERE r.status = 'active' " +
+                           "    AND r.reservationDate < ? " + // r.Start < New.End
+                           "    AND r.leavingTime > ? " +     // r.End > New.Start
+                           ")";
+
+            ps = pConn.getConnection().prepareStatement(query);
+            Calendar cal = Calendar.getInstance();
+            cal.setTimeInMillis(reservationTime.getTime());
+            
+            // איפוס לדקות, שניות ומילי-שניות (כדי לקבל שעות עגולות)
+            cal.set(Calendar.MINUTE, 0);
+            cal.set(Calendar.SECOND, 0);
+            cal.set(Calendar.MILLISECOND, 0);
+
+            for (int hour = startHour; hour < endHour; hour++) {
+                // קביעת השעה הנוכחית בלולאה
+                cal.set(Calendar.HOUR_OF_DAY, hour);
+                
+                // יצירת Timestamp של זמן ההתחלה (זה מה שנחזיר אם פנוי)
+                Timestamp checkStartTime = new Timestamp(cal.getTimeInMillis());
+                
+                // חישוב זמן סיום משוער (נניח שכל הזמנה היא שעתיים)
+                Calendar endCal = (Calendar) cal.clone();
+                endCal.add(Calendar.HOUR_OF_DAY, 2); 
+                Timestamp checkEndTime = new Timestamp(endCal.getTimeInMillis());
+
+                // הצבת הפרמטרים בשאילתה
+                ps.setInt(1, numberOfDiners);
+                ps.setTimestamp(2, checkEndTime);   // הגבול העליון של החפיפה
+                ps.setTimestamp(3, checkStartTime); // הגבול התחתון של החפיפה
+
+                rs = ps.executeQuery();
+                
+                if (rs.next()) {
+                    int count = rs.getInt(1);
+                    // אם נמצא לפחות שולחן אחד פנוי
+                    if (count > 0) {
+                        // הוספת ה-Timestamp לרשימה
+                        availableSlots.add(checkStartTime);
+                    }
+                }
+                rs.close(); 
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            closeResources(ps, rs); 
+            releaseConnection(pConn);
+        }
+
+        return availableSlots;
+        
+        
     }
     
     
@@ -306,9 +396,11 @@ public class DataBaseController {
      * @param reservationTime The time of the reservation to check availability for.
      * @return The ID of an available table, or -1 if no suitable table is found.
      */
-    public int catchTable(int numberOfDiners, java.sql.Timestamp reservationTime) {
+    //לא הושלם
+    public int catchTable(int numberOfDiners, Timestamp reservationTime) {
         PooledConnection pConn = null;
-        PreparedStatement ps = null;
+        PreparedStatement psSelect = null;
+        PreparedStatement psUpdate = null;
         ResultSet rs = null;
         int foundTableId = -1;
 
@@ -324,11 +416,11 @@ public class DataBaseController {
                            "AND tableID NOT IN " +
                            "(SELECT tableID FROM tablereservations WHERE reservationDate = ?)";
 
-            ps = pConn.getConnection().prepareStatement(query);
-            ps.setInt(1, numberOfDiners);
-            ps.setTimestamp(2, reservationTime);
+            psSelect = pConn.getConnection().prepareStatement(query);
+            psSelect.setInt(1, numberOfDiners);
+            psSelect.setTimestamp(2, reservationTime);
 
-            rs = ps.executeQuery();
+            rs = psSelect.executeQuery();
 
             if (rs.next()) {
                 foundTableId = rs.getInt("tableID");
@@ -337,8 +429,7 @@ public class DataBaseController {
         } catch (SQLException e) {
             e.printStackTrace();
         } finally {
-            if (rs != null) try { rs.close(); } catch (SQLException e) {}
-            if (ps != null) try { ps.close(); } catch (SQLException e) {}
+        	closeResources(psSelect, rs);
             releaseConnection(pConn);
         }
         return foundTableId;
@@ -349,40 +440,43 @@ public class DataBaseController {
      * @param t The TableReservation object containing all reservation details.
      * @return true if the reservation was successfully saved to the database, false otherwise.
      */
-    public boolean createNewReservation(data.TableReservation t) {
+    //הושלם
+    public boolean createNewReservation(TableReservation res) {
         PooledConnection pConn = null;
         PreparedStatement ps = null;
-        boolean success = false;
+        
 
         try {
             pConn = getConnection();
             if (pConn == null) return false;
             
             // Inserts the new reservation details into the database
-            String query = "INSERT INTO tablereservations "
-            		+ "(reservationDate, numberOfDiners, confirmationCode, subscriberId, tableID, dateOfMakeReservation)"
-            		+ " VALUES (?, ?, ?, ?, ?, ?)";
+            String query = "INSERT INTO table_reservations " +
+                    "(tableId, numberOfDiners, confirmationCode, customerId, reservationDate, arrivalTime, leavingTime) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?)";
             
             ps = pConn.getConnection().prepareStatement(query);
-            ps.setTimestamp(1, t.getReservationDate());
-            ps.setInt(2, t.getNumberOfDiners());
-            ps.setInt(3, t.getConfirmationCode()); 
-            ps.setInt(4, t.getSubscriberId());     
-            ps.setInt(5, t.getTableId());          
-            ps.setTimestamp(6, new java.sql.Timestamp(System.currentTimeMillis())); // Current server time
+            ps.setInt(1, res.getTableId());
+            ps.setInt(2, res.getNumberOfDiners());
+            ps.setInt(3, res.getConfirmationCode()); 
+            ps.setInt(4, res.getCustomerId());
+            ps.setTimestamp(5, res.getReservationDate());
+            ps.setTimestamp(6, res.getArrivalTime()); 
+            ps.setTimestamp(7, res.getLeavingTime());
 
-            int rowsAffected = ps.executeUpdate();
-            if (rowsAffected > 0) {
-                success = true;
+            int result = ps.executeUpdate();
+            
+            if (result == 1) {
+                return true;
             }
 
         } catch (SQLException e) {
             e.printStackTrace();
         } finally {
-            if (ps != null) try { ps.close(); } catch (SQLException e) {}
+        	closeResources(ps, null);
             releaseConnection(pConn);
         }
-        return success;
+        return false;
     } 
     
     /**
@@ -391,18 +485,18 @@ public class DataBaseController {
      * @param code The confirmation code to check.
      * @return true if the code already exists, false if it is unique.
      */
+    //הושלם
     public boolean checkIfConfCodeExistsInDB(int code) {
         PooledConnection pConn = null;
         PreparedStatement ps = null;
         ResultSet rs = null;
-        boolean exists = false;
+        
 
         try {
             pConn = getConnection();
             if (pConn == null) return false;
 
-            // Selects the reservation ID matching the provided confirmation code
-            String query = "SELECT reservationID FROM tablereservations WHERE confirmationCode = ?";
+            String query = "SELECT 1 FROM table_reservations WHERE confirmationCode = ?";
             
             ps = pConn.getConnection().prepareStatement(query);
             ps.setInt(1, code);
@@ -410,16 +504,86 @@ public class DataBaseController {
             rs = ps.executeQuery();
             
             if (rs.next()) {
-                exists = true;
+                return true;
             }
 
         } catch (SQLException e) {
             e.printStackTrace();
         } finally {
-            if (rs != null) try { rs.close(); } catch (SQLException e) {}
-            if (ps != null) try { ps.close(); } catch (SQLException e) {}
+        	closeResources(ps, rs);
             releaseConnection(pConn);
         }
-        return exists;
+        return false;
+    }
+    
+	/**
+	 * Retrieves the customer ID for a given customer based on their phone number or
+	 * email. If the customer does not exist, a new record is created in the
+	 * database.
+	 * 
+	 * @param cust The Customer object containing phone number and email.
+	 * @return The customer ID if found or created, -1 on failure.
+	 */
+    //הושלם
+    public int getCustomerId(Customer cust) {
+    	PooledConnection pConn = null;
+        PreparedStatement psSelect = null;
+        PreparedStatement psInsert = null;
+        ResultSet rs = null;
+        int customerId = -1;
+
+        try {
+        	pConn = getConnection();
+            if (pConn == null) return -1;
+        	
+         //
+            String selectQuery = "SELECT customerId FROM customer WHERE phoneNumber = ? OR email = ?";
+
+            
+            psSelect = pConn.getConnection().prepareStatement(selectQuery);
+            psSelect.setString(1, cust.getPhoneNumber());
+            psSelect.setString(2, cust.getEmail());
+            
+            rs = psSelect.executeQuery();
+            
+            if (rs.next()) {
+                
+                return rs.getInt("customerId");
+            }
+
+            
+            String insertQuery = "INSERT INTO customer (phoneNumber, email) VALUES (?, ?)";
+            
+            psInsert = pConn.getConnection().prepareStatement(insertQuery, Statement.RETURN_GENERATED_KEYS);
+            psInsert.setString(1, cust.getPhoneNumber());
+            psInsert.setString(2, cust.getEmail());
+            
+            int rowsAffected = psInsert.executeUpdate();
+            
+            if (rowsAffected > 0) {
+                
+                ResultSet generatedKeys = psInsert.getGeneratedKeys();
+                if (generatedKeys.next()) {
+                    customerId = generatedKeys.getInt(1); 
+                }
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            
+            closeResources(psSelect, rs);
+            closeResources(psInsert, null);
+            releaseConnection(pConn);
+        }
+        
+        return customerId;
+    }
+    
+    
+    
+    private static void closeResources( PreparedStatement stmt, ResultSet rs) {
+        try { if (rs != null) rs.close(); } catch (SQLException e) {}
+        try { if (stmt != null) stmt.close(); } catch (SQLException e) {}
     }
 }
