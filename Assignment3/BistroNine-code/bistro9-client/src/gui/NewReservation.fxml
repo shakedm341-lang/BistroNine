@@ -82,10 +82,16 @@
                   <TextField fx:id="phoneTxt" disable="true" prefWidth="200.0" promptText="Phone Number" />
                </children>
             </HBox>
+            
+            <TextField fx:id="emailTxt" disable="true" maxWidth="420.0" promptText="Email Address" />
+            
             <Button fx:id="btnCreate" disable="true" mnemonicParsing="false" onAction="#createReservation" prefHeight="40.0" prefWidth="200.0" style="-fx-background-color: #333333; -fx-text-fill: white; -fx-cursor: hand;" text="CONFIRM RESERVATION">
                <font>
                   <Font name="System Bold" size="14.0" />
                </font>
+               <VBox.margin>
+                  <Insets top="10.0" />
+               </VBox.margin>
             </Button>
          </children>
          <padding>

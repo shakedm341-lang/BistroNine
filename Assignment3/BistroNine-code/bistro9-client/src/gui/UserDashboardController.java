@@ -2,6 +2,7 @@ package gui;
 
 
 import controller.ClientController;
+import data.Subscriber;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -24,17 +25,17 @@ public class UserDashboardController {
     @FXML private Button btnViewReports;
 
     private ClientController client;
-    private StubUser currentUser;
+    private Subscriber currentUser;
 
     public void setClient(ClientController client) {
         this.client = client;
     }
 
-    public void loadUserDetails(StubUser user) {
+    public void loadUserDetails(Subscriber user) {
         this.currentUser = user;
         lblWelcome.setText("Hello, " + user.getUsername());
 
-        String type = user.getUserType(); 
+        String type = user.getType(); 
         
         
         setButtonVisible(btnManageTables, false);
@@ -42,12 +43,12 @@ public class UserDashboardController {
         setButtonVisible(btnViewReports, false);
         
         
-        if (type.equals("Manager")) {
+        if (type.equals("restaurant manager")) {
             setButtonVisible(btnManageTables, true);
             setButtonVisible(btnRegisterClient, true);
             setButtonVisible(btnViewReports, true);
         } 
-        else if (type.equals("Worker")) { 
+        else if (type.equals("restaurant representative")) { 
             setButtonVisible(btnManageTables, true);
             setButtonVisible(btnRegisterClient, true);
         }

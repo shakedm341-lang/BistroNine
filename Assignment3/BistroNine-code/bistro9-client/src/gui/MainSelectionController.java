@@ -66,8 +66,8 @@ public class MainSelectionController {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/LoginScreen.fxml"));
             Parent root = loader.load();
             
-            // LoginController loginController = loader.getController();
-            // loginController.setClient(client);
+            LoginController loginController = loader.getController();
+            loginController.setClient(client);
             
             System.out.println("Entering Remote Access (Login)...");
             switchScene(event, root, "BistroNine Client - Login Screen");

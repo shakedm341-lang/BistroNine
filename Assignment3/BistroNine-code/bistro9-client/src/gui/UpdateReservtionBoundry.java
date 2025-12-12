@@ -82,7 +82,7 @@ public class UpdateReservtionBoundry {
 	// Method to set the client controller reference
 	public void setClient(ClientController client) {
 		this.client = client;
-		ClientController.reservationBoundary = this;
+		ClientController.updatereservationBoundary = this;
 	}
 	// Method to update the table data from server response
 	 public void updateReservationTable(ArrayList<TableReservation> reservationsFromServer) {
