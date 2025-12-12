@@ -3,6 +3,7 @@ package controller;
 
 import java.sql.Timestamp;
 import java.sql.Statement;
+import java.sql.Time;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -304,90 +305,131 @@ public class DataBaseController {
         return null;  // Credentials are incorrect  
     } 
     
-    /**
-     * Checks if there is any table available for the specified number of diners at the given time.
-     * This method returns an ArrayList instead of a boolean to match
-     * the return type expected by the CustomerController.
-     * @param numberOfDiners The number of guests.
-     * @param reservationTime The requested date and time for the reservation.
-     * @return An ArrayList containing [true] if a suitable table is found, 
-     * or [false] otherwise.
-     */
-    //לא הושלם
+	/**
+	 * Checks the availability of tables for a given number of diners and
+	 * reservation time.
+	 * 
+	 * @param numberOfDiners  The number of diners for the reservation.
+	 * @param reservationTime The desired reservation time.
+	 * @return A list of available time slots as Timestamps.
+	 */
+    //הושלם
     public ArrayList<Timestamp> checkingTableAvailability(int numberOfDiners, Timestamp reservationTime) {
     	ArrayList<Timestamp> availableSlots = new ArrayList<>();
         PooledConnection pConn = null;
-        PreparedStatement ps = null;
+        Connection conn = null; // משתנה ל-Connection הפיזי
+        
+        PreparedStatement psHours = null;
+        PreparedStatement psAvailability = null;
         ResultSet rs = null;
-        
-        int startHour = 12;
-        int endHour = 23;
-        
+
         try {
             pConn = getConnection();
             if (pConn == null) return availableSlots;
-
             
-            String query = "SELECT count(*) FROM restaurant_tables t " +
-                           "WHERE t.seatsNumber >= ? " +
-                           "AND t.tableId NOT IN ( " +
-                           "    SELECT r.tableId FROM table_reservations r " +
-                           "    WHERE r.status = 'active' " +
-                           "    AND r.reservationDate < ? " + // r.Start < New.End
-                           "    AND r.leavingTime > ? " +     // r.End > New.Start
-                           ")";
+            // *תיקון קריטי: חילוץ ה-Connection פעם אחת*
+            conn = pConn.getConnection(); 
 
-            ps = pConn.getConnection().prepareStatement(query);
+            // ---------------------------------------------
+            // שלב 1: שליפת שעות הפתיחה והסגירה ליום המבוקש
+            // ---------------------------------------------
+            String hoursQuery = "SELECT openingTime, closingTime FROM restaurant_hours WHERE operatingDate = ?";
+            // שימוש ב-conn במקום pConn.getConnection()
+            psHours = conn.prepareStatement(hoursQuery); 
+            
+            // יצירת java.sql.Date מחלק התאריך של ה-Timestamp
+            psHours.setDate(1, new java.sql.Date(reservationTime.getTime())); 
+
+            ResultSet rsHours = psHours.executeQuery();
+
+            if (!rsHours.next()) {
+                // המסעדה סגורה או שאין נתונים ליום זה
+                return availableSlots; 
+            }
+
+            Time openTime = rsHours.getTime("openingTime");
+            Time closeTime = rsHours.getTime("closingTime");
+            
+            // סגירת ה-Statement של השעות
+            psHours.close();
+            
+            // חילוץ השעות כ-int ללולאה
+            Calendar openCal = Calendar.getInstance();
+            openCal.setTime(openTime);
+            int startHour = openCal.get(Calendar.HOUR_OF_DAY);
+
+            Calendar closeCal = Calendar.getInstance();
+            closeCal.setTime(closeTime);
+            int endHour = closeCal.get(Calendar.HOUR_OF_DAY);
+            
+            // הבדיקה המתוקנת לחצות (endHour == 0)
+            if (endHour == 0 && closeCal.get(Calendar.MINUTE) == 0 && closeCal.get(Calendar.SECOND) == 0) {
+                endHour = 24;
+            }
+
+            // ---------------------------------------------
+            // שלב 2: לולאה ובדיקת זמינות לכל שעה אפשרית
+            // ---------------------------------------------
+            
+            String availabilityQuery = "SELECT count(*) FROM restaurant_tables t " +
+                    "WHERE t.seatsNumber >= ? " +
+                    "AND t.tableId NOT IN ( " +
+                    "    SELECT r.tableId FROM table_reservations r " +
+                    "    WHERE r.status = 'active' " +
+                    "    AND r.reservationDate < ? " + // r.Start < New.End
+                    "    AND r.leavingTime > ? " +     // r.End > New.Start
+                    ")";
+
+            // שימוש ב-conn במקום pConn.getConnection()
+            psAvailability = conn.prepareStatement(availabilityQuery);
+            
             Calendar cal = Calendar.getInstance();
             cal.setTimeInMillis(reservationTime.getTime());
             
-            // איפוס לדקות, שניות ומילי-שניות (כדי לקבל שעות עגולות)
+            // איפוס לדקות, שניות ומילי-שניות של התאריך המבוקש
             cal.set(Calendar.MINUTE, 0);
             cal.set(Calendar.SECOND, 0);
             cal.set(Calendar.MILLISECOND, 0);
 
             for (int hour = startHour; hour < endHour; hour++) {
-                // קביעת השעה הנוכחית בלולאה
+                
                 cal.set(Calendar.HOUR_OF_DAY, hour);
                 
-                // יצירת Timestamp של זמן ההתחלה (זה מה שנחזיר אם פנוי)
                 Timestamp checkStartTime = new Timestamp(cal.getTimeInMillis());
                 
-                // חישוב זמן סיום משוער (נניח שכל הזמנה היא שעתיים)
+                // חישוב זמן סיום משוער: שעה אחת בלבד
                 Calendar endCal = (Calendar) cal.clone();
-                endCal.add(Calendar.HOUR_OF_DAY, 2); 
+                endCal.add(Calendar.HOUR_OF_DAY, 1); 
                 Timestamp checkEndTime = new Timestamp(endCal.getTimeInMillis());
 
-                // הצבת הפרמטרים בשאילתה
-                ps.setInt(1, numberOfDiners);
-                ps.setTimestamp(2, checkEndTime);   // הגבול העליון של החפיפה
-                ps.setTimestamp(3, checkStartTime); // הגבול התחתון של החפיפה
+                // מציבים פרמטרים לבדיקת הזמינות
+                psAvailability.setInt(1, numberOfDiners);
+                psAvailability.setTimestamp(2, checkEndTime);
+                psAvailability.setTimestamp(3, checkStartTime);
 
-                rs = ps.executeQuery();
+                rs = psAvailability.executeQuery();
                 
-                if (rs.next()) {
-                    int count = rs.getInt(1);
-                    // אם נמצא לפחות שולחן אחד פנוי
-                    if (count > 0) {
-                        // הוספת ה-Timestamp לרשימה
-                        availableSlots.add(checkStartTime);
-                    }
+                if (rs.next() && rs.getInt(1) > 0) {
+                    // נמצא לפחות שולחן אחד פנוי
+                    availableSlots.add(checkStartTime);
                 }
-                rs.close(); 
+                rs.close(); // סוגרים את ה-ResultSet לכל איטרציה
             }
 
         } catch (SQLException e) {
             e.printStackTrace();
         } finally {
-            closeResources(ps, rs); 
-            releaseConnection(pConn);
+            // סגירת משאבים מסודרת
+            closeResources(psAvailability, rs);
+            releaseConnection(pConn); // pConn משחרר את conn
         }
 
         return availableSlots;
-        
-        
     }
-    
+            
+            
+            
+            
     
     /**
      * Searches for a specific Table ID that meets the capacity requirements 

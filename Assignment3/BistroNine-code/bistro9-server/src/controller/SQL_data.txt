@@ -57,6 +57,13 @@ CREATE TABLE table_reservations (
     FOREIGN KEY (tableId) REFERENCES restaurant_tables(tableId)
 );
 
+CREATE TABLE restaurant_hours (
+    day DATE NOT NULL,          
+    openingTime TIME NOT NULL,           
+    closingTime TIME NOT NULL,            
+    
+    PRIMARY KEY (operatingDate) 
+);
 
 
 
