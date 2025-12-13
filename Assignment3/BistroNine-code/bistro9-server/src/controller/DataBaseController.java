@@ -172,21 +172,21 @@ public class DataBaseController {
     {
     	
     	ArrayList<ArrayList<Object>> allReservations = new ArrayList<>();
-        
+    	Connection conn = null; // משתנה ל-Connection הפיזי
         PooledConnection pConn = null;//The connection from the "connection pool"
         PreparedStatement ps = null;//The SQL statement to be executed
         ResultSet rs = null;//The result set of the executed query
 
         try {
-            pConn = getConnection();//Get a connection from the "connection pool"
-            if (pConn == null) 
+            conn =pConn.getConnection();//Get a connection from the "connection pool"
+            if (conn == null) 
             {
             	return null;
             }
 
             String query = "SELECT * FROM table_reservations WHERE customerId = ?";//The SQL query to be executed
             
-            ps = pConn.getConnection().prepareStatement(query);
+            ps = conn.prepareStatement(query);
             ps.setInt(1, customerId);
             rs = ps.executeQuery();
             
@@ -257,11 +257,12 @@ public class DataBaseController {
     public Subscriber checkLoginDetails(Subscriber sub) {
         PooledConnection pConn = null;
         PreparedStatement ps = null;
+        Connection conn = null; // משתנה ל-Connection הפיזי
         ResultSet rs = null;
                 
         try {
-            pConn = getConnection();
-            if (pConn == null) 
+            conn=pConn.getConnection();
+            if (conn == null) 
             { 
         		return null;
             }
@@ -274,7 +275,7 @@ public class DataBaseController {
                     "WHERE s.username = ? AND s.password = ?";
             
             
-            ps = pConn.getConnection().prepareStatement(query);
+            ps = conn.prepareStatement(query);
             ps.setString(1, sub.getUsername()); 
             ps.setString(2, sub.getPassword());
             
@@ -324,11 +325,11 @@ public class DataBaseController {
         ResultSet rs = null;
 
         try {
-            pConn = getConnection();
-            if (pConn == null) return availableSlots;
-            
-            // *תיקון קריטי: חילוץ ה-Connection פעם אחת*
+        	// *תיקון קריטי: חילוץ ה-Connection פעם אחת*
             conn = pConn.getConnection(); 
+            if (conn == null) return availableSlots;
+            
+            
 
             // ---------------------------------------------
             // שלב 1: שליפת שעות הפתיחה והסגירה ליום המבוקש
@@ -443,12 +444,13 @@ public class DataBaseController {
         PooledConnection pConn = null;
         PreparedStatement psSelect = null;
         PreparedStatement psUpdate = null;
+        Connection conn = null; // משתנה ל-Connection הפיזי
         ResultSet rs = null;
         int foundTableId = -1;
 
         try {
-            pConn = getConnection();
-            if (pConn == null)
+            conn=pConn.getConnection();
+            if (conn == null)
             	return -1;
 
             // Logic: Find a table with sufficient capacity that is NOT present in the reservations 
@@ -458,7 +460,7 @@ public class DataBaseController {
                            "AND tableID NOT IN " +
                            "(SELECT tableID FROM tablereservations WHERE reservationDate = ?)";
 
-            psSelect = pConn.getConnection().prepareStatement(query);
+            psSelect = conn.prepareStatement(query);
             psSelect.setInt(1, numberOfDiners);
             psSelect.setTimestamp(2, reservationTime);
 
@@ -486,18 +488,19 @@ public class DataBaseController {
     public boolean createNewReservation(TableReservation res) {
         PooledConnection pConn = null;
         PreparedStatement ps = null;
+        Connection conn = null; // משתנה ל-Connection הפיזי
         
 
         try {
-            pConn = getConnection();
-            if (pConn == null) return false;
+            conn = pConn.getConnection();
+            if (conn == null) return false;
             
             // Inserts the new reservation details into the database
             String query = "INSERT INTO table_reservations " +
                     "(tableId, numberOfDiners, confirmationCode, customerId, reservationDate, arrivalTime, leavingTime) " +
                     "VALUES (?, ?, ?, ?, ?, ?, ?)";
             
-            ps = pConn.getConnection().prepareStatement(query);
+            ps = conn.prepareStatement(query);
             ps.setInt(1, res.getTableId());
             ps.setInt(2, res.getNumberOfDiners());
             ps.setInt(3, res.getConfirmationCode()); 
@@ -531,16 +534,17 @@ public class DataBaseController {
     public boolean checkIfConfCodeExistsInDB(int code) {
         PooledConnection pConn = null;
         PreparedStatement ps = null;
+        Connection conn = null; // משתנה ל-Connection הפיזי
         ResultSet rs = null;
         
 
         try {
-            pConn = getConnection();
-            if (pConn == null) return false;
+            conn=pConn.getConnection();
+            if (conn == null) return false;
 
             String query = "SELECT 1 FROM table_reservations WHERE confirmationCode = ?";
             
-            ps = pConn.getConnection().prepareStatement(query);
+            ps = conn.prepareStatement(query);
             ps.setInt(1, code);
             
             rs = ps.executeQuery();
@@ -571,18 +575,19 @@ public class DataBaseController {
     	PooledConnection pConn = null;
         PreparedStatement psSelect = null;
         PreparedStatement psInsert = null;
+        Connection conn = null; // משתנה ל-Connection הפיזי
         ResultSet rs = null;
         int customerId = -1;
 
         try {
-        	pConn = getConnection();
-            if (pConn == null) return -1;
+        	conn=pConn.getConnection();
+            if (conn == null) return -1;
         	
          //
             String selectQuery = "SELECT customerId FROM customer WHERE phoneNumber = ? OR email = ?";
 
             
-            psSelect = pConn.getConnection().prepareStatement(selectQuery);
+            psSelect = conn.prepareStatement(selectQuery);
             psSelect.setString(1, cust.getPhoneNumber());
             psSelect.setString(2, cust.getEmail());
             
@@ -596,7 +601,7 @@ public class DataBaseController {
             
             String insertQuery = "INSERT INTO customer (phoneNumber, email) VALUES (?, ?)";
             
-            psInsert = pConn.getConnection().prepareStatement(insertQuery, Statement.RETURN_GENERATED_KEYS);
+            psInsert = conn.prepareStatement(insertQuery, Statement.RETURN_GENERATED_KEYS);
             psInsert.setString(1, cust.getPhoneNumber());
             psInsert.setString(2, cust.getEmail());
             
