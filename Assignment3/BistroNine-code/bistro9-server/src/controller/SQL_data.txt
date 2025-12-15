@@ -4,27 +4,23 @@ CREATE DATABASE IF NOT EXISTS restaurant_db;
 -- 2. Select this database to use it
 USE restaurant_db;
 
-
-
 -- 3. Now run your table creation
 
-CREATE TABLE customer
-(
-	customerId INT AUTO_INCREMENT, 
+CREATE TABLE customer (
+    customerId INT AUTO_INCREMENT, 
     phoneNumber VARCHAR(100) UNIQUE, 
     email VARCHAR(100) UNIQUE,       
-    
     
     CONSTRAINT check_contact_info CHECK (phoneNumber IS NOT NULL OR email IS NOT NULL),
     PRIMARY KEY (customerId)
 );
 
 CREATE TABLE subscriber (        
-    subscriberId INT AUTO_INCREMENT,--number of subscriber
-    customerId INT NOT NULL UNIQUE,--number of customer
+    subscriberId INT AUTO_INCREMENT, -- number of subscriber
+    customerId INT NOT NULL UNIQUE, -- number of customer
     firstName VARCHAR(100) NOT NULL,
     lastName VARCHAR(100) NOT NULL,   
-    type  ENUM('subscriber', 'restaurant representative', 'restaurant manager') NOT NULL,
+    type ENUM('subscriber', 'restaurant representative', 'restaurant manager') NOT NULL,
     personalInfo VARCHAR(1000),
     username VARCHAR(100) UNIQUE,
     password VARCHAR(100), 
@@ -32,26 +28,28 @@ CREATE TABLE subscriber (
     PRIMARY KEY (subscriberId),
     FOREIGN KEY (customerId) REFERENCES customer(customerId) ON UPDATE CASCADE
 );
+
 CREATE TABLE restaurant_tables (
-    tableId INT AUTO_INCREMENT ,
+    tableId INT AUTO_INCREMENT,
     seatsNumber INT NOT NULL, 
     location ENUM('inside', 'bar', 'outside') NOT NULL, 
     status ENUM('available', 'reserved', 'occupied') NOT NULL,
     
     PRIMARY KEY (tableId)
 );
+
 CREATE TABLE table_reservations (
     reservationID INT AUTO_INCREMENT,              
     tableId INT,
     numberOfDiners INT NOT NULL,             
-    confirmationCode INT NOT NULL ,           
+    confirmationCode INT NOT NULL,           
     customerId INT NOT NULL,  
     reservationDate DATETIME NOT NULL,            
     dateOfMakeReservation DATETIME DEFAULT CURRENT_TIMESTAMP, 
     arrivalTime DATETIME, 
-	leavingTime DATETIME,
-	status ENUM('active', 'cancelled', 'completed') NOT NULL DEFAULT 'active',
-	
+    leavingTime DATETIME,
+    status ENUM('active', 'cancelled', 'completed') NOT NULL DEFAULT 'active',
+    
     PRIMARY KEY (reservationID),
     FOREIGN KEY (customerId) REFERENCES customer(customerId) ON UPDATE CASCADE,
     FOREIGN KEY (tableId) REFERENCES restaurant_tables(tableId)
@@ -62,9 +60,7 @@ CREATE TABLE restaurant_hours (
     openingTime TIME NOT NULL,           
     closingTime TIME NOT NULL,            
     
-    PRIMARY KEY (operatingDate) 
+    PRIMARY KEY (day) 
 );
-
-
 
 -- 4. Insert the data
