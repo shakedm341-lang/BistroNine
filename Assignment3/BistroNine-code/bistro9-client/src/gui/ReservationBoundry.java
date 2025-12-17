@@ -27,7 +27,8 @@ public class ReservationBoundry {
     @FXML private DatePicker datePicker;
     @FXML private TextField txtDiners;
     @FXML private ListView<String> timeList;
-    
+    @FXML private Button btnCheckAvailability; // Added reference to the new button
+
     @FXML private TextField nameTxt;
     @FXML private TextField phoneTxt;
     @FXML private Button btnCreate;
@@ -79,41 +80,62 @@ public class ReservationBoundry {
                 setDisable(empty || date.isBefore(LocalDate.now()));
             }
         });
+        
+        // Initialize diners text
+        txtDiners.setText(String.valueOf(diners));
     }
 
+    /**
+     * Triggered when the date is changed.
+     * Now it only clears the list to indicate that the user needs to check availability again.
+     */
     @FXML
     void onDateSelected(ActionEvent event) {
+        // Clear previous results to avoid confusion
+        timeList.getItems().clear();
+        btnCreate.setDisable(true); 
+    }
+
+    /**
+     * New method linked to the "Check Availability" button.
+     * This handles the server communication.
+     */
+    @FXML
+    void checkAvailability(ActionEvent event) {
         LocalDate selectedDate = datePicker.getValue();
+
+        // Validation: Ensure a date is selected
+        if (selectedDate == null) {
+            showAlert(AlertType.WARNING, "Missing Date", "Please select a date first.");
+            return;
+        }
+
+        // Clear list before new request
+        timeList.getItems().clear();
+        btnCreate.setDisable(true);
+
+        // Prepare the parameters list for the server
+        // Server expects: [0] = numberOfDiners (int), [1] = reservationDate (Timestamp)
+        ArrayList<Object> params = new ArrayList<>();
         
-        if (selectedDate != null) {
-            // 1. Clear previous results to avoid confusion
-            timeList.getItems().clear();
-            btnCreate.setDisable(true); 
+        // Add number of diners
+        params.add(diners); 
+        
+        // Convert LocalDate to SQL Timestamp (set to start of day 00:00:00)
+        Timestamp dateAsTimestamp = Timestamp.valueOf(selectedDate.atStartOfDay());
+        params.add(dateAsTimestamp);
 
-            // 2. Prepare the parameters list for the server
-            // Server expects: [0] = numberOfDiners (int), [1] = reservationDate (Timestamp)
-            ArrayList<Object> params = new ArrayList<>();
-            
-            // Add number of diners
-            params.add(diners); 
-            
-            // Convert LocalDate to SQL Timestamp (set to start of day 00:00:00)
-            Timestamp dateAsTimestamp = Timestamp.valueOf(selectedDate.atStartOfDay());
-            params.add(dateAsTimestamp);
+        System.out.println("Sending request: Date=" + dateAsTimestamp + ", Diners=" + diners);
 
-            System.out.println("Sending request: Date=" + dateAsTimestamp + ", Diners=" + diners);
-
-            // 3. Send the request to the server
-            // Assuming TypeMessage.RESERVATION and Command.CHECK_TABLE_AVAILABILITY exist in your Enums
-            if (client != null) {
-                client.handleMessageFromBoundary(
-                    TypeMessage.RESERVATION,      // The broad category
-                    params,                       // The data (diners + date)
-                    Command.CHECK_TABLE_AVAILABILITY // The specific command
-                );
-            } else {
-                System.err.println("Error: Client connection is null.");
-            }
+        // Send the request to the server
+        if (client != null) {
+            client.handleMessageFromBoundary(
+                TypeMessage.RESERVATION,      // The broad category
+                params,                       // The data (diners + date)
+                Command.CHECK_TABLE_AVAILABILITY // The specific command
+            );
+        } else {
+            System.err.println("Error: Client connection is null.");
         }
     }
     
@@ -121,7 +143,8 @@ public class ReservationBoundry {
         // Run on JavaFX Application Thread to avoid "Not on FX application thread" exception
         javafx.application.Platform.runLater(() -> {
             if (availableTimes == null || availableTimes.isEmpty()) {
-                 showAlert(AlertType.INFORMATION, "No Availability", "No available tables found for this date.");
+                
+                  showAlert(AlertType.INFORMATION, "No Availability", "No available tables found for this date.");
                  return;
             }
 
@@ -146,7 +169,9 @@ public class ReservationBoundry {
             diners++;
             txtDiners.setText(String.valueOf(diners));
             
-             if (datePicker.getValue() != null) loadAvailableHours(datePicker.getValue());
+            // Clear list when diners change, user must click check availability again
+            timeList.getItems().clear();
+            btnCreate.setDisable(true);
         }
     }
 
@@ -155,7 +180,10 @@ public class ReservationBoundry {
         if (diners > 1) {
             diners--;
             txtDiners.setText(String.valueOf(diners));
-            if (datePicker.getValue() != null) loadAvailableHours(datePicker.getValue());
+            
+            // Clear list when diners change, user must click check availability again
+            timeList.getItems().clear();
+            btnCreate.setDisable(true);
         }
     }
 
@@ -190,8 +218,6 @@ public class ReservationBoundry {
         }
 
         // 3. Prepare Data for Server
-        
-        
         ArrayList<Object> params = new ArrayList<>();
 
         // --- Handle User Type & Contact Info ---
@@ -212,8 +238,8 @@ public class ReservationBoundry {
 
         // --- Convert Date + Time String to SQL Timestamp ---
         try {
-        	
-        	// Combine LocalDate and selected time string into LocalDateTime
+            
+            // Combine LocalDate and selected time string into LocalDateTime
             LocalTime time = LocalTime.parse(timeStr); 
             LocalDateTime dateTime = LocalDateTime.of(date, time);
             
@@ -260,12 +286,9 @@ public class ReservationBoundry {
         });
     }
 
-    // --- MOCK SERVER LOGIC ---
-    
+    // --- MOCK SERVER LOGIC (No longer used automatically) ---
     private void loadAvailableHours(LocalDate date) {
         ObservableList<String> hours = FXCollections.observableArrayList();
-        
-        //reality: fetch from server based on date and diners
         
         // Mock logic: even days have evening slots, odd days have midday slots
         if (date.getDayOfMonth() % 2 == 0) {

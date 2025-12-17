@@ -83,6 +83,7 @@ public class UserDashboardController {
             Parent root = loader.load();
             
             ReservationBoundry resController = loader.getController();
+            resController.setClient(this.client);
             resController.initData(currentUser);
             
             contentArea.getChildren().clear();
