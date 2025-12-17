@@ -21,6 +21,11 @@ import javafx.scene.control.DatePicker;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
 import javafx.scene.input.MouseEvent;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.stage.Stage;
 
 public class ReservationBoundry {
 
@@ -33,6 +38,7 @@ public class ReservationBoundry {
     @FXML private TextField phoneTxt;
     @FXML private Button btnCreate;
     @FXML private TextField emailTxt;
+    @FXML private Button btnReturnToLogin;
 
     private int diners = 1; // Default diners count
     private Subscriber currentUser;
@@ -55,6 +61,9 @@ public class ReservationBoundry {
             phoneTxt.setDisable(true);
             emailTxt.setDisable(true);
             
+            // 3. Hide the return to login button for subscribers
+            btnReturnToLogin.setVisible(false);
+            
         } else {
             // mode: GUEST USER
             
@@ -67,6 +76,9 @@ public class ReservationBoundry {
             nameTxt.setDisable(false);
             phoneTxt.setDisable(false);
             emailTxt.setDisable(false);
+            
+            // 3. Show the return to login button for guests
+            btnReturnToLogin.setVisible(true);
         }
     }
 
@@ -303,6 +315,27 @@ public class ReservationBoundry {
     public void setClient(ClientController client) {
         this.client = client;
         client.reservationBoundry = this;
+    }
+
+    @FXML
+    void returnToLogin(ActionEvent event) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/LoginScreen.fxml"));
+            Parent root = loader.load();
+
+            LoginController loginController = loader.getController();
+            loginController.setClient(client);
+
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            stage.setTitle("BistroNine Client - Login Screen");
+            Scene scene = new Scene(root);
+            stage.setScene(scene);
+            stage.show();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            showAlert(AlertType.ERROR, "Error", "Failed to return to login screen.");
+        }
     }
 
     private void showAlert(AlertType type, String title, String content) {
