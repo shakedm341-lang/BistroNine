@@ -484,7 +484,18 @@ public class ReservationControler
 		
 	}
 	
-	
+	/**
+	 * Checks table availability for a specific number of diners and reservation
+	 * day.
+	 *
+	 * @param msg The message containing the reservation details. The content of the
+	 *            message is expected to be an ArrayList<Object> with the following
+	 *            order: [Location 0 : numberOfDiners (Integer), Location 1:
+	 *            reservationDay (LocalDate)]
+	 * @return An ArrayList of LocalTime objects representing available times for
+	 *         the requested number of diners on the specified date, or null if no
+	 *         times are available.
+	 */
 	private ArrayList<LocalTime> checkingTableAvailability(Message msg)
 	{
 		
@@ -493,7 +504,7 @@ public class ReservationControler
 		
 		ArrayList<LocalTime> availableTime = new ArrayList<>();//List to hold available dates and times for the requested number of diners and reservation date
 		int numberOfDiners=0;
-		LocalDate reservationDate=null;
+		LocalDate reservationDay=null;
 	
 		//Setting number of diners from the list we got from the message content
 		if (list.get(0) instanceof Integer) {
@@ -505,13 +516,13 @@ public class ReservationControler
 		    	
 		//Setting reservation day from the list we got from the message content
 		if (list.get(1) instanceof LocalDate) {
-			reservationDate= (LocalDate) list.get(1);
+			reservationDay= (LocalDate) list.get(1);
 		} else {
 		    	  System.out.println("Error: Index 1 is not a LocalDate!");
 		    	  return null;
 		}
 		
-		ArrayList<TableReservation> allReservationsforSpecificDay = getAllReservationsByDay( reservationDate);
+		ArrayList<TableReservation> allReservationsforSpecificDay = getAllReservationsByDay( reservationDay);
 		
 		ArrayList<Table> tables = getTableInRestaurant();
 		if (tables==null) 
@@ -519,10 +530,10 @@ public class ReservationControler
             System.out.println("No tables found for " + numberOfDiners + " diners.");
             return null;
         }
-		ArrayList<TimeSlot> OpeningTime = getOpeningTime(reservationDate);
+		ArrayList<TimeSlot> OpeningTime = getOpeningTime(reservationDay);
 		if (OpeningTime==null) 
         {
-            System.out.println("The restaurant is closed on " + reservationDate.toString() );
+            System.out.println("The restaurant is closed on " + reservationDay.toString() );
             return null;
         }
 		else 
@@ -536,7 +547,7 @@ public class ReservationControler
 		        while (!currentCheckTime.plusHours(2).isAfter(slot.getClose())) //While the current check time plus two hours (duration of the reservation) is not after the closing time of the slot
 		        {
 		            
-		            LocalDateTime checkTime = LocalDateTime.of(reservationDate, currentCheckTime);//Combine the reservation date with the current check time to get the start time of the reservation
+		            LocalDateTime checkTime = LocalDateTime.of(reservationDay, currentCheckTime);//Combine the reservation date with the current check time to get the start time of the reservation
 		            
 		            ArrayList<TableReservation> overlappingRes = new ArrayList<>();
 		            
