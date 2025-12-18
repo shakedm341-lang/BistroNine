@@ -7,7 +7,9 @@ import data.*;
 import ocsf.server.*;
 import gui.ServerDashboardController;
 import javafx.application.Platform;
-
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 public class ServerController extends AbstractServer {
 	
 	final public static int DEFAULT_PORT = 5555;
@@ -16,6 +18,7 @@ public class ServerController extends AbstractServer {
 	// initialized in the constructor.
 	private ReservationControler reservationsController;
 	private CustomerController customerController;
+	private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 	
 	private ServerDashboardController serverUI;
 
@@ -26,6 +29,7 @@ public class ServerController extends AbstractServer {
 		DataBaseController.initiateDBC(dbPassword);
 		this.reservationsController = new ReservationControler();
 		this.customerController = new CustomerController();
+		startAutoTasks();
 	}
 
 	@Override
@@ -51,6 +55,21 @@ public class ServerController extends AbstractServer {
 		}
 	}
 
+	
+	private void startAutoTasks() 
+	{
+        scheduler.scheduleAtFixedRate(() -> {
+            try {
+            		
+                reservationsController.deleteLateReservations();//clean up reservations that were not confirmed befor 15 minutes
+                reservationsController.sendReminderAlertsForReservation();//send reminders for upcoming reservations 2 hours before
+            } catch (Exception e) {
+                System.err.println("Error during auto-cleanup: " + e.getMessage());
+            }
+        }, 0, 1, TimeUnit.MINUTES); // בודק כל דקה
+    }
+	
+	
 	private void handleReservationRequest(Message message, ConnectionToClient client) {
 		Object response = reservationsController.handleMessageFromServer(message);
 		message.content = response;
@@ -80,6 +99,8 @@ public class ServerController extends AbstractServer {
 
 	@Override
 	protected void serverStopped() {
+		scheduler.shutdown(); // סגירה מסודרת של התהליכון
+        System.out.println("Server and scheduler stopped.");
 		System.out.println("Server has stopped listening for connections.");
 	}
 

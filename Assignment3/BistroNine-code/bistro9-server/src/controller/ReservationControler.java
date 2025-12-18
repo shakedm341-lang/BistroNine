@@ -41,14 +41,14 @@ public class ReservationControler
 	    case GET_ALL_RESERVATIONS:
 	    	return getAllReservationsByCustomerId(msg);
 	    	
-	    /*case UPDATE_RESERVATION_DETAILS:
-	    	return updateReservationDetails(msg);*/
-	    
 	    case CREATE_NEW_RESERVATION:
 	    	return createNewReservation(msg);
 	    		
 	    case CHECK_TABLE_AVAILABILITY:
 	    	return checkingTableAvailability(msg);
+	    	
+	    case DELETE_RESERVATION:
+	    	return deleteReservation(msg);
 	    	
 	    default:
 	        System.out.println("Unknown task received.");
@@ -58,7 +58,7 @@ public class ReservationControler
 
 	
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////Regular methods//////////////////////////////////////////////////////////////////
+////////////////////////////////Helper methods//////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	/**
 	 * Converts a list of reservations from the database into TableReservation
@@ -142,7 +142,12 @@ public class ReservationControler
           //Set arrival time in the TableReservation object
             if (resAsList.get(7) instanceof Timestamp) {
                 resAsTableRes.setArrivalTime((Timestamp) resAsList.get(7));
-            } else {
+            }
+            else if (resAsList.get(7) == null) // if arrival time is null
+            {
+                resAsTableRes.setArrivalTime(null);
+            }
+            else {
                 System.out.println("Error: Index 7 is not a Timestamp!");
                 return null;
             }
@@ -150,7 +155,12 @@ public class ReservationControler
           //Set leaving Time in the TableReservation object
             if (resAsList.get(8) instanceof Timestamp) {
                 resAsTableRes.setLeavingTime((Timestamp) resAsList.get(8));
-            } else {
+            }
+			else if (resAsList.get(8) == null) // if leaving time is null
+			{
+				resAsTableRes.setLeavingTime(null);
+			}
+            else {
                 System.out.println("Error: Index 8 is not a Timestamp!");
                 return null;
             }
@@ -177,14 +187,65 @@ public class ReservationControler
 	 * @return An ArrayList of TableReservation objects representing all
 	 *         reservations for the specified date.
 	 */
-	private ArrayList<TableReservation> getAllReservationsByDay(LocalDate day)
+	private ArrayList<TableReservation> getAllReservationsByDay(LocalDate day, boolean includePreviousDay)
 	{
 		ArrayList<ArrayList<Object>> allReservations = new ArrayList<>();//List to hold all reservations from the DB as a list of lists of objects
+		
+	    
+	    if (includePreviousDay)
+	    {
+	    		ArrayList<ArrayList<Object>> allReservationsThisDay =DBC.getAllReservationsQueryByDay(day);
+	    		ArrayList<ArrayList<Object>> allReservationsPreviousDay = DBC.getAllReservationsQueryByDay(day.minusDays(1));
+	    		
+	    		if (allReservationsPreviousDay != null) 
+	    		{
+	    			allReservations.addAll(allReservationsPreviousDay);
+	    		}
+
+	     	if (allReservationsThisDay != null) 
+	     	{
+	    			allReservations.addAll(allReservationsThisDay);
+	    		}
+	    		
+	    }
+	    else 
+	    {
+	        
+	    		allReservations = DBC.getAllReservationsQueryByDay(day);
+	    }
+
 		ArrayList<TableReservation> reservationsListAsTableRes = new ArrayList<>();//List to hold all reservations as TableReservation objects
-			//b1
-	    	allReservations = DBC.getAllReservationsQueryByDay(day);//return all reservations from the DB at specific day as a list of lists of objects else return empty list
+			
+	    
 	    	reservationsListAsTableRes=	getAllReservationsAsTableReservation(allReservations);//Convert the list of reservations from the DB into list of TableReservation objects
-	
+	    	if (reservationsListAsTableRes == null) 
+	    	{
+	    		                System.out.println("error return all reservayion by day" + day.toString());
+	    		                return null;
+	    	
+	    	}
+	    	
+	    	if (includePreviousDay)
+		 {
+	    		ArrayList<TableReservation> filtered = new ArrayList<>();
+
+	            LocalDateTime startOfToday = day.atStartOfDay();
+
+	            for (TableReservation res : reservationsListAsTableRes) {
+	                
+	                LocalDateTime resEnd = res.getReservationDate().toLocalDateTime().plusHours(2);
+	                
+	                
+	                if (resEnd.isAfter(startOfToday)) {
+	                    filtered.add(res);
+	                }
+	            }
+	            return filtered;
+	        }
+		    
+	    	
+	    	
+	    	
 	    return reservationsListAsTableRes;
 	}
 
@@ -198,9 +259,9 @@ public class ReservationControler
 	private ArrayList<TimeSlot> getOpeningTime(LocalDate day)
 	{
 		OpeningHoursPerDay openingHours = new OpeningHoursPerDay(day);
-		//b2
+		
 		DBC.getOpeningHoursByDate(openingHours);//update opening hours for the specific date from the DB in the OpeningHoursPerDay object else put null in the slots list
-		// getOpeningHoursByDate(OpeningHoursPerDay openingHours)
+		
 		return openingHours.getSlots();
 	}
 	
@@ -304,8 +365,19 @@ public class ReservationControler
 				}
 			}
 	}
+
+	/**
+	 * Sends email and SMS reminders to the customer for an upcoming reservation 2 hours before the reservation time.
+	 *
+	 * @param res The TableReservation object representing the reservation.
+	 */
+	private void sendEmailAndSMS(TableReservation res) 
+	{
+	    System.out.println("Sending Reminder to Customer ID: " + res.getCustomerId() + " for reservation at " + res.getReservationDate());
+	}
+	
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////// Special methods//////////////////////////////////////////////////////////////////
+///////////////////////////////Logic methods//////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	/**
@@ -522,8 +594,11 @@ public class ReservationControler
 		    	  return null;
 		}
 		
-		ArrayList<TableReservation> allReservationsforSpecificDay = getAllReservationsByDay( reservationDay);
-		
+		ArrayList<TableReservation> allReservationsforSpecificDay = getAllReservationsByDay( reservationDay,true);//Get all reservations for the specific date from the DB);
+		if (allReservationsforSpecificDay == null) {
+			System.out.println("error return all reservayion" + reservationDay.toString());
+			return null;
+		}
 		ArrayList<Table> tables = getTableInRestaurant();
 		if (tables==null) 
         {
@@ -541,15 +616,25 @@ public class ReservationControler
 			
 		    for (TimeSlot slot : OpeningTime) //For each time slot in the opening hours
 		    {
-		        LocalTime currentCheckTime = slot.getOpen();//Starting from the opening time of the slot
 
+		        LocalDateTime startDateTime = LocalDateTime.of(reservationDay, slot.getOpen());// Get the start time of the slot as LocalDateTime
+		        LocalDateTime endDateTime = LocalDateTime.of(reservationDay, slot.getClose());// Get the end time of the slot as LocalDateTime
+		        
+		        //If the closing time is past midnight, adjust the endDateTime to the next day
+		        if (endDateTime.isBefore(startDateTime)) 
+		        {
+		            endDateTime = endDateTime.plusDays(1);
+		        }
+		        
+		        LocalDateTime currentCheckDateTime = startDateTime;// Initialize the current check time to the start of the slot
+		        
 		        //Check every half hour within the time slot
-		        while (!currentCheckTime.plusHours(2).isAfter(slot.getClose())) //While the current check time plus two hours (duration of the reservation) is not after the closing time of the slot
+		        while (!currentCheckDateTime.plusHours(2).isAfter(endDateTime)) //While the current check time plus two hours (duration of the reservation) is not after the closing time of the slot
 		        {
 		            
-		            LocalDateTime checkTime = LocalDateTime.of(reservationDay, currentCheckTime);//Combine the reservation date with the current check time to get the start time of the reservation
+		           
 		            
-		            ArrayList<TableReservation> overlappingRes = new ArrayList<>();
+		            ArrayList<TableReservation> overlappingRes = new ArrayList<>();//List to hold overlapping reservations with the requested time
 		            
 		            // Check existing reservations to see if they overlap with the requested time
 		            for (TableReservation res : allReservationsforSpecificDay) 
@@ -561,7 +646,7 @@ public class ReservationControler
 		                    LocalDateTime existingResTime = res.getReservationDate().toLocalDateTime();// Get the start time of the existing reservation as LocalDateTime
 		                    
 		                    // Calculate the time difference in minutes between the existing reservation and the requested time
-		                    long minutesBetween = Math.abs(java.time.Duration.between(existingResTime, checkTime).toMinutes());
+		                    long minutesBetween = Math.abs(java.time.Duration.between(existingResTime,currentCheckDateTime).toMinutes());
 		                    
 		                    if (minutesBetween < 120) 
 		                    {
@@ -598,12 +683,12 @@ public class ReservationControler
 		                Table tableForNewGuest = findBestFitTable(copyOfTables, numberOfDiners);// Find the best fit table for the new reservation request
 		                if (tableForNewGuest != null) 
 		                {
-		                    availableTime.add(currentCheckTime);// Add the current check time to the list of available times
+		                    availableTime.add(currentCheckDateTime.toLocalTime());// Add the current check time to the list of available times
 		                }
 		            }
 		            
 		            // Move to the next half-hour slot
-		            currentCheckTime = currentCheckTime.plusMinutes(30);
+		            currentCheckDateTime = currentCheckDateTime.plusMinutes(30);
 		        }
 		    }
 		    if (availableTime.isEmpty()) 
@@ -614,8 +699,107 @@ public class ReservationControler
 		    return availableTime;//Return to server the list of available times in the requested date else return null      
 		}      
 	}          
-		            
-		            
 	
+	/**
+	 * Deletes a table reservation from the DB based on the confirmation code.
+	 *
+	 * @param msg The message containing the confirmation code of the reservation to
+	 *            be deleted. The content of the message is expected to be an
+	 *            ArrayList<Object> with the following order: [Location 0 :
+	 *            confirmationCode (Integer)]
+	 * @return true if the reservation was deleted successfully, false otherwise.
+	 */
+	private 	boolean  deleteReservation(Message msg)
+	{
+		@SuppressWarnings("unchecked") 
+		ArrayList<Object> list = (ArrayList<Object>) msg.content;//get the reservation details from the message content
+		int confirmationCode=0;
+	
+		//Setting confirmation code from the list we got from the message content
+		if (list.get(0) instanceof Integer) {
+				confirmationCode=(int) list.get(0);
+		} else {
+		    	  System.out.println("Error: Index 0 is not a Integer!");
+		    	  return false;
+		}
+		//return true if the reservation was deleted successfully from the DB or false otherwise
+		return DBC.deleteReservationByConfCode(confirmationCode);//Return to server the result of the deletion operation
+	}
+	
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////Automated tasks//////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	/**
+	 * Deletes late reservations from the DB. A reservation is considered late
+	 * if the customer has not arrived within 15 minutes of the reservation time.
+	 * This method checks today's reservations and updates the status of late
+	 * reservations to "canceled".
+	 * this method is called periodically by schedulere to run every minute at the server.
+	 */
+	//האם לשלוח עדכון למשתמש שההזמנה בוטלה?
+	public 	void  deleteLateReservations()
+	{
+		//get today reservations
+	    LocalDate today = LocalDate.now();
+	    ArrayList<TableReservation> todayReservations = getAllReservationsByDay(today, false);
+	    //if there are no reservations for today, exit the method
+	    if (todayReservations == null || todayReservations.isEmpty()) {
+	        return;
+	    }
 
+	    LocalDateTime nowTime = LocalDateTime.now();
+
+	    // Check each reservation and cancel if the customer is late
+	    for (TableReservation res : todayReservations) 
+	    {
+	        if (res.getStatus().equals("active")) // check active reservations
+	        {
+	            LocalDateTime resTime = res.getReservationDate().toLocalDateTime();// Get the reservation time as LocalDateTime
+	            
+	            // If the current time is more than 15 minutes past the reservation time
+	            if (resTime.plusMinutes(15).isBefore(nowTime)) 
+	            {
+	                // Update the reservation status to "canceled" in the DB
+	                DBC.updateReservationStatus(res.getConfirmationCode(), "canceled");
+	                System.out.println("Reservation " + res.getConfirmationCode() + " was auto-canceled due to late arrival.");
+	            }
+	        }
+	    }
+		
+	}
+	
+	/**
+	 * Sends reminder alerts to customers for upcoming reservations. This method
+	 * checks today's reservations and sends reminders to customers whose
+	 * reservations are scheduled to start in 2 hours. this method is called
+	 * periodically by schedulere to run every minute at the server.
+	 */
+	public void sendReminderAlertsForReservation() 
+	{
+	    LocalDate today = LocalDate.now();
+	    ArrayList<TableReservation> todaysRes = getAllReservationsByDay(today,false);//get today reservations
+	    
+	    if (todaysRes == null) return;
+
+	    LocalDateTime nowTime = LocalDateTime.now();//get current time
+
+	    for (TableReservation res : todaysRes) 
+	    {
+	        
+	        if (res.getStatus().equals("active")) 
+	        {
+	            LocalDateTime resTime = res.getReservationDate().toLocalDateTime();// Get the reservation time as LocalDateTime
+	            
+	            // Calculate the time difference in minutes between now and the reservation time
+	            long minutesUntilRes = java.time.Duration.between(nowTime, resTime).toMinutes();
+	            
+	            // If the reservation is 2 hours away
+	            if (minutesUntilRes >= 119 && minutesUntilRes <= 120) 
+	            {
+	                sendEmailAndSMS(res);// Send reminder to the customer
+	            }
+	        }
+	    }
+	}
+	
 }
