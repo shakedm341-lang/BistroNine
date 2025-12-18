@@ -60,7 +60,17 @@ CREATE TABLE restaurant_hours (
     openingTime TIME NOT NULL,           
     closingTime TIME NOT NULL,            
     
-    PRIMARY KEY (day) 
+    PRIMARY KEY (day, openingTime) 
 );
+
+CREATE TABLE restaurant_discount (
+    type_customer ENUM('subscriber', 'customer') PRIMARY KEY,
+    discount DECIMAL(5,2) DEFAULT 0.00,
+    
+    PRIMARY KEY (type_customer) 
+);
+
+
+
 
 -- 4. Insert the data

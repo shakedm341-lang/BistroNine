@@ -1,14 +1,17 @@
 package controller;
 import java.sql.Timestamp;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Random;
 
 import data.Customer;
 import data.Message;
+import data.OpeningHoursPerDay;
 import data.Table;
 import data.TableReservation;
+import data.TimeSlot;
 
 public class ReservationControler 
 {
@@ -36,7 +39,7 @@ public class ReservationControler
 		switch (msg.command) //Checking the type of message sent from the server (what action should be performed in the DB Controller)
 		{
 	    case GET_ALL_RESERVATIONS:
-	    	return getAllReservations(msg);
+	    	return getAllReservationsByCustomerId(msg);
 	    	
 	    /*case UPDATE_RESERVATION_DETAILS:
 	    	return updateReservationDetails(msg);*/
@@ -53,34 +56,26 @@ public class ReservationControler
 		}
 	}
 
+	
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////Regular methods//////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	/**
-	 * Retrieves all table reservations from the database.
+	 * Converts a list of reservations from the database into TableReservation
+	 * objects.
 	 *
-	 * @param msg The message requesting all reservations.
-	 * @return An ArrayList of TableReservation objects representing all
-	 *         reservations in the database.
+	 * @param allReservations A list of reservations from the database, where each
+	 *                        reservation is represented as a list of objects.
+	 * @return An ArrayList of TableReservation objects representing the
+	 *         reservations.
 	 */
-	private ArrayList<TableReservation> getAllReservations(Message msg)
+	private ArrayList<TableReservation> getAllReservationsAsTableReservation(ArrayList<ArrayList<Object>> allReservations)
 	{
 		
-		ArrayList<ArrayList<Object>> allReservations = new ArrayList<>();//List to hold all reservations from the DB as a list of lists of objects
-    	ArrayList<TableReservation> reservationsListAsTableRes = new ArrayList<>();//List to hold all reservations as TableReservation objects
-    	
-    	@SuppressWarnings("unchecked") 
-		ArrayList<Object> list = (ArrayList<Object>) msg.content;//get the reservation details from the message content
-    	int customerId=0;
-    	// Setting subscriber ID from the list we got from the message content
-    				if (list.get(0) instanceof Integer) {
-    					 customerId = (int) list.get(0);
-    				} else {
-    					System.out.println("Error: Index 0 is not a Integer!");
-    					return null;
-    				}
-    	
-    	
-    	allReservations = DBC.getAllReservationsQuery(customerId);//Get all reservations from the DB as a list of lists of objects
-    	
-    	for (ArrayList<Object> resAsList : allReservations)
+	
+		ArrayList<TableReservation> reservationsListAsTableRes = new ArrayList<>();//List to hold all reservations as TableReservation objects
+		
+		for (ArrayList<Object> resAsList : allReservations)
     	{//For each reservation in the list of reservations
     		
     		TableReservation resAsTableRes = new TableReservation();//Create a new TableReservation 
@@ -135,9 +130,6 @@ public class ReservationControler
                 return null;
             }
 
-            
-
-            
 
             //Set date of make reservation in the TableReservation object
             if (resAsList.get(6) instanceof Timestamp) {
@@ -163,8 +155,6 @@ public class ReservationControler
                 return null;
             }
     	    
-          
-            
           //Set status  in the Subscriber object
     		if (resAsList.get(9) instanceof String) {
     			resAsTableRes.setStatus((String) resAsList.get(9));
@@ -177,59 +167,178 @@ public class ReservationControler
     	    reservationsListAsTableRes.add(resAsTableRes);//Add the reservation to the list of reservations as TableReservation 
     	}
     	
-    	return reservationsListAsTableRes;//Return to server the list of reservations as TableReservation 
+    	return reservationsListAsTableRes;
+	}
+		
+	/**
+	 * Retrieves all table reservations for a specific date from the database.
+	 *
+	 * @param date The date for which to retrieve reservations.
+	 * @return An ArrayList of TableReservation objects representing all
+	 *         reservations for the specified date.
+	 */
+	private ArrayList<TableReservation> getAllReservationsByDay(	LocalDate day)
+	{
+		ArrayList<ArrayList<Object>> allReservations = new ArrayList<>();//List to hold all reservations from the DB as a list of lists of objects
+		ArrayList<TableReservation> reservationsListAsTableRes = new ArrayList<>();//List to hold all reservations as TableReservation objects
+ 
+	    	allReservations = DBC.getAllReservationsQueryByDay(day);//return all reservations from the DB at specific day as a list of lists of objects else return empty list
+	    	reservationsListAsTableRes=	getAllReservationsAsTableReservation(allReservations);//Convert the list of reservations from the DB into list of TableReservation objects
+	
+	    return reservationsListAsTableRes;
 	}
 
+	/**
+	 * Retrieves the opening time slots for a specific date from the database.
+	 *
+	 * @param date The date for which to retrieve opening time slots.
+	 * @return An ArrayList of TimeSlot objects representing the opening time slots
+	 *         for the specified date.
+	 */
+	private ArrayList<TimeSlot> getOpeningTime(LocalDate day)
+	{
+		OpeningHoursPerDay openingHours = new OpeningHoursPerDay(day);
+
+		DBC.getOpeningHoursByDate(day);//update opening hours for the specific date from the DB in the OpeningHoursPerDay object else put null in the slots list
+		
+		return openingHours.getSlots();
+	}
 	
 	/**
-	 * Updates the details of an existing table reservation in the database.
+	 * Retrieves all tables in the restaurant from the database.
 	 *
-	 * @param msg The message containing the updated reservation details. The
-	 *            content of the message is expected to be an ArrayList<Object> with
-	 *            the following order: [reservationId (Integer), reservationDate
-	 *            (Timestamp), numberOfDiners (Integer)]
-	 * @return true if the update was successful, false otherwise.
+	 * @return An ArrayList of Table objects representing all tables in the
+	 *         restaurant.
 	 */
-	/*private boolean updateReservationDetails(Message msg)
+	private ArrayList<Table> getTableInRestaurant()
 	{
+		ArrayList<ArrayList<Object>> allTables = new ArrayList<>();// List to hold all tables from the DB as a list of
+																	// lists of objects
+		ArrayList<Table> tablesListAsTable = new ArrayList<>();// List to hold all tables as Table objects
 
-		@SuppressWarnings("unchecked") 
-		ArrayList<Object> list = (ArrayList<Object>) msg.content;//Get the reservation details from the message content
+		allTables = DBC.getAllTablesInRestaurant();//return all tables  from the DB as a list of lists of objects else return null
+		for (ArrayList<Object> tableAsList : allTables) {// For each table in the list of tables
+			Table table = new Table();// Create a new Table object
+
+			// Set table ID in the Table object
+			if (tableAsList.get(0) instanceof Integer) {
+				table.setTableId((Integer) tableAsList.get(0));
+			} else {
+				System.out.println("Error: Index 0 is not a Integer!");
+				return null;
+			}
+
+			// Set number of seats in the Table object
+			if (tableAsList.get(1) instanceof Integer) {
+				table.setSeatsNumber((Integer) tableAsList.get(1));
+			} else {
+				System.out.println("Error: Index 1 is not a Integer!");
+				return null;
+			}
+
+			// Set location in the Table object
+			if (tableAsList.get(2) instanceof String) {
+				table.setLocation((String) tableAsList.get(2));
+			} else {
+				System.out.println("Error: Index 2 is not a String!");
+				return null;
+			}
+
+			//set status in the Table object
+			if (tableAsList.get(3) instanceof String) {
+				table.setStatus((String) tableAsList.get(3));
+			} else {
+				System.out.println("Error: Index 3 is not a String!");
+				return null;
+			}
+			
+			tablesListAsTable.add(table);// Add the table to the list of tables as Table objects
+		}
+
+		return tablesListAsTable;
+	}
+		    
+	/**
+	* Finds the best fit table for a given number of diners from a list of tables.
+	*
+	* @param tables The list of available tables.
+	* @param diners The number of diners to be accommodated.
+	* @return The best fit Table object, or null if no suitable table is found.
+	*/
+	private Table findBestFitTable(ArrayList<Table> tables, int diners) 
+	{
+		Table bestFit = null;
+		for (Table t : tables) // For each table in the list of tables
+		{
+			if (t.getSeatsNumber() >= diners) 
+			{
+			    // Check if this table is a better fit than the current best fit
+			    if (bestFit == null || t.getSeatsNumber() < bestFit.getSeatsNumber()) 
+			    {
+			        bestFit = t;
+			    }
+			}
+		}
+		return bestFit;
+	}
+	
+	/**
+	* Sorts a list of TableReservation objects in descending order based on the
+	* number of diners.
+	*
+	* @param reservations The list of TableReservation objects to be sorted.
+	*/
+	private void sortReservationsByDinersDescending(ArrayList<TableReservation> reservations) 
+	{
+		int n = reservations.size();
+			for (int i = 0; i < n; i++) {
+				for (int j = i + 1; j < n; j++) 
+				{
+				    // Compare number of diners and swap if necessary
+				    if (reservations.get(i).getNumberOfDiners() < reservations.get(j).getNumberOfDiners()) 
+				    {
+				        TableReservation temp = reservations.get(i);
+				        reservations.set(i, reservations.get(j));
+				        reservations.set(j, temp);
+				    }
+				}
+			}
+	}
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////// Special methods//////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	/**
+	 * Retrieves all table reservations from the database.
+	 *
+	 * @param msg The message requesting all reservations.
+	 * @return An ArrayList of TableReservation objects representing all
+	 *         reservations in the database.
+	 */
+	private ArrayList<TableReservation> getAllReservationsByCustomerId(Message msg)
+	{
 		
-  
-    	TableReservation res = new TableReservation();
+	ArrayList<ArrayList<Object>> allReservations = new ArrayList<>();//List to hold all reservations from the DB as a list of lists of objects
+    	ArrayList<TableReservation> reservationsListAsTableRes = new ArrayList<>();//List to hold all reservations as TableReservation objects
     	
-    	//Set reservation ID from the list
-		if (list.get(0) instanceof Integer) {
-    	    res.setReservationId((int) list.get(0));
-    	} else {
-    	    System.out.println("Error: Index 0 is not a Integer!");
-    	    return false;
-    	}
-    	
-    	//Set reservation date from the list
-    	if (list.get(1) instanceof Timestamp) {
-    	    res.setReservationDate((Timestamp) list.get(1));
-    	} else {
-    	    System.out.println("Error: Index 1 is not a Timestamp!");
-    	    return false;
-    	}
-    	
-    	//Set number of diners from the list
-    	if (list.get(2) instanceof Integer) {
-    	    res.setNumberOfDiners((int) list.get(2));
-    	} else {
-    	    System.out.println("Error: Index 2 is not a Integer!");
-    	    return false;
-    	}
+    	@SuppressWarnings("unchecked") 
+		ArrayList<Object> list = (ArrayList<Object>) msg.content;//get the reservation details from the message content
+    	int customerId=0;
+    	// Setting customer ID from the list we got from the message content
+    				if (list.get(0) instanceof Integer) {
+    					 customerId = (int) list.get(0);
+    				} else {
+    					System.out.println("Error: Index 0 is not a Integer!");
+    					return null;
+    				}
     	
     	
+    	allReservations = DBC.getAllReservationsQueryByCustomerId(customerId);//Get all reservations from the DB as a list of lists of objects
+    	reservationsListAsTableRes=	getAllReservationsAsTableReservation(allReservations);//Convert the list of reservations from the DB into list of TableReservation objects
 
-	    //Updates the order details in the DB
-	    //Return to the server whether the update operation was performed correctly or not
-	    return DBC.updateReservationDetailsQuery(res); 
-	    
-	}*/
+    	
+    return reservationsListAsTableRes;//Return to server the list of reservations as TableReservation 
+	}
 
 	/**
 	 * Creates a new table reservation in the database.
@@ -266,27 +375,34 @@ public class ReservationControler
 		
 		if (typeCustomer.equals("customer")) 
 		{
-			Customer cust = new Customer();
-			// Setting phone Number from the list we got from the message content
+			Customer customer = new Customer();
+			
 			if (list.get(1) instanceof String) 
 			{
-				cust.setPhoneNumber((String) list.get(1))  ;
-				if (list.get(2) instanceof String) {
-					cust.setEmail((String) list.get(2));// Setting email from the list we got from the message content
-				} else {
+				customer.setPhoneNumber((String) list.get(1))  ;// Setting phone Number from the list we got from the message content
+				if (list.get(2) instanceof String) 
+				{
+					customer.setEmail((String) list.get(2));// Setting email from the list we got from the message content
+				}
+				else if (list.get(2)==null)//if the email is null
+                 {
+                        customer.setEmail(null);
+                 }
+				else 
+				{
 					System.out.println("Error: Index 2 is not a String!");
 					return null;
 				}
-				
 			}
 			else if (list.get(1)==null)//if the phone number is null
 			{
+				customer.setPhoneNumber(null);
 				if (list.get(2) instanceof String) 
 				{
-					cust.setEmail((String) list.get(2))  ;//Setting email from the list we got from the message content
-					cust.setPhoneNumber(null);
+					customer.setEmail((String) list.get(2))  ;//Setting email from the list we got from the message content
 				}
-				else {
+				else 
+				{
 					System.out.println("Error: Index 2 is not a String!");
 					return null;
 				}
@@ -296,8 +412,9 @@ public class ReservationControler
 				System.out.println("Error: Index 1 is not a String!");
 				return null;
 			}
-			//return customer ID from the DB . if cust not exists he created in the DB and return his ID else return his ID
-			customerId=DBC.getCustomerId(cust);//Getting customer ID from the DB based on the phone number or email provided
+
+			//return customer ID from the DB . if customer not exists he created in the DB and return his ID else return his ID
+			customerId=DBC.getCustomerId(customer);//Getting customer ID from the DB based on the phone number or email provided
 		}
 
 		else if (typeCustomer.equals("subscriber")) 
@@ -334,10 +451,7 @@ public class ReservationControler
 			    return null;
 		}
 		
-		//Setting table ID based on number of diners and reservation date
-		newRes.setTableId(DBC.catchTable(newRes.getNumberOfDiners(), newRes.getReservationDate()));//Assigning a table ID to the reservation based on the number of diners and reservation date
-				
-		
+		//Setting table ID to null at the beginning .chosen when the customer arrives at the restaurant
 		
 		int code=0;
         boolean exists=true;
@@ -345,7 +459,7 @@ public class ReservationControler
         
         while (exists)
         {
-        	code = 100000 + rand.nextInt(900000);
+        	code = 100000 + rand.nextInt(900000);//Generate a random 6-digit confirmation code
         	exists = DBC.checkIfConfCodeExistsInDB(code);//Check if the generated code already exists in the DB
         }
 
@@ -357,36 +471,29 @@ public class ReservationControler
 		
 		//date of make reservation is auto generated in the DB
 		
-        //arrival time and leaving time are set  as null at the beginning
+        //arrival time and leaving time are set  as null at the beginning,changed when the customer arrives at the restaurant
 
 		//status of reservation is auto generated in the DB
 
-		if (DBC.createNewReservation(newRes))//Return that the reservation was created successfully
+		if (DBC.createNewReservation(newRes))//Return that the reservation was created successfully in the DB
 		{
 			return newRes.getConfirmationCode();//Return to server the confirmation code of the new reservation);
 		}
 		
-		return null;
+		return null;//Return null if the reservation was not created successfully in the DB
 		
 	}
 	
-	/**
-	 * Checks table availability for a given number of diners and reservation date.
-	 *
-	 * @param msg The message containing the details for checking table
-	 *            availability. The content of the message is expected to be an
-	 *            ArrayList<Object> with the following order: [numberOfDiners
-	 *            (Integer), reservationDate (Timestamp)]
-	 * @return An ArrayList of Timestamps representing available dates and times for
-	 *         the requested number of diners and reservation date.
-	 */
-	private ArrayList<Timestamp> checkingTableAvailability(Message msg)
-	{
 	
+	private ArrayList<LocalTime> checkingTableAvailability(Message msg)
+	{
+		
 		@SuppressWarnings("unchecked") 
 		ArrayList<Object> list = (ArrayList<Object>) msg.content;//get the reservation details from the message content
-		int numberOfDiners = 0;
-		Timestamp reservationDate = null;
+		
+		ArrayList<LocalTime> availableTime = new ArrayList<>();//List to hold available dates and times for the requested number of diners and reservation date
+		int numberOfDiners=0;
+		LocalDate reservationDate=null;
 	
 		//Setting number of diners from the list we got from the message content
 		if (list.get(0) instanceof Integer) {
@@ -396,18 +503,108 @@ public class ReservationControler
 		    	  return null;
 		}
 		    	
-		//Setting reservation date from the list we got from the message content
-		if (list.get(1) instanceof Timestamp) {
-			reservationDate=(Timestamp) list.get(1);
+		//Setting reservation day from the list we got from the message content
+		if (list.get(1) instanceof LocalDate) {
+			reservationDate= (LocalDate) list.get(1);
 		} else {
-		    	  System.out.println("Error: Index 1 is not a Timestamp!");
+		    	  System.out.println("Error: Index 1 is not a LocalDate!");
 		    	  return null;
 		}
 		
+		ArrayList<TableReservation> allReservationsforSpecificDay = getAllReservationsByDay( reservationDate);
 		
-		return DBC.checkingTableAvailability(numberOfDiners, reservationDate);//Return to server the list of available dates and times for the requested number of diners and reservation date;
-	}
-	
+		ArrayList<Table> tables = getTableInRestaurant();
+		if (tables==null) 
+        {
+            System.out.println("No tables found for " + numberOfDiners + " diners.");
+            return null;
+        }
+		ArrayList<TimeSlot> OpeningTime = getOpeningTime(reservationDate);
+		if (OpeningTime==null) 
+        {
+            System.out.println("The restaurant is closed on " + reservationDate.toString() );
+            return null;
+        }
+		else 
+		{
+			
+		    for (TimeSlot slot : OpeningTime) //For each time slot in the opening hours
+		    {
+		        LocalTime currentCheckTime = slot.getOpen();//Starting from the opening time of the slot
+
+		        //Check every half hour within the time slot
+		        while (!currentCheckTime.plusHours(2).isAfter(slot.getClose())) //While the current check time plus two hours (duration of the reservation) is not after the closing time of the slot
+		        {
+		            
+		            LocalDateTime checkTime = LocalDateTime.of(reservationDate, currentCheckTime);//Combine the reservation date with the current check time to get the start time of the reservation
+		            
+		            ArrayList<TableReservation> overlappingRes = new ArrayList<>();
+		            
+		            // Check existing reservations to see if they overlap with the requested time
+		            for (TableReservation res : allReservationsforSpecificDay) 
+		            {
+		            	    // Check only active or arrived reservations                        
+		                if (res.getStatus().equalsIgnoreCase("active") || res.getStatus().equalsIgnoreCase("arrived")) 
+		                {
+		                    
+		                    LocalDateTime existingResTime = res.getReservationDate().toLocalDateTime();// Get the start time of the existing reservation as LocalDateTime
+		                    
+		                    // Calculate the time difference in minutes between the existing reservation and the requested time
+		                    long minutesBetween = Math.abs(java.time.Duration.between(existingResTime, checkTime).toMinutes());
+		                    
+		                    if (minutesBetween < 120) 
+		                    {
+			                    
+		                    		overlappingRes.add(res);// Add the overlapping reservation to the list
+
+		                    }
+		                }
+		            }
+		            
+		            //sort the overlapping reservations by number of diners in descending order
+		            sortReservationsByDinersDescending(overlappingRes);
+		            
+		            ArrayList<Table> copyOfTables = new ArrayList<>(tables);// Create a copy of the tables in the restaurant for simulation
+		            boolean canFitAllExistRes = true;
+		            
+		         //try to fit all existing  reservations into the available tables in the restaurant
+		            for (TableReservation res : overlappingRes) 
+		            {
+		                Table bestFit = findBestFitTable(copyOfTables, res.getNumberOfDiners());// Find the best fit table for the existing reservation
+		                if (bestFit != null) // If a suitable table is found
+		                {
+		                    copyOfTables.remove(bestFit);// Remove the table from the available tables in the simulation
+		                } else 
+		                {
+		                    canFitAllExistRes = false; //no possibility to fit all existing reservations in the restaurant
+		                    break;
+		                }
+		            }
+		            
+		         // If all existing reservations can be accommodated
+		            if (canFitAllExistRes) 
+		            {
+		                Table tableForNewGuest = findBestFitTable(copyOfTables, numberOfDiners);// Find the best fit table for the new reservation request
+		                if (tableForNewGuest != null) 
+		                {
+		                    availableTime.add(currentCheckTime);// Add the current check time to the list of available times
+		                }
+		            }
+		            
+		            // Move to the next half-hour slot
+		            currentCheckTime = currentCheckTime.plusMinutes(30);
+		        }
+		    }
+		    if (availableTime.isEmpty()) 
+		    {
+		        return null;
+		    }
+		    
+		    return availableTime;//Return to server the list of available times in the requested date else return null      
+		}      
+	}          
+		            
+		            
 	
 
 }
