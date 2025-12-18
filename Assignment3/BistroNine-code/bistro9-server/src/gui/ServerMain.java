@@ -1,9 +1,6 @@
 package gui;
 
-import controller.DataBaseController; // Added for the test
 import controller.ServerController;
-import java.sql.Timestamp; // Added for the test
-import java.util.ArrayList; // Added for the test
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -59,27 +56,6 @@ public class ServerMain extends Application {
 			// 4. Start the Server logic
 			ServerController sv = new ServerController(finalPort, dbPassword, dashboardController);
 			sv.listen();
-
-			//start test code:
-			System.out.println(">>> STARTING DATABASE TEST <<<");
-
-			// 1. Define the date we inserted in SQL (20th Dec 2025)
-			Timestamp dateToCheck = Timestamp.valueOf("2025-12-20 00:00:00");
-
-			// 2. Call your fixed method
-			ArrayList<ArrayList<Object>> results = DataBaseController.getInstance()
-					.getAllReservationsQueryByDate(dateToCheck);
-
-			// 3. Print the result to the console
-			if (results != null) {
-				System.out.println("✅ Query Success!");
-				System.out.println("Found " + results.size() + " reservations for the requested date.");
-			} else {
-				System.out.println("❌ Query returned NULL. Connection failed?");
-			}
-			System.out.println(">>> END DATABASE TEST <<<");
-			// =================================================================
-			//end test code.
 
 		} catch (Exception ex) {
 			System.out.println("ERROR - Could not start server or load dashboard!");

@@ -177,11 +177,11 @@ public class ReservationControler
 	 * @return An ArrayList of TableReservation objects representing all
 	 *         reservations for the specified date.
 	 */
-	private ArrayList<TableReservation> getAllReservationsByDay(	LocalDate day)
+	private ArrayList<TableReservation> getAllReservationsByDay(LocalDate day)
 	{
 		ArrayList<ArrayList<Object>> allReservations = new ArrayList<>();//List to hold all reservations from the DB as a list of lists of objects
 		ArrayList<TableReservation> reservationsListAsTableRes = new ArrayList<>();//List to hold all reservations as TableReservation objects
- 
+			//b1
 	    	allReservations = DBC.getAllReservationsQueryByDay(day);//return all reservations from the DB at specific day as a list of lists of objects else return empty list
 	    	reservationsListAsTableRes=	getAllReservationsAsTableReservation(allReservations);//Convert the list of reservations from the DB into list of TableReservation objects
 	
@@ -198,9 +198,9 @@ public class ReservationControler
 	private ArrayList<TimeSlot> getOpeningTime(LocalDate day)
 	{
 		OpeningHoursPerDay openingHours = new OpeningHoursPerDay(day);
-
-		DBC.getOpeningHoursByDate(day);//update opening hours for the specific date from the DB in the OpeningHoursPerDay object else put null in the slots list
-		
+		//b2
+		DBC.getOpeningHoursByDate(openingHours);//update opening hours for the specific date from the DB in the OpeningHoursPerDay object else put null in the slots list
+		// getOpeningHoursByDate(OpeningHoursPerDay openingHours)
 		return openingHours.getSlots();
 	}
 	
@@ -215,7 +215,7 @@ public class ReservationControler
 		ArrayList<ArrayList<Object>> allTables = new ArrayList<>();// List to hold all tables from the DB as a list of
 																	// lists of objects
 		ArrayList<Table> tablesListAsTable = new ArrayList<>();// List to hold all tables as Table objects
-
+		//b3
 		allTables = DBC.getAllTablesInRestaurant();//return all tables  from the DB as a list of lists of objects else return null
 		for (ArrayList<Object> tableAsList : allTables) {// For each table in the list of tables
 			Table table = new Table();// Create a new Table object
