@@ -29,19 +29,17 @@ public class DataBaseController {
 	// this are the public methods that the
 	// controllers can call to get OR set data.
 
-	// 1. getAllReservationsQueryByCustomerId(int customerId) :
-	// ArrayList<ArrayList<Object>>
-	// 2. getAllReservationsQueryByDay(LocalDate day) : ArrayList<ArrayList<Object>>
-	// 3. getOpeningHoursByDate(OpeningHoursPerDay openingHours) :
-	// OpeningHoursPerDay
+	// 1. getAllReservationsQueryByCustomerId(int) : ArrayList<ArrayList<Object>>
+	// 2. getAllReservationsQueryByDay(LocalDate) : ArrayList<ArrayList<Object>>
+	// 3. getOpeningHoursByDate(OpeningHoursPerDay) : OpeningHoursPerDay
 	// 4. getAllTablesInRestaurant() : ArrayList<ArrayList<Object>>
-	// 5. checkLoginDetails(Subscriber sub) : Subscriber
-	// 6. createNewReservation(TableReservation res) : boolean
-	// 7. checkIfConfCodeExistsInDB(int code) : boolean
-	// 8. getCustomerId(Customer cust) : int
-	// 9. deleteReservationByConfCode(int confirmationCode) : boolean
-	// 10. updateReservationStatus(int confirmationCode, String newStatus) : boolean
-	// 11. getBillDetails(Bill bill) : Bill
+	// 5. checkLoginDetails(Subscriber) : Subscriber
+	// 6. createNewReservation(TableReservation) : boolean
+	// 7. checkIfConfCodeExistsInDB(int) : boolean
+	// 8. getCustomerId(Customer) : int
+	// 9. deleteReservationByConfCode(int) : boolean
+	// 10. updateReservationStatus(int, String) : boolean
+	// 11. getBillDetails(Bill) : Bill
 
 	// END OF API.
 
