@@ -17,6 +17,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import data.Bill;
 import data.Customer;
 import data.OpeningHoursPerDay;
 import data.Subscriber;
@@ -38,7 +39,10 @@ public class DataBaseController {
 	// 6. createNewReservation(TableReservation res) : boolean
 	// 7. checkIfConfCodeExistsInDB(int code) : boolean
 	// 8. getCustomerId(Customer cust) : int
-		
+	// 9. deleteReservationByConfCode(int confirmationCode) : boolean
+	// 10. updateReservationStatus(int confirmationCode, String newStatus) : boolean
+	// 11. getBillDetails(Bill bill) : Bill
+	
 	// END OF API.
 	
 	private static DataBaseController instance;
@@ -614,6 +618,151 @@ public class DataBaseController {
 	 * @return true if the reservation was successfully saved to the database, false
 	 *         otherwise.
 	 */
+	
+	
+	//d1
+	
+	
+	/**
+	 * Deletes a reservation from the database based on its unique confirmation code.
+	 * * @param confirmationCode The unique confirmation code of the reservation to delete.
+	 * @return true if the reservation was found and deleted, false otherwise.
+	 */
+	public boolean deleteReservationByConfCode(int confirmationCode) {
+	    // 1. Get connection from the pool
+	    PooledConnection pConn = this.getConnection();
+
+	    // Safety check
+	    if (pConn == null) {
+	        return false;
+	    }
+
+	    Connection conn = pConn.getConnection();
+	    PreparedStatement ps = null;
+
+	    try {
+	        String query = "DELETE FROM table_reservations WHERE confirmationCode = ?";
+
+	        ps = conn.prepareStatement(query);
+	        ps.setInt(1, confirmationCode);
+
+	        // executeUpdate returns the number of rows affected
+	        int rowsAffected = ps.executeUpdate();
+
+	        // If rowsAffected > 0, it means the reservation existed and was deleted
+	        if (rowsAffected > 0) {
+	            return true;
+	        }
+
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    } finally {
+	        closeResources(ps, null);
+	        releaseConnection(pConn); // Release back to pool
+	    }
+
+	    return false;
+	}
+	
+	
+	//d2
+	
+	
+	/**
+	 * Updates the status of a reservation (e.g., from 'active' to 'cancelled').
+	 * @param confirmationCode The unique code of the reservation.
+	 * @param newStatus The new status string (Must match SQL ENUM: 'active', 'arrived', 'cancelled', 'completed').
+	 * @return true if updated successfully, false otherwise.
+	 */
+	public boolean updateReservationStatus(int confirmationCode, String newStatus) {
+	    // 1. Get connection from the pool
+	    PooledConnection pConn = this.getConnection();
+
+	    // Safety check
+	    if (pConn == null) {
+	        return false;
+	    }
+
+	    Connection conn = pConn.getConnection();
+	    PreparedStatement ps = null;
+
+	    try {
+	        String query = "UPDATE table_reservations SET status = ? WHERE confirmationCode = ?";
+
+	        ps = conn.prepareStatement(query);
+	        ps.setString(1, newStatus);
+	        ps.setInt(2, confirmationCode);
+
+	        int rowsAffected = ps.executeUpdate();
+
+	        if (rowsAffected > 0) {
+	            return true;
+	        }
+
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    } finally {
+	        closeResources(ps, null);
+	        releaseConnection(pConn); // Release back to pool
+	    }
+
+	    return false;
+	}
+	
+	//d3
+	
+	/**
+	 * Retrieves bill details from the database based on the reservation ID
+	 * and updates the provided Bill object.
+	 * @param bill The Bill object containing the reservationId.
+	 * @return The updated Bill object (or null if connection failed).
+	 */
+	public Bill getBillDetails(Bill bill) {
+	    // 1. Get connection from the pool
+	    PooledConnection pConn = this.getConnection();
+
+	    // Safety check
+	    if (pConn == null) {
+	        return null;
+	    }
+
+	    Connection conn = pConn.getConnection();
+	    PreparedStatement ps = null;
+	    ResultSet rs = null;
+
+	    try {
+	        String query = "SELECT * FROM bills WHERE reservationId = ?";
+
+	        ps = conn.prepareStatement(query);
+	        ps.setInt(1, bill.getReservationId());
+
+	        rs = ps.executeQuery();
+
+	        if (rs.next()) {
+	            // Update the bill object with data from the DB
+	            bill.setBillId(rs.getInt("billId"));
+	            bill.setTotalAmount(rs.getFloat("totalAmount")); 
+	            bill.setTotalAmountAfterDiscount(rs.getFloat("totalAmountAfterDiscount"));
+	            bill.setDiscountSize(rs.getFloat("discountPercentage"));
+	            bill.setPaid(rs.getBoolean("isPaid"));
+	            
+	            // Handle the ENUM: if null, it stays null; otherwise get the string
+	            String method = rs.getString("paymentMethod");
+	            if (method != null) {
+	                bill.setPaymentMethod(method);
+	            }
+	        }
+
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    } finally {
+	        closeResources(ps, rs);
+	        releaseConnection(pConn); // Release back to pool
+	    }
+
+	    return bill;
+	}
+	
 	// הושלם
 	public boolean createNewReservation(TableReservation res) {
 		// FIX 1: Get the pooled connection properly

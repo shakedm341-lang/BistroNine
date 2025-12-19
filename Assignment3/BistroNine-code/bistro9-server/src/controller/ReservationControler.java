@@ -722,6 +722,7 @@ public class ReservationControler
 		    	  System.out.println("Error: Index 0 is not a Integer!");
 		    	  return false;
 		}
+		//d1
 		//return true if the reservation was deleted successfully from the DB or false otherwise
 		return DBC.deleteReservationByConfCode(confirmationCode);//Return to server the result of the deletion operation
 	}
@@ -760,7 +761,8 @@ public class ReservationControler
 	            if (resTime.plusMinutes(15).isBefore(nowTime)) 
 	            {
 	                // Update the reservation status to "canceled" in the DB
-	                DBC.updateReservationStatus(res.getConfirmationCode(), "canceled");
+	                //d2
+	            	DBC.updateReservationStatus(res.getConfirmationCode(), "cancelled");
 	                System.out.println("Reservation " + res.getConfirmationCode() + " was auto-canceled due to late arrival.");
 	            }
 	        }
