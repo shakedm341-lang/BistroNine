@@ -6,9 +6,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.sql.Time;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
@@ -25,15 +23,17 @@ import data.TableReservation;
 import data.TimeSlot;
 
 public class DataBaseController {
-	
+
 	// START OF API:
-	
+
 	// this are the public methods that the
 	// controllers can call to get OR set data.
-	
-	// 1. getAllReservationsQueryByCustomerId(int customerId) : ArrayList<ArrayList<Object>>
+
+	// 1. getAllReservationsQueryByCustomerId(int customerId) :
+	// ArrayList<ArrayList<Object>>
 	// 2. getAllReservationsQueryByDay(LocalDate day) : ArrayList<ArrayList<Object>>
-	// 3. getOpeningHoursByDate(OpeningHoursPerDay openingHours) : OpeningHoursPerDay
+	// 3. getOpeningHoursByDate(OpeningHoursPerDay openingHours) :
+	// OpeningHoursPerDay
 	// 4. getAllTablesInRestaurant() : ArrayList<ArrayList<Object>>
 	// 5. checkLoginDetails(Subscriber sub) : Subscriber
 	// 6. createNewReservation(TableReservation res) : boolean
@@ -42,9 +42,9 @@ public class DataBaseController {
 	// 9. deleteReservationByConfCode(int confirmationCode) : boolean
 	// 10. updateReservationStatus(int confirmationCode, String newStatus) : boolean
 	// 11. getBillDetails(Bill bill) : Bill
-	
+
 	// END OF API.
-	
+
 	private static DataBaseController instance;
 
 	// DB connection settings data
@@ -295,77 +295,78 @@ public class DataBaseController {
 
 	public OpeningHoursPerDay getOpeningHoursByDate(OpeningHoursPerDay openingHours) {
 
-	    // 1. Get connection from the pool
-	    PooledConnection pConn = this.getConnection();
+		// 1. Get connection from the pool
+		PooledConnection pConn = this.getConnection();
 
-	    // Safety check
-	    if (pConn == null) {
-	        return null;
-	    }
+		// Safety check
+		if (pConn == null) {
+			return null;
+		}
 
-	    Connection conn = pConn.getConnection();
-	    PreparedStatement ps = null;
-	    ResultSet rs = null;
+		Connection conn = pConn.getConnection();
+		PreparedStatement ps = null;
+		ResultSet rs = null;
 
-	    // Create a list to hold the found slots
-	    ArrayList<TimeSlot> foundSlots = new ArrayList<>();
+		// Create a list to hold the found slots
+		ArrayList<TimeSlot> foundSlots = new ArrayList<>();
 
-	    try {
-	        // ---------------------------------------------------------
-	        // STEP 1: Check for Special Hours (Priority)
-	        // ---------------------------------------------------------
-	        String querySpecial = "SELECT openingTime, closingTime FROM special_hours WHERE specificDate = ?";
-	        ps = conn.prepareStatement(querySpecial);
-	        ps.setDate(1, java.sql.Date.valueOf(openingHours.getDay()));
-	        rs = ps.executeQuery();
+		try {
+			// ---------------------------------------------------------
+			// STEP 1: Check for Special Hours (Priority)
+			// ---------------------------------------------------------
+			String querySpecial = "SELECT openingTime, closingTime FROM special_hours WHERE specificDate = ?";
+			ps = conn.prepareStatement(querySpecial);
+			ps.setDate(1, java.sql.Date.valueOf(openingHours.getDay()));
+			rs = ps.executeQuery();
 
-	        while (rs.next()) {
-	            java.sql.Time sqlOpen = rs.getTime("openingTime");
-	            java.sql.Time sqlClose = rs.getTime("closingTime");
+			while (rs.next()) {
+				java.sql.Time sqlOpen = rs.getTime("openingTime");
+				java.sql.Time sqlClose = rs.getTime("closingTime");
 
-	            if (sqlOpen != null && sqlClose != null) {
-	                foundSlots.add(new TimeSlot(sqlOpen.toLocalTime(), sqlClose.toLocalTime()));
-	            }
-	        }
-	        
-	        // Close resources from the first query to prepare for the second (if needed)
-	        rs.close();
-	        ps.close();
+				if (sqlOpen != null && sqlClose != null) {
+					foundSlots.add(new TimeSlot(sqlOpen.toLocalTime(), sqlClose.toLocalTime()));
+				}
+			}
 
-	        // ---------------------------------------------------------
-	        // STEP 2: If no special hours found, check Weekly Hours
-	        // ---------------------------------------------------------
-	        if (foundSlots.isEmpty()) {
-	            String queryWeekly = "SELECT openingTime, closingTime FROM weekly_hours WHERE dayOfWeek = ?";
-	            ps = conn.prepareStatement(queryWeekly);
+			// Close resources from the first query to prepare for the second (if needed)
+			rs.close();
+			ps.close();
 
-	            // Since DB is now uppercase ENUM ('SUNDAY'), we can just use Java's default toString()
-	            // Example: LocalDate.of(2025, 12, 21) -> getDayOfWeek() -> SUNDAY
-	            ps.setString(1, openingHours.getDay().getDayOfWeek().toString());
+			// ---------------------------------------------------------
+			// STEP 2: If no special hours found, check Weekly Hours
+			// ---------------------------------------------------------
+			if (foundSlots.isEmpty()) {
+				String queryWeekly = "SELECT openingTime, closingTime FROM weekly_hours WHERE dayOfWeek = ?";
+				ps = conn.prepareStatement(queryWeekly);
 
-	            rs = ps.executeQuery();
+				// Since DB is now uppercase ENUM ('SUNDAY'), we can just use Java's default
+				// toString()
+				// Example: LocalDate.of(2025, 12, 21) -> getDayOfWeek() -> SUNDAY
+				ps.setString(1, openingHours.getDay().getDayOfWeek().toString());
 
-	            while (rs.next()) {
-	                java.sql.Time sqlOpen = rs.getTime("openingTime");
-	                java.sql.Time sqlClose = rs.getTime("closingTime");
+				rs = ps.executeQuery();
 
-	                if (sqlOpen != null && sqlClose != null) {
-	                    foundSlots.add(new TimeSlot(sqlOpen.toLocalTime(), sqlClose.toLocalTime()));
-	                }
-	            }
-	        }
+				while (rs.next()) {
+					java.sql.Time sqlOpen = rs.getTime("openingTime");
+					java.sql.Time sqlClose = rs.getTime("closingTime");
 
-	        // Update the original object with the list of slots we found
-	        openingHours.setSlots(foundSlots);
+					if (sqlOpen != null && sqlClose != null) {
+						foundSlots.add(new TimeSlot(sqlOpen.toLocalTime(), sqlClose.toLocalTime()));
+					}
+				}
+			}
 
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	    } finally {
-	        closeResources(ps, rs);
-	        releaseConnection(pConn); // Release back to pool
-	    }
+			// Update the original object with the list of slots we found
+			openingHours.setSlots(foundSlots);
 
-	    return openingHours;
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			closeResources(ps, rs);
+			releaseConnection(pConn); // Release back to pool
+		}
+
+		return openingHours;
 	}
 
 	// c3
@@ -618,151 +619,152 @@ public class DataBaseController {
 	 * @return true if the reservation was successfully saved to the database, false
 	 *         otherwise.
 	 */
-	
-	
-	//d1
-	
-	
+
+	// d1
+
 	/**
-	 * Deletes a reservation from the database based on its unique confirmation code.
-	 * * @param confirmationCode The unique confirmation code of the reservation to delete.
+	 * Deletes a reservation from the database based on its unique confirmation
+	 * code. * @param confirmationCode The unique confirmation code of the
+	 * reservation to delete.
+	 * 
 	 * @return true if the reservation was found and deleted, false otherwise.
 	 */
 	public boolean deleteReservationByConfCode(int confirmationCode) {
-	    // 1. Get connection from the pool
-	    PooledConnection pConn = this.getConnection();
+		// 1. Get connection from the pool
+		PooledConnection pConn = this.getConnection();
 
-	    // Safety check
-	    if (pConn == null) {
-	        return false;
-	    }
+		// Safety check
+		if (pConn == null) {
+			return false;
+		}
 
-	    Connection conn = pConn.getConnection();
-	    PreparedStatement ps = null;
+		Connection conn = pConn.getConnection();
+		PreparedStatement ps = null;
 
-	    try {
-	        String query = "DELETE FROM table_reservations WHERE confirmationCode = ?";
+		try {
+			String query = "DELETE FROM table_reservations WHERE confirmationCode = ?";
 
-	        ps = conn.prepareStatement(query);
-	        ps.setInt(1, confirmationCode);
+			ps = conn.prepareStatement(query);
+			ps.setInt(1, confirmationCode);
 
-	        // executeUpdate returns the number of rows affected
-	        int rowsAffected = ps.executeUpdate();
+			// executeUpdate returns the number of rows affected
+			int rowsAffected = ps.executeUpdate();
 
-	        // If rowsAffected > 0, it means the reservation existed and was deleted
-	        if (rowsAffected > 0) {
-	            return true;
-	        }
+			// If rowsAffected > 0, it means the reservation existed and was deleted
+			if (rowsAffected > 0) {
+				return true;
+			}
 
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	    } finally {
-	        closeResources(ps, null);
-	        releaseConnection(pConn); // Release back to pool
-	    }
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			closeResources(ps, null);
+			releaseConnection(pConn); // Release back to pool
+		}
 
-	    return false;
+		return false;
 	}
-	
-	
-	//d2
-	
-	
+
+	// d2
+
 	/**
 	 * Updates the status of a reservation (e.g., from 'active' to 'cancelled').
+	 * 
 	 * @param confirmationCode The unique code of the reservation.
-	 * @param newStatus The new status string (Must match SQL ENUM: 'active', 'arrived', 'cancelled', 'completed').
+	 * @param newStatus        The new status string (Must match SQL ENUM: 'active',
+	 *                         'arrived', 'cancelled', 'completed').
 	 * @return true if updated successfully, false otherwise.
 	 */
 	public boolean updateReservationStatus(int confirmationCode, String newStatus) {
-	    // 1. Get connection from the pool
-	    PooledConnection pConn = this.getConnection();
+		// 1. Get connection from the pool
+		PooledConnection pConn = this.getConnection();
 
-	    // Safety check
-	    if (pConn == null) {
-	        return false;
-	    }
+		// Safety check
+		if (pConn == null) {
+			return false;
+		}
 
-	    Connection conn = pConn.getConnection();
-	    PreparedStatement ps = null;
+		Connection conn = pConn.getConnection();
+		PreparedStatement ps = null;
 
-	    try {
-	        String query = "UPDATE table_reservations SET status = ? WHERE confirmationCode = ?";
+		try {
+			String query = "UPDATE table_reservations SET status = ? WHERE confirmationCode = ?";
 
-	        ps = conn.prepareStatement(query);
-	        ps.setString(1, newStatus);
-	        ps.setInt(2, confirmationCode);
+			ps = conn.prepareStatement(query);
+			ps.setString(1, newStatus);
+			ps.setInt(2, confirmationCode);
 
-	        int rowsAffected = ps.executeUpdate();
+			int rowsAffected = ps.executeUpdate();
 
-	        if (rowsAffected > 0) {
-	            return true;
-	        }
+			if (rowsAffected > 0) {
+				return true;
+			}
 
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	    } finally {
-	        closeResources(ps, null);
-	        releaseConnection(pConn); // Release back to pool
-	    }
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			closeResources(ps, null);
+			releaseConnection(pConn); // Release back to pool
+		}
 
-	    return false;
+		return false;
 	}
-	
-	//d3
-	
+
+	// d3
+
 	/**
-	 * Retrieves bill details from the database based on the reservation ID
-	 * and updates the provided Bill object.
+	 * Retrieves bill details from the database based on the reservation ID and
+	 * updates the provided Bill object.
+	 * 
 	 * @param bill The Bill object containing the reservationId.
 	 * @return The updated Bill object (or null if connection failed).
 	 */
 	public Bill getBillDetails(Bill bill) {
-	    // 1. Get connection from the pool
-	    PooledConnection pConn = this.getConnection();
+		// 1. Get connection from the pool
+		PooledConnection pConn = this.getConnection();
 
-	    // Safety check
-	    if (pConn == null) {
-	        return null;
-	    }
+		// Safety check
+		if (pConn == null) {
+			return null;
+		}
 
-	    Connection conn = pConn.getConnection();
-	    PreparedStatement ps = null;
-	    ResultSet rs = null;
+		Connection conn = pConn.getConnection();
+		PreparedStatement ps = null;
+		ResultSet rs = null;
 
-	    try {
-	        String query = "SELECT * FROM bills WHERE reservationId = ?";
+		try {
+			String query = "SELECT * FROM bills WHERE reservationId = ?";
 
-	        ps = conn.prepareStatement(query);
-	        ps.setInt(1, bill.getReservationId());
+			ps = conn.prepareStatement(query);
+			ps.setInt(1, bill.getReservationId());
 
-	        rs = ps.executeQuery();
+			rs = ps.executeQuery();
 
-	        if (rs.next()) {
-	            // Update the bill object with data from the DB
-	            bill.setBillId(rs.getInt("billId"));
-	            bill.setTotalAmount(rs.getFloat("totalAmount")); 
-	            bill.setTotalAmountAfterDiscount(rs.getFloat("totalAmountAfterDiscount"));
-	            bill.setDiscountSize(rs.getFloat("discountPercentage"));
-	            bill.setPaid(rs.getBoolean("isPaid"));
-	            
-	            // Handle the ENUM: if null, it stays null; otherwise get the string
-	            String method = rs.getString("paymentMethod");
-	            if (method != null) {
-	                bill.setPaymentMethod(method);
-	            }
-	        }
+			if (rs.next()) {
+				// Update the bill object with data from the DB
+				bill.setBillId(rs.getInt("billId"));
+				bill.setTotalAmount(rs.getFloat("totalAmount"));
+				bill.setTotalAmountAfterDiscount(rs.getFloat("totalAmountAfterDiscount"));
+				bill.setDiscountSize(rs.getFloat("discountPercentage"));
+				bill.setPaid(rs.getBoolean("isPaid"));
 
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	    } finally {
-	        closeResources(ps, rs);
-	        releaseConnection(pConn); // Release back to pool
-	    }
+				// Handle the ENUM: if null, it stays null; otherwise get the string
+				String method = rs.getString("paymentMethod");
+				if (method != null) {
+					bill.setPaymentMethod(method);
+				}
+			}
 
-	    return bill;
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			closeResources(ps, rs);
+			releaseConnection(pConn); // Release back to pool
+		}
+
+		return bill;
 	}
-	
+
 	// הושלם
 	public boolean createNewReservation(TableReservation res) {
 		// FIX 1: Get the pooled connection properly
