@@ -3,7 +3,7 @@ package data;
 public class Subscriber extends Customer
 {
 	private int subscriberId;//number of subscriber,give by DB auto increment
-	// customerId;   //number of customer
+	// customerId;   //number of customer ,give by DB auto increment
 	private String firstName;
 	private String lastName;
 	private String type;//'subscriber', 'restaurant representative', 'restaurant manager
@@ -44,7 +44,6 @@ public class Subscriber extends Customer
 	public void setPassword(String password) {
 		this.password = password;
 	}
-
 
 	public String getFirstName() {
 		return firstName;

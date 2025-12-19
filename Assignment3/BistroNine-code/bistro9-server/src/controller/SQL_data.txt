@@ -22,8 +22,8 @@ CREATE TABLE subscriber (
     lastName VARCHAR(100) NOT NULL,   
     type ENUM('subscriber', 'restaurant representative', 'restaurant manager') NOT NULL,
     personalInfo VARCHAR(1000),
-    username VARCHAR(100) UNIQUE,
-    password VARCHAR(100), 
+    username VARCHAR(100) NOT NULL UNIQUE,
+    password VARCHAR(100)NOT NULL, 
     
     PRIMARY KEY (subscriberId),
     FOREIGN KEY (customerId) REFERENCES customer(customerId) ON UPDATE CASCADE
