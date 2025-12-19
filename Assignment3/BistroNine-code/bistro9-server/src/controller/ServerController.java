@@ -32,6 +32,7 @@ public class ServerController extends AbstractServer {
 		DataBaseController.initiateDBC(dbPassword);
 		this.reservationsController = new ReservationControler();
 		this.customerController = new CustomerController();
+		this.tableController = new TableController();
 		startAutoTasks();
 	}
 

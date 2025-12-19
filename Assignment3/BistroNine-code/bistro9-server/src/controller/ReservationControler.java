@@ -525,6 +525,7 @@ public class ReservationControler
 		
 		//Setting table ID to null at the beginning .chosen when the customer arrives at the restaurant
 		
+		
 		int code=0;
         boolean exists=true;
 

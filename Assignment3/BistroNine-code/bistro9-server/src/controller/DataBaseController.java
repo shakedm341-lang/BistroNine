@@ -320,7 +320,7 @@ public class DataBaseController {
 			while (rs.next()) {
 				java.sql.Time sqlOpen = rs.getTime("openingTime");
 				java.sql.Time sqlClose = rs.getTime("closingTime");
-
+				System.out.println("Found slot for TUESDAY: " + sqlOpen + " - " + sqlClose);
 				if (sqlOpen != null && sqlClose != null) {
 					foundSlots.add(new TimeSlot(sqlOpen.toLocalTime(), sqlClose.toLocalTime()));
 				}
@@ -782,7 +782,9 @@ public class DataBaseController {
 					+ "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
 			ps = conn.prepareStatement(query);
-			ps.setInt(1, res.getTableId());
+			
+	        ps.setNull(1, java.sql.Types.INTEGER);
+	        
 			ps.setInt(2, res.getNumberOfDiners());
 			ps.setInt(3, res.getConfirmationCode());
 			ps.setInt(4, res.getCustomerId());

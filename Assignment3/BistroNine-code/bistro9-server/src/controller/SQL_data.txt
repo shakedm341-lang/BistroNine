@@ -62,7 +62,7 @@ CREATE TABLE weekly_hours (
     closingTime TIME NOT NULL,
     PRIMARY KEY (dayOfWeek, openingTime)
 );
-);
+
 
 CREATE TABLE special_hours (
     specificDate DATE NOT NULL,    
@@ -72,7 +72,7 @@ CREATE TABLE special_hours (
 );
 
 CREATE TABLE restaurant_discount (
-    type_customer ENUM('subscriber', 'customer') PRIMARY KEY,
+    type_customer ENUM('subscriber', 'customer'),
     discount DECIMAL(5,2) DEFAULT 0.00,
     
     PRIMARY KEY (type_customer) 
@@ -95,3 +95,178 @@ CREATE TABLE bills (
 
 
 -- 4. Insert the data
+
+-- הכנסת 10 שולחנות (קיבולת 2, 4, 6)
+INSERT INTO restaurant_tables (seatsNumber, location, status) VALUES 
+(2, 'inside', 'available'),
+(2, 'inside', 'available'),
+(2, 'bar', 'available'),
+(2, 'outside', 'available'), -- סה"כ 4 שולחנות זוגיים
+(4, 'inside', 'available'),
+(4, 'inside', 'available'),
+(4, 'outside', 'available'),
+(4, 'outside', 'available'), -- סה"כ 4 שולחנות ל-4
+(6, 'inside', 'available'),
+(6, 'outside', 'available'); -- סה"כ 2 שולחנות ל-6
+
+-- הגדרת הנחות
+INSERT INTO restaurant_discount (type_customer, discount) VALUES 
+('customer', 0.00),
+('subscriber', 10.00);
+
+-- שעות פתיחה רגילות (יום שלישי מפוצל)
+INSERT INTO weekly_hours (dayOfWeek, openingTime, closingTime) VALUES 
+('SUNDAY', '10:00:00', '22:00:00'),
+('MONDAY', '10:00:00', '22:00:00'),
+('TUESDAY', '10:00:00', '14:00:00'), -- פיצול בוקר
+('TUESDAY', '16:00:00', '22:00:00'), -- פיצול ערב
+('WEDNESDAY', '10:00:00', '22:00:00'),
+('THURSDAY', '10:00:00', '22:00:00'),
+('FRIDAY', '10:00:00', '22:00:00'),
+('SATURDAY', '10:00:00', '22:00:00');
+
+-- שעות מיוחדות (10 תאריכים בחודש הקרוב: חלק סגור, חלק מאוחר, חלק מפוצל)
+-- הערה: יום עמוס מתוכנן ל-02/01/2026
+INSERT INTO special_hours (specificDate, openingTime, closingTime) VALUES 
+('2025-12-24', '10:00:00', '01:00:00'), -- חג המולד (פתוח מאוחר)
+('2025-12-25', '18:00:00', '23:00:00'), -- פתיחה מאוחרת
+('2025-12-31', '10:00:00', '02:00:00'), -- סילבסטר (פתוח מאוחר)
+('2026-01-01', '12:00:00', '22:00:00'), -- שנה חדשה
+('2026-01-05', '10:00:00', '13:00:00'), -- יום שני מפוצל (בוקר)
+('2026-01-05', '17:00:00', '23:00:00'), -- יום שני מפוצל (ערב)
+('2026-01-10', '10:00:00', '00:00:00'), -- סופ"ש ארוך
+('2026-01-12', '16:00:00', '22:00:00'), -- חצי יום חופש
+('2026-01-15', '10:00:00', '22:00:00'), -- רגיל (אבל מוגדר כמיוחד למקרה שרוצים לשנות)
+('2026-01-18', '10:00:00', '14:00:00'); -- יום מקוצר
+
+-- =============================================
+-- 2. הכנסת יוזרים (15 סה"כ)
+-- =============================================
+
+-- שלב א: יצירת רשומות בטבלת Customer (כולם חייבים להיות כאן קודם)
+INSERT INTO customer (phoneNumber, email) VALUES 
+('050-1000001', 'manager@rest.com'),      -- 1: מנהל
+('050-1000002', 'rep1@rest.com'),         -- 2: נציג
+('050-1000003', 'rep2@rest.com'),         -- 3: נציג
+('050-1000004', 'sub1@gmail.com'),        -- 4: מנוי
+('050-1000005', 'sub2@gmail.com'),        -- 5: מנוי
+('050-1000006', 'sub3@gmail.com'),        -- 6: מנוי
+('050-1000007', 'sub4@gmail.com'),        -- 7: מנוי
+('050-1000008', 'sub5@gmail.com'),        -- 8: מנוי
+('050-1000009', 'cust1@yahoo.com'),       -- 9: לקוח רגיל
+('050-1000010', 'cust2@yahoo.com'),       -- 10: לקוח רגיל
+('050-1000011', 'cust3@yahoo.com'),       -- 11: לקוח רגיל
+('050-1000012', 'cust4@yahoo.com'),       -- 12: לקוח רגיל
+('050-1000013', 'cust5@yahoo.com'),       -- 13: לקוח רגיל
+('050-1000014', 'cust6@yahoo.com'),       -- 14: לקוח רגיל (בלי הזמנות)
+('050-1000015', 'cust7@yahoo.com');       -- 15: לקוח רגיל
+
+-- שלב ב: קישור לטבלת Subscriber (מנהלים, נציגים ומנויים)
+INSERT INTO subscriber (customerId, firstName, lastName, type, username, password) VALUES 
+(1, 'Boss', 'Man', 'restaurant manager', 'admin', '1234'),
+(2, 'Rep', 'One', 'restaurant representative', 'rep1', '1234'),
+(3, 'Rep', 'Two', 'restaurant representative', 'rep2', '1234'),
+(4, 'Dana', 'Levi', 'subscriber', 'dana', '1234'),
+(5, 'Yossi', 'Cohen', 'subscriber', 'yossi', '1234'),
+(6, 'Rina', 'Melul', 'subscriber', 'rina', '1234'),
+(7, 'Gadi', 'Suk', 'subscriber', 'gadi', '1234'),
+(8, 'Tomer', 'Katz', 'subscriber', 'tomer', '1234');
+
+-- =============================================
+-- 3. הכנסת 50 הזמנות
+-- =============================================
+-- לוגיקה: 
+-- תאריך "עמוס": 02/01/2026 (יום שישי)
+-- לקוחות 14, 15 לא יקבלו הזמנות.
+-- למנוי 4 (דנה) יהיו הרבה הזמנות.
+-- חלק הושלמו (תאריך עבר), חלק עתידיות.
+
+INSERT INTO table_reservations (tableId, numberOfDiners, confirmationCode, customerId, reservationDate, arrivalTime, leavingTime, status) VALUES 
+-- הזמנות עבר (Completed) - דצמבר
+(1, 2, 1001, 4, '2025-12-01 19:00:00', '2025-12-01 19:05:00', '2025-12-01 21:00:00', 'completed'), -- מנוי
+(2, 2, 1002, 9, '2025-12-05 20:00:00', '2025-12-05 20:10:00', '2025-12-05 22:00:00', 'completed'), -- לקוח
+(5, 4, 1003, 4, '2025-12-10 13:00:00', '2025-12-10 13:00:00', '2025-12-10 14:30:00', 'completed'), -- מנוי (שוב)
+(6, 4, 1004, 10, '2025-12-12 19:00:00', '2025-12-12 19:15:00', '2025-12-12 21:00:00', 'completed'),
+(9, 6, 1005, 5, '2025-12-15 20:00:00', '2025-12-15 20:00:00', '2025-12-15 22:30:00', 'completed'),
+
+-- הזמנות להיום (Arrived)
+(1, 2, 2001, 4, '2025-12-19 12:00:00', '2025-12-19 12:05:00', NULL, 'arrived'),
+(5, 4, 2002, 11, '2025-12-19 13:00:00', '2025-12-19 13:10:00', NULL, 'arrived'),
+
+-- יום עמוס במיוחד: 02/01/2026 (ממלאים את כל השולחנות בערב)
+(NULL, 2, 3001, 4, '2026-01-02 19:00:00', NULL, NULL, 'active'),
+(NULL, 2, 3002, 5, '2026-01-02 19:00:00', NULL, NULL, 'active'),
+(NULL, 2, 3003, 6, '2026-01-02 19:00:00', NULL, NULL, 'active'),
+(NULL, 2, 3004, 7, '2026-01-02 19:00:00', NULL, NULL, 'active'),
+(NULL, 4, 3005, 8, '2026-01-02 19:00:00', NULL, NULL, 'active'),
+(NULL, 4, 3006, 9, '2026-01-02 19:00:00', NULL, NULL, 'active'),
+(NULL, 4, 3007, 10, '2026-01-02 19:00:00', NULL, NULL, 'active'),
+(NULL, 4, 3008, 11, '2026-01-02 19:00:00', NULL, NULL, 'active'),
+(NULL, 6, 3009, 12, '2026-01-02 19:00:00', NULL, NULL, 'active'),
+(NULL, 6, 3010, 13, '2026-01-02 19:00:00', NULL, NULL, 'active'),
+-- עוד סבב באותו יום מוקדם יותר
+(NULL, 4, 3011, 4, '2026-01-02 13:00:00', NULL, NULL, 'active'),
+(NULL, 6, 3012, 5, '2026-01-02 13:00:00', NULL, NULL, 'active'),
+
+-- שאר ההזמנות מפוזרות לאורך החודש (עתידיות - Active)
+(NULL, 2, 4001, 6, '2025-12-20 18:00:00', NULL, NULL, 'active'),
+(NULL, 2, 4002, 7, '2025-12-21 19:00:00', NULL, NULL, 'active'),
+(NULL, 4, 4003, 9, '2025-12-22 20:00:00', NULL, NULL, 'active'),
+(NULL, 4, 4004, 10, '2025-12-23 14:00:00', NULL, NULL, 'active'),
+(NULL, 6, 4005, 11, '2025-12-24 20:00:00', NULL, NULL, 'active'), -- חג
+(NULL, 2, 4006, 4, '2025-12-26 12:00:00', NULL, NULL, 'active'),
+(NULL, 2, 4007, 4, '2025-12-28 10:00:00', NULL, NULL, 'active'), -- עוד אחד ללקוח 4
+(NULL, 6, 4008, 12, '2025-12-31 22:00:00', NULL, NULL, 'active'), -- סילבסטר
+(NULL, 4, 4009, 8, '2026-01-01 13:00:00', NULL, NULL, 'active'),
+(NULL, 4, 4010, 5, '2026-01-03 19:00:00', NULL, NULL, 'active'),
+(NULL, 4, 4011, 6, '2026-01-04 20:00:00', NULL, NULL, 'active'),
+(NULL, 4, 4012, 7, '2026-01-05 18:00:00', NULL, NULL, 'active'),
+(NULL, 2, 4013, 13, '2026-01-06 19:00:00', NULL, NULL, 'active'),
+(NULL, 2, 4014, 9, '2026-01-07 20:00:00', NULL, NULL, 'active'),
+(NULL, 2, 4015, 10, '2026-01-08 14:00:00', NULL, NULL, 'active'),
+(NULL, 2, 4016, 11, '2026-01-09 10:00:00', NULL, NULL, 'active'),
+(NULL, 6, 4017, 12, '2026-01-10 12:00:00', NULL, NULL, 'active'),
+(NULL, 6, 4018, 5, '2026-01-11 13:00:00', NULL, NULL, 'active'),
+(NULL, 2, 4019, 4, '2026-01-12 17:00:00', NULL, NULL, 'active'),
+(NULL, 2, 4020, 6, '2026-01-13 18:00:00', NULL, NULL, 'active'),
+(NULL, 2, 4021, 7, '2026-01-14 19:00:00', NULL, NULL, 'active'),
+(NULL, 4, 4022, 8, '2026-01-15 20:00:00', NULL, NULL, 'active'),
+(NULL, 4, 4023, 9, '2026-01-16 21:00:00', NULL, NULL, 'active'),
+(NULL, 4, 4024, 10, '2026-01-17 12:00:00', NULL, NULL, 'active'),
+(NULL, 4, 4025, 11, '2026-01-18 11:00:00', NULL, NULL, 'active'),
+(NULL, 6, 4026, 12, '2026-01-19 13:00:00', NULL, NULL, 'active'),
+(NULL, 6, 4027, 4, '2026-01-19 19:00:00', NULL, NULL, 'active'),
+(NULL, 2, 4028, 5, '2026-01-03 12:00:00', NULL, NULL, 'active'),
+(NULL, 2, 4029, 6, '2026-01-03 14:00:00', NULL, NULL, 'active'),
+(NULL, 2, 4030, 7, '2026-01-04 15:00:00', NULL, NULL, 'active'),
+(NULL, 2, 4031, 8, '2026-01-04 16:00:00', NULL, NULL, 'active');
+
+-- =============================================
+-- 4. יצירת חשבונות (Bills) להזמנות שהסתיימו
+-- =============================================
+-- שאילתה חכמה שיוצרת חשבונות לכל מי שבסטטוס 'completed' או 'arrived'.
+-- היא מחשבת סכום רנדומלי, בודקת אם הלקוח הוא מנוי, ומחשבת את המחיר הסופי.
+
+INSERT INTO bills (reservationId, totalAmount, discountPercentage, totalAmountAfterDiscount, isPaid, paymentMethod)
+SELECT 
+    r.reservationId,
+    -- סכום רנדומלי בין 150 ל-600
+    ROUND(150 + (RAND() * 450), 2) AS randTotal,
+    
+    -- בדיקה האם הלקוח מנוי (אם כן 10%, אם לא 0%)
+    CASE 
+        WHEN s.type = 'subscriber' THEN 10.00 
+        ELSE 0.00 
+    END AS discountPerc,
+    
+    -- חישוב המחיר הסופי (בגלל מגבלות SQL בתוך INSERT, אנו מחשבים זאת כך)
+    ROUND(
+        (150 + (RAND() * 450)) * -- אותו סכום רנדומלי (הערה: ב-SQL טהור זה עלול לייצר מספר שונה, לכן עדיף במציאות פרוצדורה, אבל לסימולציה זה בסדר)
+        (1 - (CASE WHEN s.type = 'subscriber' THEN 0.10 ELSE 0.00 END)), 
+    2) AS finalPrice,
+    
+    TRUE, -- שולם
+    'Credit' -- שיטת תשלום
+FROM table_reservations r
+LEFT JOIN subscriber s ON r.customerId = s.customerId
+WHERE r.status IN ('completed', 'arrived');
