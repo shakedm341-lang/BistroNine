@@ -290,58 +290,66 @@ public class DataBaseController {
 	// c2
 
 	public OpeningHoursPerDay getOpeningHoursByDate(OpeningHoursPerDay openingHours) {
+	    // 1. Get connection
+	    PooledConnection pConn = this.getConnection();
+	    if (pConn == null) return null;
+	    
+	    Connection conn = pConn.getConnection();
+	    PreparedStatement ps = null;
+	    ResultSet rs = null;
+	    
+	    // List to hold all found slots
+	    ArrayList<TimeSlot> foundSlots = new ArrayList<>();
 
-		// 1. Get connection from the pool
-		PooledConnection pConn = this.getConnection();
+	    try {
+	        // --- QUERY 1: WEEKLY HOURS ---
+	        String queryWeekly = "SELECT openingTime, closingTime FROM weekly_hours WHERE dayOfWeek = ?";
+	        ps = conn.prepareStatement(queryWeekly);
+	        
+	        // SIMPLE: Java's getDayOfWeek().toString() returns "SUNDAY", "MONDAY", etc.
+	        // This now matches your SQL exactly.
+	        ps.setString(1, openingHours.getDay().getDayOfWeek().toString());
+	        
+	        rs = ps.executeQuery();
+	        
+	        while (rs.next()) {
+	            java.sql.Time t1 = rs.getTime("openingTime");
+	            java.sql.Time t2 = rs.getTime("closingTime");
+	            if (t1 != null && t2 != null) {
+	                foundSlots.add(new TimeSlot(t1.toLocalTime(), t2.toLocalTime()));
+	            }
+	        }
+	        
+	        // Close resources to reuse
+	        rs.close();
+	        ps.close();
 
-		// Safety check
-		if (pConn == null) {
-			return null;
-		}
+	        // --- QUERY 2: SPECIAL HOURS ---
+	        String querySpecial = "SELECT openingTime, closingTime FROM special_hours WHERE specificDate = ?";
+	        ps = conn.prepareStatement(querySpecial);
+	        ps.setDate(1, java.sql.Date.valueOf(openingHours.getDay()));
+	        
+	        rs = ps.executeQuery();
+	        
+	        while (rs.next()) {
+	            java.sql.Time t1 = rs.getTime("openingTime");
+	            java.sql.Time t2 = rs.getTime("closingTime");
+	            if (t1 != null && t2 != null) {
+	                foundSlots.add(new TimeSlot(t1.toLocalTime(), t2.toLocalTime()));
+	            }
+	        }
 
-		Connection conn = pConn.getConnection();
-		PreparedStatement ps = null;
-		ResultSet rs = null;
+	        // Update object
+	        openingHours.setSlots(foundSlots);
 
-		// Create a list to hold the found slots
-		ArrayList<TimeSlot> foundSlots = new ArrayList<>();
-
-		try {
-			String query = "SELECT openingTime, closingTime FROM restaurant_hours WHERE day = ?";
-
-			ps = conn.prepareStatement(query);
-
-			// Convert the LocalDate from the object to java.sql.Date for the query
-			ps.setDate(1, java.sql.Date.valueOf(openingHours.getDay()));
-
-			rs = ps.executeQuery();
-
-			while (rs.next()) {
-				// Get SQL Time objects
-				Time sqlOpen = rs.getTime("openingTime");
-				Time sqlClose = rs.getTime("closingTime");
-
-				// Convert to LocalTime
-				LocalTime localOpen = (sqlOpen != null) ? sqlOpen.toLocalTime() : null;
-				LocalTime localClose = (sqlClose != null) ? sqlClose.toLocalTime() : null;
-
-				// Create new TimeSlot and add to list
-				if (localOpen != null && localClose != null) {
-					foundSlots.add(new TimeSlot(localOpen, localClose));
-				}
-			}
-
-			// Update the original object with the list of slots we found
-			openingHours.setSlots(foundSlots);
-
-		} catch (SQLException e) {
-			e.printStackTrace();
-		} finally {
-			closeResources(ps, rs);
-			releaseConnection(pConn); // Release back to pool
-		}
-
-		return openingHours;
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    } finally {
+	        closeResources(ps, rs);
+	        releaseConnection(pConn);
+	    }
+	    
+	    return openingHours;
 	}
 
 	// c3

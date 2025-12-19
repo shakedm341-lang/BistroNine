@@ -56,10 +56,12 @@ CREATE TABLE table_reservations (
 );
 
 CREATE TABLE weekly_hours (
-    dayOfWeek ENUM(Sunday,  Monday, Tuesday, Wednesday, Thursday ,Friday, saturday) NOT NULL, 
+    -- CHANGED: All days are now UPPERCASE to match Java's DayOfWeek.toString()
+    dayOfWeek ENUM('SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY') NOT NULL, 
     openingTime TIME NOT NULL,
     closingTime TIME NOT NULL,
     PRIMARY KEY (dayOfWeek, openingTime)
+);
 );
 
 CREATE TABLE special_hours (
