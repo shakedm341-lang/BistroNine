@@ -18,6 +18,9 @@ public class ServerController extends AbstractServer {
 	// initialized in the constructor.
 	private ReservationControler reservationsController;
 	private CustomerController customerController;
+	private TableController tableController;
+	
+	// Scheduler for outonomous tasks
 	private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 	
 	private ServerDashboardController serverUI;
@@ -63,10 +66,11 @@ public class ServerController extends AbstractServer {
             		
                 reservationsController.deleteLateReservations();//clean up reservations that were not confirmed befor 15 minutes
                 reservationsController.sendReminderAlertsForReservation();//send reminders for upcoming reservations 2 hours before
+                tableController.sendBillReservation();//send bills for reservations 
             } catch (Exception e) {
                 System.err.println("Error during auto-cleanup: " + e.getMessage());
             }
-        }, 0, 1, TimeUnit.MINUTES); // בודק כל דקה
+        }, 0, 1, TimeUnit.MINUTES); // initial delay 0, run every 1 minute
     }
 	
 	

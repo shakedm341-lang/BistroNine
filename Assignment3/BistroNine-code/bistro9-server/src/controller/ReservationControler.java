@@ -16,7 +16,7 @@ import data.TimeSlot;
 public class ReservationControler 
 {
 
-	private DataBaseController DBC=DataBaseController.getInstance();//Interfacing with the DB Controller
+	private static DataBaseController DBC=DataBaseController.getInstance();//Interfacing with the DB Controller
 	
 	/**
 	 * Default constructor
@@ -69,7 +69,7 @@ public class ReservationControler
 	 * @return An ArrayList of TableReservation objects representing the
 	 *         reservations.
 	 */
-	private ArrayList<TableReservation> getAllReservationsAsTableReservation(ArrayList<ArrayList<Object>> allReservations)
+	private static ArrayList<TableReservation> getAllReservationsAsTableReservation(ArrayList<ArrayList<Object>> allReservations)
 	{
 		
 	
@@ -187,7 +187,7 @@ public class ReservationControler
 	 * @return An ArrayList of TableReservation objects representing all
 	 *         reservations for the specified date.
 	 */
-	private ArrayList<TableReservation> getAllReservationsByDay(LocalDate day, boolean includePreviousDay)
+	public static ArrayList<TableReservation> getAllReservationsByDay(LocalDate day, boolean includePreviousDay)
 	{
 		ArrayList<ArrayList<Object>> allReservations = new ArrayList<>();//List to hold all reservations from the DB as a list of lists of objects
 		
