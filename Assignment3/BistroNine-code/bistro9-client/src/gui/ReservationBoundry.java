@@ -132,12 +132,11 @@ public class ReservationBoundry {
         
         // Add number of diners
         params.add(diners); 
-        
-        // Convert LocalDate to SQL Timestamp (set to start of day 00:00:00)
-        Timestamp dateAsTimestamp = Timestamp.valueOf(selectedDate.atStartOfDay());
-        params.add(dateAsTimestamp);
+       
+        //Send LocalDate directly
+       params.add(selectedDate);
 
-        System.out.println("Sending request: Date=" + dateAsTimestamp + ", Diners=" + diners);
+        System.out.println("Sending request: Date=" + selectedDate + ", Diners=" + diners);
 
         // Send the request to the server
         if (client != null) {
@@ -151,7 +150,7 @@ public class ReservationBoundry {
         }
     }
     
-    public void updateAvailableHours(ArrayList<Timestamp> availableTimes) {
+    public void updateAvailableHours(ArrayList<LocalTime> availableTimes) {
         // Run on JavaFX Application Thread to avoid "Not on FX application thread" exception
         javafx.application.Platform.runLater(() -> {
             if (availableTimes == null || availableTimes.isEmpty()) {
@@ -163,9 +162,10 @@ public class ReservationBoundry {
             // Convert Timestamps to simple String format (HH:mm) for the ListView
             ObservableList<String> formattedTimes = FXCollections.observableArrayList();
             
-            for (Timestamp ts : availableTimes) {
-                // Formatting: Extract HH:mm from the timestamp
-                String timeStr = ts.toLocalDateTime().toLocalTime().toString(); 
+            for (LocalTime time : availableTimes) {
+                // Formatting: simply convert LocalTime to String (defaults to HH:mm or HH:mm:ss)
+                
+                String timeStr = time.toString(); 
                 formattedTimes.add(timeStr);
             }
 

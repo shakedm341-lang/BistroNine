@@ -3,6 +3,7 @@ package controller;
 import ocsf.client.AbstractClient;
 import java.io.*;
 import java.sql.Timestamp;
+import java.time.LocalTime;
 import java.util.ArrayList;
 
 import data.*;
@@ -63,8 +64,10 @@ public class ClientController extends AbstractClient {
 	private void handleTableAvailabilityResponse(Message message) {
 		if (reservationBoundry != null) {
 			@SuppressWarnings("unchecked")
-			ArrayList<Timestamp> availableTimes = (ArrayList<Timestamp>) message.content;
-			reservationBoundry.updateAvailableHours(availableTimes); // Update available times in boundary
+			
+	        ArrayList<LocalTime> availableTimes = (ArrayList<LocalTime>) message.content;
+	        
+	        reservationBoundry.updateAvailableHours(availableTimes); // Update available times in boundary
 		}
 	}
 	private void handleCreateReservationResponse(Message message) {
