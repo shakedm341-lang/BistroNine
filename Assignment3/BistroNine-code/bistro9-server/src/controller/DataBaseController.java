@@ -290,65 +290,77 @@ public class DataBaseController {
 	// c2
 
 	public OpeningHoursPerDay getOpeningHoursByDate(OpeningHoursPerDay openingHours) {
-	    // 1. Get connection
+
+	    // 1. Get connection from the pool
 	    PooledConnection pConn = this.getConnection();
-	    if (pConn == null) return null;
-	    
+
+	    // Safety check
+	    if (pConn == null) {
+	        return null;
+	    }
+
 	    Connection conn = pConn.getConnection();
 	    PreparedStatement ps = null;
 	    ResultSet rs = null;
-	    
-	    // List to hold all found slots
+
+	    // Create a list to hold the found slots
 	    ArrayList<TimeSlot> foundSlots = new ArrayList<>();
 
 	    try {
-	        // --- QUERY 1: WEEKLY HOURS ---
-	        String queryWeekly = "SELECT openingTime, closingTime FROM weekly_hours WHERE dayOfWeek = ?";
-	        ps = conn.prepareStatement(queryWeekly);
-	        
-	        // SIMPLE: Java's getDayOfWeek().toString() returns "SUNDAY", "MONDAY", etc.
-	        // This now matches your SQL exactly.
-	        ps.setString(1, openingHours.getDay().getDayOfWeek().toString());
-	        
-	        rs = ps.executeQuery();
-	        
-	        while (rs.next()) {
-	            java.sql.Time t1 = rs.getTime("openingTime");
-	            java.sql.Time t2 = rs.getTime("closingTime");
-	            if (t1 != null && t2 != null) {
-	                foundSlots.add(new TimeSlot(t1.toLocalTime(), t2.toLocalTime()));
-	            }
-	        }
-	        
-	        // Close resources to reuse
-	        rs.close();
-	        ps.close();
-
-	        // --- QUERY 2: SPECIAL HOURS ---
+	        // ---------------------------------------------------------
+	        // STEP 1: Check for Special Hours (Priority)
+	        // ---------------------------------------------------------
 	        String querySpecial = "SELECT openingTime, closingTime FROM special_hours WHERE specificDate = ?";
 	        ps = conn.prepareStatement(querySpecial);
 	        ps.setDate(1, java.sql.Date.valueOf(openingHours.getDay()));
-	        
 	        rs = ps.executeQuery();
-	        
+
 	        while (rs.next()) {
-	            java.sql.Time t1 = rs.getTime("openingTime");
-	            java.sql.Time t2 = rs.getTime("closingTime");
-	            if (t1 != null && t2 != null) {
-	                foundSlots.add(new TimeSlot(t1.toLocalTime(), t2.toLocalTime()));
+	            java.sql.Time sqlOpen = rs.getTime("openingTime");
+	            java.sql.Time sqlClose = rs.getTime("closingTime");
+
+	            if (sqlOpen != null && sqlClose != null) {
+	                foundSlots.add(new TimeSlot(sqlOpen.toLocalTime(), sqlClose.toLocalTime()));
+	            }
+	        }
+	        
+	        // Close resources from the first query to prepare for the second (if needed)
+	        rs.close();
+	        ps.close();
+
+	        // ---------------------------------------------------------
+	        // STEP 2: If no special hours found, check Weekly Hours
+	        // ---------------------------------------------------------
+	        if (foundSlots.isEmpty()) {
+	            String queryWeekly = "SELECT openingTime, closingTime FROM weekly_hours WHERE dayOfWeek = ?";
+	            ps = conn.prepareStatement(queryWeekly);
+
+	            // Since DB is now uppercase ENUM ('SUNDAY'), we can just use Java's default toString()
+	            // Example: LocalDate.of(2025, 12, 21) -> getDayOfWeek() -> SUNDAY
+	            ps.setString(1, openingHours.getDay().getDayOfWeek().toString());
+
+	            rs = ps.executeQuery();
+
+	            while (rs.next()) {
+	                java.sql.Time sqlOpen = rs.getTime("openingTime");
+	                java.sql.Time sqlClose = rs.getTime("closingTime");
+
+	                if (sqlOpen != null && sqlClose != null) {
+	                    foundSlots.add(new TimeSlot(sqlOpen.toLocalTime(), sqlClose.toLocalTime()));
+	                }
 	            }
 	        }
 
-	        // Update object
+	        // Update the original object with the list of slots we found
 	        openingHours.setSlots(foundSlots);
 
 	    } catch (SQLException e) {
 	        e.printStackTrace();
 	    } finally {
 	        closeResources(ps, rs);
-	        releaseConnection(pConn);
+	        releaseConnection(pConn); // Release back to pool
 	    }
-	    
+
 	    return openingHours;
 	}
 
