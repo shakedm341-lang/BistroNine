@@ -40,7 +40,10 @@ public class DataBaseController {
 	// 9. deleteReservationByConfCode(int) : boolean
 	// 10. updateReservationStatus(int, String) : boolean
 	// 11. getBillDetails(Bill) : Bill
-
+	// 12. addNewSubscriber(Subscriber) : int
+	// 13. updateSubscriberDetails(Subscriber) : boolean
+	// 14. getAllSubscribersQuery() : ArrayList<ArrayList<Object>>
+	
 	// END OF API.
 
 	private static DataBaseController instance;
@@ -929,6 +932,221 @@ public class DataBaseController {
 		} catch (SQLException e) {
 		}
 	}
+	
+	//e1
+	
+	/**
+	 * Inserts a new subscriber into the database and returns the generated subscriberId.
+	 * @param sub The Subscriber object containing details (firstName, lastName, type, etc.) and the linked customerId.
+	 * @return The new subscriberId if successful, or -1 if failed.
+	 */
+	public int addNewSubscriber(Subscriber sub) {
+	    // 1. Get connection from the pool
+	    PooledConnection pConn = this.getConnection();
+
+	    // Safety check
+	    if (pConn == null) {
+	        return -1;
+	    }
+
+	    Connection conn = pConn.getConnection();
+	    PreparedStatement ps = null;
+	    ResultSet rs = null;
+	    int newSubscriberId = -1;
+
+	    try {
+	        String query = "INSERT INTO subscriber (customerId, firstName, lastName, type, personalInfo, username, password) "
+	                     + "VALUES (?, ?, ?, ?, ?, ?, ?)";
+
+	        // We must specify Statement.RETURN_GENERATED_KEYS to get the auto-increment ID back
+	        ps = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+
+	        ps.setInt(1, sub.getCustomerId());
+	        ps.setString(2, sub.getFirstName());
+	        ps.setString(3, sub.getLastName());
+	        ps.setString(4, sub.getType());
+	        ps.setString(5, sub.getPersonalInfo());
+	        ps.setString(6, sub.getUsername());
+	        ps.setString(7, sub.getPassword());
+
+	        int rowsAffected = ps.executeUpdate();
+
+	        if (rowsAffected > 0) {
+	            // Retrieve the generated primary key (subscriberId)
+	            rs = ps.getGeneratedKeys();
+	            if (rs.next()) {
+	                newSubscriberId = rs.getInt(1);
+	            }
+	        }
+
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    } finally {
+	        closeResources(ps, rs);
+	        releaseConnection(pConn); // Release back to pool
+	    }
+
+	    return newSubscriberId;
+	}
+	
+	//e2
+	
+	/**
+	 * Updates the contact details (phone/email) of a subscriber (linked to the customer table).
+	 * Only non-null fields in the Subscriber object will be updated in the database.
+	 * @param sub The Subscriber object containing the customerId and the new phone/email.
+	 * @return true if the update was successful, false otherwise.
+	 */
+	public boolean updateSubscriberDetails(Subscriber sub) {
+	    // 1. Get connection from the pool
+	    PooledConnection pConn = this.getConnection();
+
+	    // Safety check
+	    if (pConn == null) {
+	        return false;
+	    }
+
+	    Connection conn = pConn.getConnection();
+	    PreparedStatement ps = null;
+
+	    // Flags to check what we need to update
+	    boolean updatePhone = (sub.getPhoneNumber() != null);
+	    boolean updateEmail = (sub.getEmail() != null);
+
+	    // If both are null, there is nothing to update
+	    if (!updatePhone && !updateEmail) {
+	        return false;
+	    }
+
+	    try {
+	        // Build the query dynamically based on which fields are present
+	        StringBuilder query = new StringBuilder("UPDATE customer SET ");
+	        
+	        if (updatePhone) {
+	            query.append("phoneNumber = ?");
+	        }
+	        
+	        if (updatePhone && updateEmail) {
+	            query.append(", "); // Add comma if we are updating both
+	        }
+	        
+	        if (updateEmail) {
+	            query.append("email = ?");
+	        }
+	        
+	        query.append(" WHERE customerId = ?");
+
+	        ps = conn.prepareStatement(query.toString());
+
+	        // Set the parameters dynamically
+	        int paramIndex = 1;
+	        
+	        if (updatePhone) {
+	            ps.setString(paramIndex++, sub.getPhoneNumber());
+	        }
+	        
+	        if (updateEmail) {
+	            ps.setString(paramIndex++, sub.getEmail());
+	        }
+	        
+	        // The last parameter is always the customerId
+	        ps.setInt(paramIndex, sub.getCustomerId());
+
+	        int rowsAffected = ps.executeUpdate();
+
+	        if (rowsAffected > 0) {
+	            return true;
+	        }
+
+	    } catch (SQLException e) {
+	        e.printStackTrace(); // This will print if you try to update to a duplicate phone/email
+	    } finally {
+	        closeResources(ps, null);
+	        releaseConnection(pConn); // Release back to pool
+	    }
+
+	    return false;
+	}
+	
+	//e3
+	
+	
+	/**
+	 * Retrieves all subscribers from the database, including their contact info from the customer table.
+	 * @return An ArrayList of rows, where each row is an ArrayList of objects.
+	 */
+	public ArrayList<ArrayList<Object>> getAllSubscribersQuery() {
+	    ArrayList<ArrayList<Object>> allSubscribers = new ArrayList<>();
+
+	    // 1. Get connection from the pool
+	    PooledConnection pConn = this.getConnection();
+
+	    // Safety check
+	    if (pConn == null) {
+	        return null;
+	    }
+
+	    Connection conn = pConn.getConnection();
+	    PreparedStatement ps = null;
+	    ResultSet rs = null;
+
+	    try {
+	        // We need a JOIN to get the phone number and email from the customer table
+	        String query = "SELECT s.subscriberId, s.customerId, s.firstName, s.lastName, "
+	                     + "s.type, s.personalInfo, s.username, s.password, "
+	                     + "c.phoneNumber, c.email "
+	                     + "FROM subscriber s "
+	                     + "JOIN customer c ON s.customerId = c.customerId";
+
+	        ps = conn.prepareStatement(query);
+	        rs = ps.executeQuery();
+
+	        while (rs.next()) {
+	            ArrayList<Object> subscriberRow = new ArrayList<>();
+	            
+	            // 0. subscriberId
+	            subscriberRow.add(rs.getInt("subscriberId"));
+	            
+	            // 1. customerId
+	            subscriberRow.add(rs.getInt("customerId"));
+	            
+	            // 2. firstName
+	            subscriberRow.add(rs.getString("firstName"));
+	            
+	            // 3. lastName
+	            subscriberRow.add(rs.getString("lastName"));
+	            
+	            // 4. type
+	            subscriberRow.add(rs.getString("type"));
+	            
+	            // 5. personalInfo (can be null in DB, returns null here)
+	            subscriberRow.add(rs.getString("personalInfo"));
+	            
+	            // 6. username
+	            subscriberRow.add(rs.getString("username"));
+	            
+	            // 7. password
+	            subscriberRow.add(rs.getString("password"));
+	            
+	            // 8. phoneNumber
+	            subscriberRow.add(rs.getString("phoneNumber"));
+	            
+	            // 9. email
+	            subscriberRow.add(rs.getString("email"));
+
+	            allSubscribers.add(subscriberRow);
+	        }
+
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    } finally {
+	        closeResources(ps, rs);
+	        releaseConnection(pConn); // Release back to pool
+	    }
+
+	    return allSubscribers;
+	}
+	
 
 //	public static void main() {
 //		// Create a timestamp for 20th Dec 2025 (Time doesn't matter, can be 00:00:00)
