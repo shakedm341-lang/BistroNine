@@ -71,10 +71,11 @@ public class ClientController extends AbstractClient {
 		}
 	}
 	private void handleCreateReservationResponse(Message message) {
-		if (reservationBoundry != null) {
-			Boolean success = (Boolean) message.content;
-			reservationBoundry.onReservationCreationResponse(success); // Show creation message in boundary
-		}
+	    if (reservationBoundry != null) {
+	      
+	        Object response = message.content; 
+	        reservationBoundry.onReservationCreationResponse(response); 
+	    }
 	}
 
 	private void handleLoginResponse(Message message) {

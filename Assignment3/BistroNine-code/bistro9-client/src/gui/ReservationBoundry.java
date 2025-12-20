@@ -286,9 +286,12 @@ public class ReservationBoundry {
     public void onReservationCreationResponse(Object response) {
         javafx.application.Platform.runLater(() -> {
             if (response instanceof Integer) {
-                int code = (Integer) response;
-                showAlert(AlertType.INFORMATION, "Success", 
-                    "Reservation created successfully!\nYour Confirmation Code: " + code);
+                int confirmationCode = (Integer) response;
+                
+                showAlert(AlertType.INFORMATION, "Reservation Confirmed", 
+                        "The reservation was created successfully!\n\n" +
+                        "Your Confirmation Code is: " + confirmationCode + "\n" +
+                        "Please save this code for future reference.");
                 
                 // Optional: Clear form or go back to home
             } else {
