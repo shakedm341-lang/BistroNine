@@ -85,11 +85,20 @@ public class ReservationBoundry {
     @FXML
     void initialize() {
 
+    	// FIX: Restrict date selection to a specific range (Today to 1 month from now)
         datePicker.setDayCellFactory(picker -> new javafx.scene.control.DateCell() {
             @Override
             public void updateItem(LocalDate date, boolean empty) {
                 super.updateItem(date, empty);
-                setDisable(empty || date.isBefore(LocalDate.now()));
+                
+                LocalDate today = LocalDate.now();
+                LocalDate oneMonthFromNow = today.plusMonths(1); // Calculate the upper limit date
+
+                // Disable the date if:
+                // 1. It is empty
+                // 2. It is in the past (before today)
+                // 3. It is beyond the allowed booking window (1 month from today)
+                setDisable(empty || date.isBefore(today) || !date.isBefore(oneMonthFromNow));
             }
         });
         
@@ -154,19 +163,35 @@ public class ReservationBoundry {
         // Run on JavaFX Application Thread to avoid "Not on FX application thread" exception
         javafx.application.Platform.runLater(() -> {
             if (availableTimes == null || availableTimes.isEmpty()) {
-                
                   showAlert(AlertType.INFORMATION, "No Availability", "No available tables found for this date.");
                  return;
             }
 
-            // Convert Timestamps to simple String format (HH:mm) for the ListView
+            // Convert LocalTime to simple String format (HH:mm) for the ListView
             ObservableList<String> formattedTimes = FXCollections.observableArrayList();
             
+            LocalDate selectedDate = datePicker.getValue();
+            LocalDate today = LocalDate.now();
+            LocalTime cutoffTime = LocalTime.now().plusHours(1); // Define minimum booking time (1 hour from now)
+
             for (LocalTime time : availableTimes) {
-                // Formatting: simply convert LocalTime to String (defaults to HH:mm or HH:mm:ss)
                 
-                String timeStr = time.toString(); 
-                formattedTimes.add(timeStr);
+                // if date is TODAY
+                if (selectedDate != null && selectedDate.equals(today)) {
+                	
+                    // Only add times that are at least 1 hour in the future
+                    if (time.isAfter(cutoffTime)) {
+                        formattedTimes.add(time.toString());
+                    }
+                } else {
+                    // For future dates, add all available times returned by the server
+                    formattedTimes.add(time.toString());
+                }
+            }
+
+            // If no times remain after filtering (e.g., it's too late in the day)
+            if (formattedTimes.isEmpty()) {
+                 showAlert(AlertType.INFORMATION, "No Availability", "No available times left for today (too late to book).");
             }
 
             // Update the ListView
