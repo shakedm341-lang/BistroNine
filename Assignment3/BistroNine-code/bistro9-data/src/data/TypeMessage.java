@@ -4,5 +4,6 @@ package data;
 
 public enum TypeMessage {
 	RESERVATION,
-	CUSTOMER
+	CUSTOMER,
+	TABLE
 }

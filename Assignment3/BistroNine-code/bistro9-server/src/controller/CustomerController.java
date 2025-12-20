@@ -68,11 +68,11 @@ public class CustomerController
 		@SuppressWarnings("unchecked") 
 		ArrayList<Object> list = (ArrayList<Object>) msg.content;//get username and password from the message
 		
-		ArrayList<Object> res = new ArrayList<>();//To store the result from the DB Controller(null or list of subscriber details)
+		
 		Subscriber sub = new Subscriber();
 		
 		
-		//Set username  in the Subscriber object
+		//Set user name  in the Subscriber object
 		if (list.get(0) instanceof String) {
 			sub.setUsername((String) list.get(0));
     	} else {
@@ -87,7 +87,7 @@ public class CustomerController
     	    return null;
     	}
     	
-    	return DBC.checkLoginDetails(sub);//Check login details in the DB and get subscriber details if valid, return null if invalid or list of object
+    	return DBC.checkLoginDetails(sub);//Check login details in the DB and get subscriber details if valid, return null if invalid 
     	
     	//Return to server the subscriber details as Subscriber object
     	}
@@ -95,11 +95,11 @@ public class CustomerController
 	/**
 	 * Adds a new subscriber to the database.
 	 * @param msg The message containing the subscriber details. 
-	 * The content of the message is expected to be an ArrayList<Object> with the following order:
-	 * [Location 0 :firstName (String),Location 1:lastName (String),Location 2:type (String),
-	 * Location 3:personalInfo (String),Location 4:username (String),Location 5:password (String),
-	 * Location 6:phoneNumber (String),Location 7:email (String)]
-	 * @return
+	 * 		The content of the message is expected to be an ArrayList<Object> with the following order:
+	 * 		[Location 0 :firstName (String),Location 1:lastName (String),Location 2:type (String),
+	 * 		Location 3:personalInfo (String),Location 4:username (String),Location 5:password (String),
+	 * 		Location 6:phoneNumber (String),Location 7:email (String)]
+	 * @return Subscriber object for the subscriber id assigned by the database.
 	 */
 	private Subscriber addNewSubscriber(Message msg)
 	{
@@ -116,7 +116,7 @@ public class CustomerController
     					 sub.setFirstName((String) list.get(0)) ;
     		} else {
     					System.out.println("Error: Index 0 is not a String!");
-    					return false;
+    					return null;
     		}
     		
     		// Setting last Name from the list we got from the message content
@@ -124,7 +124,7 @@ public class CustomerController
 				sub.setLastName((String) list.get(1));
 			} else {
 				System.out.println("Error: Index 1 is not a String!");
-				return false;
+				return null;
 			}
     		
     		 // Setting type from the list we got from the message content
@@ -132,7 +132,7 @@ public class CustomerController
 				sub.setType((String) list.get(2));
             } else {
                 System.out.println("Error: Index 2 is not a String!");
-                return false;
+                return null;
             }
     		
     		 // Setting personal Info from the list we got from the message content
@@ -140,7 +140,7 @@ public class CustomerController
 					sub.setPersonalInfo((String) list.get(3));
 			} else {
 					System.out.println("Error: Index 3 is not a String!");
-					return false;
+					return null;
 			}
 
 		 // Setting user name from the list we got from the message content	
@@ -148,7 +148,7 @@ public class CustomerController
 					sub.setUsername((String) list.get(4));
 			} else {
 					System.out.println("Error: Index 4 is not a String!");
-					return false;
+					return null;
 			}
     		
     		// Setting password from the list we got from the message content
@@ -156,7 +156,7 @@ public class CustomerController
 				sub.setPassword((String) list.get(5));
 			} else {
 				System.out.println("Error: Index 5 is not a String!");
-				return false;
+				return null;
 			}
 			
 		//setting phone Number from the list we got from the message content
@@ -164,7 +164,7 @@ public class CustomerController
 			sub.setPhoneNumber((String) list.get(6));
 		} else {
 			System.out.println("Error: Index 6 is not a String!");
-			return false;
+			return null;
 		}
 		
 		//setting email from the list we got from the message content
@@ -172,7 +172,7 @@ public class CustomerController
 			sub.setEmail((String) list.get(7));
 		} else {
 			System.out.println("Error: Index 7 is not a String!");
-			return false;
+			return null;
 		}
 		
 		sub.setCustomerId(DBC.getCustomerId(sub));//return get customer id if exists in customer table else set new customer id

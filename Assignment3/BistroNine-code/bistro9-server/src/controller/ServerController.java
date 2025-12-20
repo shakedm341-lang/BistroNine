@@ -35,7 +35,9 @@ public class ServerController extends AbstractServer {
 		this.tableController = new TableController();
 		startAutoTasks();
 	}
-
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////managing messages //////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	@Override
 	public void handleMessageFromClient(Object msg, ConnectionToClient client) {
 		if (msg instanceof byte[]) {
@@ -49,6 +51,10 @@ public class ServerController extends AbstractServer {
 			case CUSTOMER:
 				handleCustomerRequest(message, client);
 				break;
+			
+			case TABLE:
+				handleTableRequest(message, client);
+				break;
 				
 			default:
 				System.out.println("Unknown command received: " + message.type);
@@ -59,22 +65,6 @@ public class ServerController extends AbstractServer {
 		}
 	}
 
-	
-	private void startAutoTasks() 
-	{
-        scheduler.scheduleAtFixedRate(() -> {
-            try {
-            		
-                reservationsController.deleteLateReservations();//clean up reservations that were not confirmed befor 15 minutes
-                reservationsController.sendReminderAlertsForReservation();//send reminders for upcoming reservations 2 hours before
-                tableController.sendBillReservation();//send bills for reservations 
-            } catch (Exception e) {
-                System.err.println("Error during auto-cleanup: " + e.getMessage());
-            }
-        }, 0, 1, TimeUnit.MINUTES); // initial delay 0, run every 1 minute
-    }
-	
-	
 	private void handleReservationRequest(Message message, ConnectionToClient client) {
 		Object response = reservationsController.handleMessageFromServer(message);
 		message.content = response;
@@ -97,6 +87,39 @@ public class ServerController extends AbstractServer {
 		}
 	}
 
+	private void handleTableRequest(Message message, ConnectionToClient client) 
+	{
+		Object response = tableController.handleMessageFromServer(message);
+		message.content = response;
+		try {
+			byte[] data = KryoUtil.serialize(message);
+			client.sendToClient(data);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////initialization Automated tasks//////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	
+	private void startAutoTasks() 
+	{
+        scheduler.scheduleAtFixedRate(() -> {
+            try {
+            		
+                reservationsController.deleteLateReservations();//clean up reservations that were not confirmed befor 15 minutes
+                reservationsController.sendReminderAlertsForReservation();//send reminders for upcoming reservations 2 hours before
+                tableController.sendBillReservation();//send bills for reservations 
+            } catch (Exception e) {
+                System.err.println("Error during auto-cleanup: " + e.getMessage());
+            }
+        }, 0, 1, TimeUnit.MINUTES); // initial delay 0, run every 1 minute
+    }
+	
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////Client server architecture management methods//////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	@Override
 	protected void serverStarted() {
 		System.out.println("Server listening for connections on port " + getPort());
@@ -164,7 +187,14 @@ public class ServerController extends AbstractServer {
 		}
 	}
 	
-	// --- New Helper Method ---
+	/**
+	 * Uses Reflection to access the private 'clientSocket' field in
+	 * ConnectionToClient to retrieve the client's port number.
+	 * 
+	 * @param client The ConnectionToClient instance.
+	 * @return The client's port number as a String, or "Unknown" if it cannot be
+	 *         retrieved.
+	 */
 	private String getClientPortUsingReflection(ConnectionToClient client) {
 		try {
 			// Access the private variable 'clientSocket' inside ConnectionToClient
