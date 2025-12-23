@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<AnchorPane xmlns="http://javafx.com/javafx/8.0.171"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="gui.ReservationManagementController">
+
+    <children>
+
+        <VBox spacing="10"
+              AnchorPane.topAnchor="10"
+              AnchorPane.leftAnchor="10"
+              AnchorPane.rightAnchor="10"
+              AnchorPane.bottomAnchor="10">
+
+            <!-- Search / Actions -->
+            <HBox spacing="10">
+                <TextField fx:id="customerIdField"
+                           promptText="Enter Customer ID"/>
+                <Button text="Search by Customer"
+                        onAction="#handleSearchByCustomer"/>
+                <Button text="Load Active Reservations"
+                        onAction="#handleLoadActiveReservations"/>
+            </HBox>
+
+            <!-- Reservations Table -->
+            <TableView fx:id="reservationsTable" VBox.vgrow="ALWAYS">
+
+                <columns>
+                    <TableColumn fx:id="colDateTime" text="Date &amp; Time" prefWidth="150"/>
+                    <TableColumn fx:id="colGuests" text="Guests" prefWidth="80"/>
+                    <TableColumn fx:id="colConfirmationCode" text="Code" prefWidth="100"/>
+                    <TableColumn fx:id="colStatus" text="Status" prefWidth="100"/>
+                    <TableColumn fx:id="colAction" text="Action" prefWidth="100"/>
+                </columns>
+
+            </TableView>
+
+        </VBox>
+
+    </children>
+</AnchorPane>

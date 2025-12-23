@@ -1,5 +1,6 @@
 package gui;
 
+import java.io.IOException;
 
 import controller.ClientController;
 import data.Subscriber;
@@ -16,13 +17,16 @@ import javafx.stage.Stage;
 
 public class UserDashboardController {
 
-    @FXML private Label lblWelcome;
-    @FXML private StackPane contentArea;
+    @FXML
+    private Label lblWelcome;
+    @FXML
+    private StackPane contentArea;
 
-    
-    @FXML private Button btnManageTables;
-    @FXML private Button btnRegisterClient;
-    @FXML private Button btnViewReports;
+ 
+    @FXML
+    private Button btnRestaurantOps; 
+    @FXML
+    private Button btnViewReports;   
 
     private ClientController client;
     private Subscriber currentUser;
@@ -31,37 +35,42 @@ public class UserDashboardController {
         this.client = client;
     }
 
+    /**
+     * Sets up the dashboard based on the logged-in user's role.
+     * Logic updated to support the new unified "Restaurant Operations" button.
+     */
     public void loadUserDetails(Subscriber user) {
         this.currentUser = user;
         lblWelcome.setText("Hello, " + user.getUsername());
 
-        String type = user.getType(); 
-        
-        
-        setButtonVisible(btnManageTables, false);
-        setButtonVisible(btnRegisterClient, false);
+        String type = user.getType(); // Assuming format like "restaurant manager"
+
+        // Default: Hide operations buttons
+        setButtonVisible(btnRestaurantOps, false);
         setButtonVisible(btnViewReports, false);
-        
-        
+
+        // Role-based visibility
         if (type.equals("restaurant manager")) {
-            setButtonVisible(btnManageTables, true);
-            setButtonVisible(btnRegisterClient, true);
+        	
+            // Manager sees Operations (Tables/Clients) AND Reports 
+            setButtonVisible(btnRestaurantOps, true);
             setButtonVisible(btnViewReports, true);
-        } 
-        else if (type.equals("restaurant representative")) { 
-            setButtonVisible(btnManageTables, true);
-            setButtonVisible(btnRegisterClient, true);
+        } else if (type.equals("restaurant representative")) {
+            // Representative sees Operations 
+            setButtonVisible(btnRestaurantOps, true);
+            // Usually, specific analytical reports are for managers, 
+            // but Reps see lists/orders inside Operations tabs
         }
     }
 
     private void setButtonVisible(Button btn, boolean isVisible) {
         if (btn != null) {
             btn.setVisible(isVisible);
-            btn.setManaged(isVisible);
+            btn.setManaged(isVisible); // Collapses the space if hidden
         }
     }
 
-    // --- Action Methods (Empty Stubs for now) ---
+    // --- Action Methods ---
 
     @FXML
     void goToHome(ActionEvent event) {
@@ -71,45 +80,70 @@ public class UserDashboardController {
 
     @FXML
     void goToMyReservations(ActionEvent event) {
-        System.out.println("DEBUG: Go to My Reservations");
-        // TODO: Load My Reservations screen
-    }
-
-    @FXML
-    void openNewReservation(ActionEvent event) {
-       
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/NewReservation.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/MyReservations.fxml"));
             Parent root = loader.load();
-            
-            ReservationBoundry resController = loader.getController();
-            resController.setClient(this.client);
-            resController.initData(currentUser);
-            
+
+            MyReservationsController controller = loader.getController();
+            controller.setDependencies(this.currentUser, this.client);
+
             contentArea.getChildren().clear();
             contentArea.getChildren().add(root);
-            
-        } catch (Exception e) {
+
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
     @FXML
-    void goToManageTables(ActionEvent event) {
-        System.out.println("DEBUG: Go to Manage Tables");
-        // TODO: Load Table Management screen
+    void openNewReservation(ActionEvent event) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/NewReservation.fxml"));
+            Parent root = loader.load();
+
+            ReservationBoundry resController = loader.getController();
+            resController.setClient(this.client);
+            resController.initData(currentUser);
+
+            contentArea.getChildren().clear();
+            contentArea.getChildren().add(root);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
+    /**
+     * Loads the unified Restaurant Operations view (TabPane).
+     * This replaces goToManageTables and goToRegisterClient.
+     */
     @FXML
-    void goToRegisterClient(ActionEvent event) {
-        System.out.println("DEBUG: Go to Register Client");
-        // TODO: Load Register Client screen
+    void goToRestaurantOps(ActionEvent event) {
+        try {
+            // Load the FXML that contains the Tabs
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/RestaurantManagement.fxml"));
+            Parent root = loader.load();
+
+            // Get the controller with the NEW name
+            RestaurantManagementController opsController = loader.getController();
+            
+            // Pass the dependencies (client and user) to the new controller
+            opsController.setDependencies(this.client, this.currentUser); 
+
+            // Show in the center area
+            contentArea.getChildren().clear();
+            contentArea.getChildren().add(root);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.err.println("Error loading Restaurant Management screen: " + e.getMessage());
+        }
     }
 
     @FXML
     void goToViewReports(ActionEvent event) {
         System.out.println("DEBUG: Go to View Reports");
-        // TODO: Load Reports screen
+        // TODO: Load Reports screen (Analytical reports for Manager)
     }
 
     @FXML

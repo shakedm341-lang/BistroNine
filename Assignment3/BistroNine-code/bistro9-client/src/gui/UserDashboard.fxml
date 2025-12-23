@@ -61,21 +61,14 @@
                </font>
             </Button>
 
-            <Button fx:id="btnManageTables" mnemonicParsing="false" onAction="#goToManageTables" prefHeight="45.0" prefWidth="220.0" style="-fx-background-color: transparent; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;" text="Manage Tables" textFill="#333333">
+            <Separator prefWidth="200.0" />
+
+            <Button fx:id="btnRestaurantOps" mnemonicParsing="false" onAction="#goToRestaurantOps" prefHeight="45.0" prefWidth="220.0" style="-fx-background-color: transparent; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;" text="Restaurant Operations" textFill="#333333">
                <padding>
                   <Insets left="20.0" />
                </padding>
                <font>
-                  <Font size="14.0" />
-               </font>
-            </Button>
-            
-            <Button fx:id="btnRegisterClient" mnemonicParsing="false" onAction="#goToRegisterClient" prefHeight="45.0" prefWidth="220.0" style="-fx-background-color: transparent; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;" text="Register Client" textFill="#333333">
-               <padding>
-                  <Insets left="20.0" />
-               </padding>
-               <font>
-                  <Font size="14.0" />
+                  <Font name="System Bold" size="14.0" />
                </font>
             </Button>
             

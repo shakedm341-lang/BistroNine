@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<VBox prefHeight="600.0" prefWidth="800.0" spacing="15.0" style="-fx-background-color: white;" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gui.MyReservationsController">
+   <padding>
+      <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+   </padding>
+   <children>
+      <Label text="My Reservations History" textFill="#2196f3">
+         <font>
+            <Font name="System Bold" size="24.0" />
+         </font>
+      </Label>
+      
+      <Label text="Here you can view your past and future reservations. You can cancel active future reservations." textFill="#757575">
+         <font>
+            <Font size="14.0" />
+         </font>
+      </Label>
+
+      <TableView fx:id="reservationsTable" prefHeight="200.0" prefWidth="200.0" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="colDateTime" prefWidth="180.0" text="Date &amp; Time" />
+          
+            <TableColumn fx:id="colGuests" prefWidth="100.0" text="Guests" />
+          
+            <TableColumn fx:id="colConfirmationCode" prefWidth="120.0" text="Conf. Code" />
+            
+            <TableColumn fx:id="colStatus" prefWidth="120.0" text="Status" />
+            
+            <TableColumn fx:id="colAction" prefWidth="140.0" text="Action" />
+        </columns>
+         <columnResizePolicy>
+            <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+         </columnResizePolicy>
+      </TableView>
+   </children>
+</VBox>
