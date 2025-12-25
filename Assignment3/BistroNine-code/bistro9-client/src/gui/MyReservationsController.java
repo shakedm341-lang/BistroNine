@@ -61,6 +61,9 @@ public class MyReservationsController implements Initializable, IReservationView
 
 	}
 
+	/**
+	 * Initializes the table columns with appropriate cell value factories.
+	 */
 	private void initColumns() {
 
 		colDateTime.setCellValueFactory(cellData -> {
@@ -75,18 +78,28 @@ public class MyReservationsController implements Initializable, IReservationView
 		colConfirmationCode.setCellValueFactory(new PropertyValueFactory<>("confirmationCode"));
 
 		colStatus.setCellValueFactory(new PropertyValueFactory<>("status"));
-
+		
+		// Add the "Cancel" button to the table
 		addButtonToTable();
 
 		reservationsTable.setItems(reservationList);
 	}
-
+	
+	/**
+	 * Adds a "Cancel" button to each row in the table for active future reservations.
+	 */
 	private void addButtonToTable() {
+		
+		// Define a cell factory to create the "Cancel" button in each row
 		Callback<TableColumn<TableReservation, Void>, TableCell<TableReservation, Void>> cellFactory = new Callback<>() {
+			
 			@Override
+			// Create a new TableCell with a "Cancel" button
 			public TableCell<TableReservation, Void> call(final TableColumn<TableReservation, Void> param) {
+				// Return a new TableCell instance
 				return new TableCell<>() {
 
+					// Create the "Cancel" button
 					private final Button btn = new Button("Cancel");
 
 					{
@@ -98,6 +111,7 @@ public class MyReservationsController implements Initializable, IReservationView
 					}
 
 					@Override
+					// Update the cell item to show or hide the button based on reservation status
 					public void updateItem(Void item, boolean empty) {
 						super.updateItem(item, empty);
 						if (empty) {
@@ -122,7 +136,13 @@ public class MyReservationsController implements Initializable, IReservationView
 
 		colAction.setCellFactory(cellFactory);
 	}
-
+	
+	/**
+	 * Sets the dependencies for this controller.
+	 * 
+	 * @param user       The current subscriber user.
+	 * @param controller The client controller for server communication.
+	 */
 	public void setDependencies(Subscriber user, ClientController controller) {
 		this.currentUser = user;
 		this.clientController = controller;
@@ -130,7 +150,10 @@ public class MyReservationsController implements Initializable, IReservationView
 
 		loadReservationsData();
 	}
-
+	
+	/**
+	 * Loads the reservations data for the current user from the server.
+	 */
 	private void loadReservationsData() {
 
 		int customerId = currentUser.getCustomerId();
@@ -139,7 +162,11 @@ public class MyReservationsController implements Initializable, IReservationView
 		params.add(customerId);
 		
 		if (clientController != null) {
+			
+			// Set this controller as the reservation viewer
 			clientController.setReservationViewer(this);
+			
+			// Request all reservations for the current customer
 			clientController.handleMessageFromBoundary(
 					TypeMessage.RESERVATION, // The broad category
 					params, // The data (customer ID)
@@ -150,22 +177,39 @@ public class MyReservationsController implements Initializable, IReservationView
 		}
 	}
 
-	/*
+	/**
 	 * Sets the list of reservations to be displayed in the table.
 	 */
 	public void setReservationsList(ArrayList<TableReservation> reservations) {
-		if (reservations != null) {
-			reservationList.setAll(reservations);
-		}
+		javafx.application.Platform.runLater(() ->{
+			if (reservations != null) {
+				if (reservations.size() == 0) {
+					showError("No reservations found.");
+				}
+				reservationList.setAll(reservations);
+			}
+			
+		});
+		
 	}
-
+	
+	/**
+	 * Handles the cancellation of a reservation.
+	 * 
+	 * @param res The reservation to be cancelled.
+	 */
 	private void handleCancelReservation(TableReservation res) {
 
+		// Prepare parameters for the delete reservation request
 		ArrayList<Object> params = new ArrayList<>();
 		params.add(res.getConfirmationCode());
+		
+		// Send the delete reservation request to the server
 		if (clientController != null) {
 			clientController.setReservationDeleter(this);
-			clientController.handleMessageFromBoundary(TypeMessage.RESERVATION, params, Command.DELETE_RESERVATION);
+			clientController.handleMessageFromBoundary(TypeMessage.RESERVATION, 
+														params, 
+														Command.DELETE_RESERVATION);
 		} else {
 			System.err.println("Error: Client connection is null.");
 		}
@@ -183,20 +227,37 @@ public class MyReservationsController implements Initializable, IReservationView
 			if (isDeleted) {
 				showSuccessMessage("Reservation cancelled successfully!");
 			} else {
-				showErrorMessage("Could not delete reservation. Please try again.");
+				showError("Could not delete reservation. Please try again.");
 			}
 		});
 	}
 
-	private void showErrorMessage(String message) {
-		Alert alert = new Alert(AlertType.ERROR);
-		alert.setTitle("Error");
-		alert.setHeaderText("Operation Failed");
-		alert.setContentText(message);
-		alert.showAndWait();
-
+	/**
+	 * Displays an error message in an alert dialog.
+	 * 
+	 * @param message The error message to display.
+	 */
+	private void showError(String msg) {
+	    // One-liner to create the alert
+	    Alert alert = new Alert(Alert.AlertType.ERROR, 
+	    							msg, 
+	    							javafx.scene.control.ButtonType.OK);
+	    
+	    // Remove the header to make it look cleaner
+	    alert.setHeaderText(null);
+	    
+	    // Optional: Only needed if you want the window centered on your app
+	    // alert.initOwner(opsTabPane.getScene().getWindow()); 
+	    
+	    alert.showAndWait();
 	}
 
+	
+	/**
+	 * Displays a success message in an alert dialog and reloads the reservations data.
+	 * 
+	 * @param text The success message to display.
+	 */
 	public void showSuccessMessage(String text) {
 		Alert alert = new Alert(AlertType.INFORMATION);
 		alert.setTitle("Success");

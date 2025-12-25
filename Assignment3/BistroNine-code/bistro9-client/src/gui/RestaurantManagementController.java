@@ -2,98 +2,87 @@ package gui;
 
 import controller.ClientController;
 import data.Subscriber;
-import javafx.event.Event;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
-import javafx.scene.layout.AnchorPane;
 
+/**
+ * Main controller for the Restaurant Management Dashboard.
+ * Serves as a container for various operational tabs.
+ */
 public class RestaurantManagementController {
 
     @FXML
     private TabPane opsTabPane;
 
     @FXML
-    private Tab registerClientTab;
+    private Tab createReservationTab;
 
-    @FXML
-    private Tab manageTablesTab;
+    // =================================================================================
+    // Nested Controllers Injection
+    // JavaFX automatically injects the controllers of included FXML files.
+    // Naming Convention: [fx:id of the include] + "Controller"
+    // =================================================================================
 
+    /**
+     * Controller for the "Create New Reservation" tab.
+     * In FXML: <fx:include fx:id="createReservationView" ... />
+     */
     @FXML
-    private Tab reservationManagementTab;
+    private ReservationBoundry createReservationViewController;
 
+    /**
+     * Controller for the "Reservation Management" tab.
+     * In FXML: <fx:include fx:id="reservationView" ... />
+     */
     @FXML
-    private Tab waitingListTab;
+    private ReservationManagementController reservationViewController;
 
-    @FXML
-    private Tab settingsTab;
+    // =================================================================================
+    // Data Fields
+    // =================================================================================
 
     private ClientController client;
     private Subscriber currentUser;
 
-    private boolean reservationTabLoaded = false;
+    // =================================================================================
+    // Initialization & Logic
+    // =================================================================================
 
+    /**
+     * Sets external dependencies and propagates them to child controllers.
+     * This method is typically called by the login screen or main app navigator.
+     * * @param client      The network client for server communication.
+     * @param currentUser The currently logged-in user.
+     */
     public void setDependencies(ClientController client, Subscriber currentUser) {
         this.client = client;
         this.currentUser = currentUser;
 
-        System.out.println(
-            "DEBUG: RestaurantManagementController initialized for user: "
-            + currentUser.getUsername()
-        );
+        System.out.println("DEBUG: RestaurantManagementController initialized for user: " 
+                           + currentUser.getUsername());
 
-        initTabListeners();
+        // Propagate dependencies to the nested "Create Reservation" controller
+        if (createReservationViewController != null) {
+            createReservationViewController.setClient(client);
+            createReservationViewController.initData(currentUser,true);
+            // If the child controller needs the user info:
+            // createReservationViewController.setCurrentUser(currentUser); 
+        }
+
+        // Propagate dependencies to the nested "Reservation Management" controller
+        if (reservationViewController != null) {
+            reservationViewController.setClient(client);
+        }
     }
 
     /**
-     * Attach listeners to all tabs
+     * Programmatically switches the active tab to "Create Reservation".
+     * Useful for navigation from other parts of the UI.
      */
-    private void initTabListeners() {
-
-        reservationManagementTab.setOnSelectionChanged(
-            new EventHandler<Event>() {
-
-                @Override
-                public void handle(Event event) {
-
-                    if (reservationManagementTab.isSelected()
-                            && !reservationTabLoaded) {
-
-                        loadReservationManagementTab();
-                        reservationTabLoaded = true;
-                    }
-                }
-            }
-        );
-
-        // דוגמה עתידית:
-        // manageTablesTab.setOnSelectionChanged(...)
-        // waitingListTab.setOnSelectionChanged(...)
-    }
-
-    private void loadReservationManagementTab() {
-
-        try {
-            FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/gui/ReservationManagement.fxml")
-            );
-
-            AnchorPane pane = loader.load();
-
-            ReservationManagementController controller =
-                    loader.getController();
-            controller.setClient(client);
-
-            reservationManagementTab.setContent(pane);
-
-            System.out.println(
-                "DEBUG: Reservation Management tab loaded"
-            );
-
-        } catch (Exception e) {
-            e.printStackTrace();
+    public void navigateToCreateReservation() {
+        if (opsTabPane != null && createReservationTab != null) {
+            opsTabPane.getSelectionModel().select(createReservationTab);
         }
     }
 }

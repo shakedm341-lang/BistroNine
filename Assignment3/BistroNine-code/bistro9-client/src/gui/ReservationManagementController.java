@@ -161,7 +161,16 @@ public class ReservationManagementController implements Initializable, IReservat
 	/* ================= Server Responses ================= */
 	@Override
 	public void setReservationsList(ArrayList<TableReservation> reservations) {
-		reservationList.setAll(reservations);
+		System.out.println("DEBUG: Received " + reservations.size() + " reservations from server");
+		javafx.application.Platform.runLater(() -> {
+	        
+	        if (reservations.size() == 0) {
+	            showError("No reservations found for the given customer ID");
+	            return; 
+	        }
+	        
+	        reservationList.setAll(reservations);
+	    });
 	}
 
 	public void handleDeleteReservationResponse(boolean isDeleted) {
@@ -191,12 +200,20 @@ public class ReservationManagementController implements Initializable, IReservat
 		client.setReservationDeleter(this);
 		client.handleMessageFromBoundary(TypeMessage.RESERVATION, params, Command.DELETE_RESERVATION);
 	}
-
+	
 	private void showError(String msg) {
-		Alert alert = new Alert(Alert.AlertType.ERROR);
-		alert.setHeaderText("Error");
-		alert.setContentText(msg);
-		alert.showAndWait();
+	    // One-liner to create the alert
+	    Alert alert = new Alert(Alert.AlertType.ERROR, 
+	    							msg, 
+	    							javafx.scene.control.ButtonType.OK);
+	    
+	    // Remove the header to make it look cleaner
+	    alert.setHeaderText(null);
+	    
+	    // Optional: Only needed if you want the window centered on your app
+	    // alert.initOwner(opsTabPane.getScene().getWindow()); 
+	    
+	    alert.showAndWait();
 	}
 
 }

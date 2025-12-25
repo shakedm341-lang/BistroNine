@@ -132,7 +132,7 @@ public class LoginController {
             ReservationBoundry resController = loader.getController();
             resController.setClient(this.client);
             
-            resController.initData(null); 
+            resController.initData(null,true); 
 
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             stage.setTitle("BistroNine - Guest Reservation");

@@ -44,10 +44,14 @@ public class ReservationBoundry {
     private Subscriber currentUser;
     private ClientController client;
 
-    public void initData(Subscriber user) {
+    
+    private boolean isRepMod = false;
+    
+    public void initData(Subscriber user,boolean custMod) {
         this.currentUser = user;
+        this.isRepMod= custMod;
         
-        if (user != null) {
+        if (user != null && !custMod) {
             // mode: SUBSCRIBER
             
             // 1. Pre-fill the fields with subscriber details
@@ -77,8 +81,12 @@ public class ReservationBoundry {
             phoneTxt.setDisable(false);
             emailTxt.setDisable(false);
             
-            // 3. Show the return to login button for guests
-            btnReturnToLogin.setVisible(true);
+            
+            if (user == null) {
+                btnReturnToLogin.setVisible(true);
+            } else {
+                btnReturnToLogin.setVisible(false); 
+            }
         }
     }
 
@@ -258,13 +266,13 @@ public class ReservationBoundry {
         ArrayList<Object> params = new ArrayList<>();
 
         // --- Handle User Type & Contact Info ---
-        if (currentUser != null) {
-            // Case A: Subscriber
+        if (currentUser != null && !isRepMod) {
+            // Case A: Subscriber/ Representative for self
             params.add("subscriber");                  // Index 0: Type
             params.add(currentUser.getSubscriberId()); // Index 1: Subscriber ID
             params.add(null);                          // Index 2: Placeholder (Server skips this for subscribers)
         } else {
-            // Case B: Guest 
+            // Case B: Guest or Representative creating for a customer
             params.add("customer");                    // Index 0: Type
             params.add(phone.isEmpty() ? null : phone);// Index 1: Phone (or null if empty)
             params.add(email.isEmpty() ? null : email);// Index 2: Email (or null if empty)
