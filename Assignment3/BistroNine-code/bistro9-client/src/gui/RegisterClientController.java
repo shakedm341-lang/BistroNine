@@ -55,7 +55,7 @@ public class RegisterClientController {
             client.handleMessageFromBoundary(
                 TypeMessage.CUSTOMER,            // The broad category
                 subscriberData,                 // The data of the subscriber
-                Command.CREATE_NEW_RESERVATION // The specific command
+                Command.ADD_NEW_SUBSCRIBER // The specific command
             );
         } else {
         	lblMessage.setText("Error: Client is not connected.");

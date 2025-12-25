@@ -21,8 +21,10 @@ public class ClientController extends AbstractClient {
     public static ReservationBoundry reservationBoundry;
     public static MyReservationsController MyReservation;
     public static ReservationManagementController reservationManagementController;
+    public static gui.RegisterClientController registerClientController;
     private gui.IReservationViewer currentReservationViewer;
     private gui.IReservationDeleter currentReservationDeleter;
+    
 
     // Constructor
     public ClientController(String host, int port) throws IOException {
@@ -105,7 +107,10 @@ public class ClientController extends AbstractClient {
             case CHECK_LOGIN_DETAILS:
                 handleLoginResponse(message);
                 break;
-               
+             
+            case ADD_NEW_SUBSCRIBER: 
+                handleRegistrationResponse(message);
+                break;
 
             default:
                 System.out.println("Unknown Customer command: " + message.command);
@@ -178,6 +183,13 @@ public class ClientController extends AbstractClient {
 						currentReservationDeleter = null; // Reset after use
 		}
 	}
+    
+    // Helper method for handling the registration response
+    private void handleRegistrationResponse(Message message) {
+        if (registerClientController != null) {
+            registerClientController.handleServerResponse(message.content); // Pass response to registration controller
+        }
+    }
 
     // Handle message from boundary
     public void handleMessageFromBoundary(TypeMessage type, Object content, Command command) {
