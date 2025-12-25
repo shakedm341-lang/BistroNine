@@ -7,182 +7,129 @@
 <?import javafx.scene.control.ListView?>
 <?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.TextField?>
-<?import javafx.scene.effect.DropShadow?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<VBox alignment="TOP_CENTER" prefHeight="650.0" prefWidth="800.0" style="-fx-background-color: #F4F6F8;" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gui.ReservationBoundry">
-   <children>
-      
-      <HBox alignment="CENTER_LEFT" prefHeight="70.0" prefWidth="800.0" spacing="10.0" style="-fx-background-color: #333333;">
-         <padding>
-            <Insets left="20.0" right="20.0" />
-         </padding>
-         <children>
-            <Button fx:id="btnReturnToLogin" mnemonicParsing="false" onAction="#returnToLogin" style="-fx-background-color: transparent; -fx-cursor: hand; -fx-border-color: #AAAAAA; -fx-border-radius: 5;" text="&lt; Back" textFill="#DDDDDD">
-               <font>
-                  <Font name="System Bold" size="14.0" />
-               </font>
-            </Button>
-            
-            <Region HBox.hgrow="ALWAYS" /> <Label text="New Reservation" textFill="WHITE">
-               <font>
-                  <Font name="System Bold" size="24.0" />
-               </font>
-            </Label>
-            
-            <Region HBox.hgrow="ALWAYS" /> <Region prefWidth="60.0" />
-         </children>
-         <effect>
-            <DropShadow color="#00000040" height="10.0" radius="4.5" width="10.0" />
-         </effect>
-      </HBox>
+<VBox alignment="TOP_CENTER" prefHeight="750.0" prefWidth="1000.0" spacing="20.0" style="-fx-background-color: white;" 
+      xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" 
+      fx:controller="gui.ReservationBoundry">
 
-      <VBox alignment="TOP_CENTER" spacing="20.0">
-         <padding>
-            <Insets bottom="20.0" left="20.0" right="20.0" top="30.0" />
-         </padding>
-         <children>
+    <padding>
+        <Insets bottom="30.0" left="40.0" right="40.0" top="30.0" />
+    </padding>
 
-            <HBox alignment="CENTER" prefHeight="360.0" prefWidth="760.0" spacing="30.0">
-               <children>
-                  
-                  <VBox alignment="TOP_CENTER" prefHeight="350.0" prefWidth="340.0" spacing="15.0" style="-fx-background-color: white; -fx-background-radius: 10;">
-                     <children>
-                        <Label text="Step 1: Reservation Details" textFill="#333333">
+    <HBox alignment="CENTER_LEFT" spacing="20.0">
+        <Button fx:id="btnReturnToLogin" onAction="#returnToLogin" 
+                style="-fx-background-color: transparent; -fx-cursor: hand; -fx-text-fill: #666666; -fx-border-color: #cccccc; -fx-border-radius: 4;" 
+                text="&lt; Back">
+            <font>
+                <Font size="14.0" />
+            </font>
+        </Button>
+        
+        <Region HBox.hgrow="ALWAYS" />
+        
+        <Label text="Create New Reservation" textFill="#0078d7">
+            <font>
+                <Font name="System Bold" size="28.0" />
+            </font>
+        </Label>
+        
+        <Region HBox.hgrow="ALWAYS" />
+        <Region prefWidth="60.0" /> 
+    </HBox>
+
+    <Separator prefWidth="200.0" />
+
+    <HBox alignment="TOP_CENTER" spacing="30.0" VBox.vgrow="ALWAYS">
+        
+        <VBox spacing="15.0" prefWidth="380.0" maxWidth="400.0">
+            <Label style="-fx-font-weight: bold; -fx-underline: true; -fx-font-size: 16px;" text="Step 1: Reservation Details" />
+
+            <VBox spacing="15.0" style="-fx-border-color: #eeeeee; -fx-border-radius: 8; -fx-padding: 20; -fx-background-color: #fcfcfc;">
+                
+                <VBox spacing="5.0">
+                    <Label text="Select Date:" style="-fx-font-weight: bold; -fx-text-fill: #555555;" />
+                    <DatePicker fx:id="datePicker" onAction="#onDateSelected" promptText="Pick a date" maxWidth="Infinity" style="-fx-font-size: 14;" />
+                </VBox>
+
+                <VBox spacing="5.0">
+                    <Label text="Number of Diners:" style="-fx-font-weight: bold; -fx-text-fill: #555555;" />
+                    <HBox alignment="CENTER_LEFT" spacing="0.0" style="-fx-border-color: #cccccc; -fx-border-radius: 4; -fx-background-color: white;">
+                         <Button onAction="#decreaseDiners" prefHeight="35.0" prefWidth="45.0" 
+                                style="-fx-background-color: transparent; -fx-cursor: hand; -fx-text-fill: #333333;" text="-">
                            <font>
-                              <Font name="System Bold" size="16.0" />
-                           </font>
-                        </Label>
-                        <Separator prefWidth="200.0" />
-                        
-                        <VBox spacing="8.0">
-                           <children>
-                              <Label text="Select Date" textFill="#666666">
-                                 <font>
-                                    <Font name="System Bold" size="12.0" />
-                                 </font></Label>
-                              <DatePicker fx:id="datePicker" onAction="#onDateSelected" prefHeight="40.0" prefWidth="300.0" promptText="Pick a date" style="-fx-font-size: 14;" />
-                           </children>
-                           <VBox.margin>
-                              <Insets top="10.0" />
-                           </VBox.margin>
-                        </VBox>
-
-                        <VBox spacing="8.0">
-                           <children>
-                              <Label text="Number of Diners" textFill="#666666">
-                                 <font>
-                                    <Font name="System Bold" size="12.0" />
-                                 </font></Label>
-                              
-                              <HBox alignment="CENTER" spacing="0.0" style="-fx-border-color: #E0E0E0; -fx-border-radius: 5;">
-                                 <children>
-                                    <Button mnemonicParsing="false" onAction="#decreaseDiners" prefHeight="40.0" prefWidth="50.0" style="-fx-background-color: transparent; -fx-cursor: hand; -fx-text-fill: #333333;" text="-">
-                                       <font>
-                                          <Font name="System Bold" size="18.0" />
-                                       </font>
-                                    </Button>
-                                    
-                                    <Separator orientation="VERTICAL" />
-                                    
-                                    <TextField fx:id="txtDiners" alignment="CENTER" editable="false" prefHeight="40.0" prefWidth="198.0" style="-fx-background-color: transparent; -fx-border-width: 0;" text="2">
-                                       <font>
-                                          <Font size="16.0" />
-                                       </font>
-                                    </TextField>
-                                    
-                                    <Separator orientation="VERTICAL" />
-                                    
-                                    <Button mnemonicParsing="false" onAction="#increaseDiners" prefHeight="40.0" prefWidth="50.0" style="-fx-background-color: transparent; -fx-cursor: hand; -fx-text-fill: #333333;" text="+">
-                                       <font>
-                                          <Font name="System Bold" size="18.0" />
-                                       </font>
-                                    </Button>
-                                 </children>
-                              </HBox>
-                           </children>
-                        </VBox>
-
-                        <Region VBox.vgrow="ALWAYS" />
-
-                        <Button fx:id="btnCheckAvailability" mnemonicParsing="false" onAction="#checkAvailability" prefHeight="45.0" prefWidth="300.0" style="-fx-background-color: #333333; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 5; -fx-font-weight: bold;" text="CHECK AVAILABILITY">
-                           <font>
-                              <Font size="14.0" />
+                              <Font name="System Bold" size="18.0" />
                            </font>
                         </Button>
-                     </children>
-                     <padding>
-                        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
-                     </padding>
-                     <effect>
-                        <DropShadow color="#0000001a" height="10.0" radius="4.5" width="10.0" />
-                     </effect>
-                  </VBox>
-
-                  <VBox alignment="TOP_CENTER" prefHeight="350.0" prefWidth="340.0" spacing="10.0" style="-fx-background-color: white; -fx-background-radius: 10;">
-                     <children>
-                        <Label text="Step 2: Select Time" textFill="#333333">
-                           <font>
-                              <Font name="System Bold" size="16.0" />
-                           </font>
-                        </Label>
-                        <Separator prefWidth="200.0" />
                         
-                        <ListView fx:id="timeList" onMouseClicked="#onTimeSelected" prefHeight="260.0" prefWidth="300.0" style="-fx-background-color: #F9F9F9; -fx-border-color: #E0E0E0; -fx-border-radius: 4;" />
+                        <Separator orientation="VERTICAL" />
                         
-                        <Label text="* Select a time to proceed" textFill="#999999">
+                        <TextField fx:id="txtDiners" alignment="CENTER" editable="false" prefHeight="35.0" prefWidth="240.0" 
+                                   style="-fx-background-color: transparent; -fx-border-width: 0;" text="2">
                            <font>
-                              <Font size="11.0" />
+                              <Font name="System Bold" size="15.0" />
                            </font>
-                        </Label>
-                     </children>
-                     <padding>
-                        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
-                     </padding>
-                     <effect>
-                        <DropShadow color="#0000001a" height="10.0" radius="4.5" width="10.0" />
-                     </effect>
-                  </VBox>
-               </children>
-            </HBox>
+                        </TextField>
+                        
+                        <Separator orientation="VERTICAL" />
 
-            <VBox alignment="CENTER" maxWidth="710.0" spacing="15.0" style="-fx-background-color: white; -fx-background-radius: 10;">
-               <children>
-                  <Label text="Step 3: Contact Details &amp; Confirm" textFill="#444444">
-                     <font>
-                        <Font name="System Bold" size="15.0" />
-                     </font>
-                  </Label>
-                  
-                  <HBox alignment="CENTER" spacing="15.0">
-                     <children>
-                        <TextField fx:id="nameTxt" disable="true" prefHeight="40.0" prefWidth="210.0" promptText="Full Name" style="-fx-background-radius: 5; -fx-background-color: #F5F5F5; -fx-border-color: #E0E0E0; -fx-border-radius: 5;" />
-                        <TextField fx:id="phoneTxt" disable="true" prefHeight="40.0" prefWidth="210.0" promptText="Phone Number" style="-fx-background-radius: 5; -fx-background-color: #F5F5F5; -fx-border-color: #E0E0E0; -fx-border-radius: 5;" />
-                        <TextField fx:id="emailTxt" disable="true" prefHeight="40.0" prefWidth="210.0" promptText="Email Address" style="-fx-background-radius: 5; -fx-background-color: #F5F5F5; -fx-border-color: #E0E0E0; -fx-border-radius: 5;" />
-                     </children>
-                  </HBox>
-                  
-                  <Button fx:id="btnCreate" disable="true" mnemonicParsing="false" onAction="#createReservation" prefHeight="50.0" prefWidth="300.0" style="-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 25;" text="CONFIRM RESERVATION">
-                     <font>
-                        <Font name="System Bold" size="16.0" />
-                     </font>
-                     <VBox.margin>
-                        <Insets top="10.0" />
-                     </VBox.margin>
-                  </Button>
-               </children>
-               <padding>
-                  <Insets bottom="25.0" left="25.0" right="25.0" top="20.0" />
-               </padding>
-               <effect>
-                  <DropShadow color="#0000001a" height="10.0" radius="4.5" width="10.0" />
-               </effect>
+                        <Button onAction="#increaseDiners" prefHeight="35.0" prefWidth="45.0" 
+                                style="-fx-background-color: transparent; -fx-cursor: hand; -fx-text-fill: #0078d7;" text="+">
+                           <font>
+                              <Font name="System Bold" size="18.0" />
+                           </font>
+                        </Button>
+                    </HBox>
+                </VBox>
+
+                <Button fx:id="btnCheckAvailability" onAction="#checkAvailability" maxWidth="Infinity" 
+                        style="-fx-background-color: #0078d7; -fx-text-fill: white; -fx-cursor: hand; -fx-font-weight: bold; -fx-padding: 10;" 
+                        text="CHECK AVAILABILITY">
+                   <VBox.margin>
+                      <Insets top="10.0" />
+                   </VBox.margin>
+                </Button>
             </VBox>
-         </children>
-      </VBox>
-      
-   </children>
-</VBox>
+        </VBox>
+
+        <VBox spacing="15.0" prefWidth="380.0" maxWidth="400.0">
+            <Label style="-fx-font-weight: bold; -fx-underline: true; -fx-font-size: 16px;" text="Step 2: Select Time" />
+            
+            <VBox spacing="5.0" VBox.vgrow="ALWAYS" style="-fx-border-color: #eeeeee; -fx-border-radius: 8; -fx-padding: 10; -fx-background-color: #fcfcfc;">
+                <ListView fx:id="timeList" onMouseClicked="#onTimeSelected" VBox.vgrow="ALWAYS" 
+                          style="-fx-background-color: white; -fx-border-color: #e0e0e0; -fx-border-radius: 4;" />
+                <Label text="* Select a time from the list above" textFill="#999999" style="-fx-font-size: 11px;" />
+            </VBox>
+        </VBox>
+    </HBox>
+
+    <VBox spacing="15.0" maxWidth="800.0" style="-fx-background-color: #f9f9f9; -fx-background-radius: 8; -fx-padding: 20; -fx-border-color: #eeeeee;">
+        <Label style="-fx-font-weight: bold; -fx-font-size: 16px;" text="Step 3: Confirm Details" />
+        
+        <GridPane hgap="15.0" vgap="15.0">
+            <columnConstraints>
+                <ColumnConstraints hgrow="ALWAYS" percentWidth="33.0" />
+                <ColumnConstraints hgrow="ALWAYS" percentWidth="33.0" />
+                <ColumnConstraints hgrow="ALWAYS" percentWidth="33.0" />
+            </columnConstraints>
+            
+            <TextField fx:id="nameTxt" disable="true" promptText="Full Name" GridPane.columnIndex="0" style="-fx-pref-height: 35;" />
+            <TextField fx:id="phoneTxt" disable="true" promptText="Phone Number" GridPane.columnIndex="1" style="-fx-pref-height: 35;" />
+            <TextField fx:id="emailTxt" disable="true" promptText="Email Address" GridPane.columnIndex="2" style="-fx-pref-height: 35;" />
+         <rowConstraints>
+            <RowConstraints />
+         </rowConstraints>
+        </GridPane>
+
+        <Button fx:id="btnCreate" disable="true" onAction="#createReservation" prefWidth="250.0"
+                style="-fx-background-color: #28a745; -fx-text-fill: white; -fx-cursor: hand; -fx-font-size: 15px; -fx-font-weight: bold; -fx-padding: 10; -fx-alignment: center;" 
+                text="CONFIRM RESERVATION" VBox.vgrow="NEVER" translateX="260.0"/> 
+                </VBox>
+    
+    </VBox>

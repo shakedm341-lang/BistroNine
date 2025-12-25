@@ -5,41 +5,47 @@
 <?import javafx.geometry.Insets?>
 
 <AnchorPane xmlns="http://javafx.com/javafx/8.0.171"
-            xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="gui.ReservationManagementController">
+	xmlns:fx="http://javafx.com/fxml/1"
+	fx:controller="gui.ReservationManagementController">
 
-    <children>
+	<children>
 
-        <VBox spacing="10"
-              AnchorPane.topAnchor="10"
-              AnchorPane.leftAnchor="10"
-              AnchorPane.rightAnchor="10"
-              AnchorPane.bottomAnchor="10">
+		<VBox spacing="10" AnchorPane.topAnchor="10"
+			AnchorPane.leftAnchor="10" AnchorPane.rightAnchor="10"
+			AnchorPane.bottomAnchor="10">
 
-            <!-- Search / Actions -->
-            <HBox spacing="10">
-                <TextField fx:id="customerIdField"
-                           promptText="Enter Customer ID"/>
-                <Button text="Search by Customer"
-                        onAction="#handleSearchByCustomer"/>
-                <Button text="Load Active Reservations"
-                        onAction="#handleLoadActiveReservations"/>
-            </HBox>
+			<HBox spacing="10" alignment="CENTER_LEFT">
+				<TextField fx:id="customerIdField"
+					promptText="Enter Customer ID" prefWidth="200" />
+				<Button text="Search by Customer"
+					onAction="#handleSearchByCustomer"
+					style="-fx-background-color: #2196f3; -fx-text-fill: white; -fx-cursor: hand;" />
+				<Button text="Load Active Reservations"
+					onAction="#handleLoadActiveReservations" style="-fx-cursor: hand;" />
+			</HBox>
 
-            <!-- Reservations Table -->
-            <TableView fx:id="reservationsTable" VBox.vgrow="ALWAYS">
+			<TableView fx:id="reservationsTable" VBox.vgrow="ALWAYS">
 
-                <columns>
-                    <TableColumn fx:id="colDateTime" text="Date &amp; Time" prefWidth="150"/>
-                    <TableColumn fx:id="colGuests" text="Guests" prefWidth="80"/>
-                    <TableColumn fx:id="colConfirmationCode" text="Code" prefWidth="100"/>
-                    <TableColumn fx:id="colStatus" text="Status" prefWidth="100"/>
-                    <TableColumn fx:id="colAction" text="Action" prefWidth="100"/>
-                </columns>
+				<columns>
+					<TableColumn fx:id="colDateTime" text="Date &amp; Time"
+						prefWidth="200" />
+					<TableColumn fx:id="colGuests" text="Guests"
+						prefWidth="80" />
+					<TableColumn fx:id="colConfirmationCode" text="Code"
+						prefWidth="120" />
+					<TableColumn fx:id="colStatus" text="Status"
+						prefWidth="120" />
+					<TableColumn fx:id="colAction" text="Action"
+						prefWidth="120" />
+				</columns>
 
-            </TableView>
+				<columnResizePolicy>
+					<TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+				</columnResizePolicy>
 
-        </VBox>
+			</TableView>
 
-    </children>
+		</VBox>
+
+	</children>
 </AnchorPane>

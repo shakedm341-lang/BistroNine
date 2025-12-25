@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.String?>
+<?import javafx.collections.FXCollections?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<VBox alignment="TOP_CENTER" spacing="20.0" style="-fx-background-color: white;" 
+      xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" 
+      fx:controller="gui.RegisterClientController">
+    
+    <padding>
+        <Insets bottom="20.0" left="30.0" right="30.0" top="30.0" />
+    </padding>
+
+    <Label text="Register New Client" textFill="#0078d7">
+        <font>
+            <Font name="System Bold" size="26.0" />
+        </font>
+    </Label>
+
+    <HBox alignment="CENTER" spacing="40.0" maxWidth="Infinity">
+        
+        <VBox spacing="15.0" HBox.hgrow="ALWAYS" prefWidth="0" minWidth="300.0">
+            <Label style="-fx-font-weight: bold; -fx-underline: true; -fx-font-size: 14px;" text="Personal Details &amp; Contact" />
+            
+            <GridPane hgap="10.0" vgap="20.0">
+                <columnConstraints>
+                    <ColumnConstraints hgrow="NEVER" minWidth="110.0" prefWidth="110.0" />
+                    <ColumnConstraints hgrow="ALWAYS" maxWidth="Infinity" />
+                </columnConstraints>
+                
+                <Label text="First Name:" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+                <TextField fx:id="txtFirstName" maxWidth="Infinity" promptText="Enter first name" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+
+                <Label text="Last Name:" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+                <TextField fx:id="txtLastName" maxWidth="Infinity" promptText="Enter last name" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+
+                <Label text="Phone Number:" GridPane.columnIndex="0" GridPane.rowIndex="2" />
+                <TextField fx:id="txtPhone" maxWidth="Infinity" promptText="05X-XXXXXXX" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+
+                <Label text="Email:" GridPane.columnIndex="0" GridPane.rowIndex="3" />
+                <TextField fx:id="txtEmail" maxWidth="Infinity" promptText="example@mail.com" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+                
+                <Label text="Personal Info:" GridPane.columnIndex="0" GridPane.rowIndex="4" GridPane.valignment="TOP" />
+                <TextArea fx:id="txtPersonalInfo" maxWidth="Infinity" prefHeight="100.0" promptText="Add notes here..." wrapText="true" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+                
+                <rowConstraints>
+                   <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+                   <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+                   <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+                   <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+                   <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+                </rowConstraints>
+            </GridPane>
+        </VBox>
+
+        <VBox spacing="15.0" HBox.hgrow="ALWAYS" prefWidth="0" minWidth="300.0">
+            <Label style="-fx-font-weight: bold; -fx-underline: true; -fx-font-size: 14px;" text="Account Settings" />
+
+            <GridPane hgap="10.0" vgap="20.0">
+                <columnConstraints>
+                    <ColumnConstraints hgrow="NEVER" minWidth="100.0" prefWidth="100.0" />
+                    <ColumnConstraints hgrow="ALWAYS" maxWidth="Infinity" />
+                </columnConstraints>
+
+                <Label text="Username:" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+                <TextField fx:id="txtUsername" maxWidth="Infinity" promptText="Choose username" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+
+                <Label text="Password:" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+                <PasswordField fx:id="txtPassword" maxWidth="Infinity" promptText="Enter password" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+
+                <Label text="Client Type:" GridPane.columnIndex="0" GridPane.rowIndex="2" />
+                <ComboBox fx:id="cmbType" maxWidth="Infinity" promptText="Select Type" GridPane.columnIndex="1" GridPane.rowIndex="2">
+                    <items>
+                        <FXCollections fx:factory="observableArrayList">
+                            <String fx:value="subscriber" />
+                            <String fx:value="restaurant representative" />
+                            <String fx:value="restaurant manager" />
+                        </FXCollections>
+                    </items>
+                </ComboBox>
+                
+                <rowConstraints>
+                   <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+                   <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+                   <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+                </rowConstraints>
+            </GridPane>
+        </VBox>
+    </HBox>
+
+    <Button fx:id="btnRegister" onAction="#getRegistrationBtn" 
+            style="-fx-background-color: #0078d7; -fx-text-fill: white; -fx-font-size: 15px; -fx-font-weight: bold; -fx-padding: 10 40; -fx-cursor: hand;" 
+            text="Register Client">
+        <VBox.margin>
+            <Insets top="20.0" />
+        </VBox.margin>
+    </Button>
+            
+    <Label fx:id="lblMessage" text="" textFill="RED">
+        <font>
+            <Font size="14.0" />
+        </font>
+    </Label>
+</VBox>

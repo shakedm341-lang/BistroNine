@@ -17,6 +17,9 @@ public class RestaurantManagementController {
 
     @FXML
     private Tab createReservationTab;
+    
+    @FXML
+    private Tab registerClientTab;
 
     // =================================================================================
     // Nested Controllers Injection
@@ -37,6 +40,9 @@ public class RestaurantManagementController {
      */
     @FXML
     private ReservationManagementController reservationViewController;
+    
+    @FXML
+    private RegisterClientController registerClientViewController;
 
     // =================================================================================
     // Data Fields
@@ -73,6 +79,10 @@ public class RestaurantManagementController {
         // Propagate dependencies to the nested "Reservation Management" controller
         if (reservationViewController != null) {
             reservationViewController.setClient(client);
+        }
+        
+        if (registerClientViewController != null) {
+            registerClientViewController.setClientController(client);
         }
     }
 
