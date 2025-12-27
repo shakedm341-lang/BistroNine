@@ -1,16 +1,20 @@
 package controller;
 
 import java.sql.Timestamp;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Random;
 
+import data.Customer;
 import data.Message;
 import data.Subscriber;
+import data.Table;
 import data.TableReservation;
 
 public class CustomerController 
 {
-	private DataBaseController DBC=DataBaseController.getInstance();//Interfacing with the DB Controller
+	private static DataBaseController DBC=DataBaseController.getInstance();//Interfacing with the DB Controller
 	
 	/**
 	 * Default constructor
@@ -19,6 +23,9 @@ public class CustomerController
 	{
 		
 	}
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////managing messages //////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	/**
 	 * Handles messages received from the server and performs corresponding actions.
@@ -44,12 +51,29 @@ public class CustomerController
 		case GET_ALL_SUBSCRIBERS:
 			return getAllSubscribers(msg);
 			
+		case LOST_CONF_CODE:
+			return LostConfCode(msg);
 	    default:
 	        System.out.println("Unknown task received.");
 	        return null;
 		}
 	}
-	
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////Helper methods//////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+	/**
+	 * Retrieves the customer type based on the provided customer ID.
+	 *
+	 * @param customerId The ID of the customer.
+	 * @return The type of the customer (e.g., Customer, Subscriber, Restaurant
+	 *         Representative, Restaurant Manager).
+	 */
+	public static String getCustomerType(int customerId)
+	{
+		return DBC.getCustomerType(customerId);//return the customer type from DB /Customer/subscriber/restaurant representative/restaurant manager
+	}
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////Logic methods//////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -346,5 +370,118 @@ public class CustomerController
 		return subListAsSubscriber;
 	}
 	
+	/**
+	 * Retrieves lost confirmation codes for a customer or subscriber for today's reservations.
+	 * 
+	 * @param msg The message containing the details to retrieve lost confirmation
+	 *            codes. The content of the message is expected to be an
+	 *            ArrayList<Object> with the following order: [Location 0
+	 *            :typeCustomer (String: "customer" or "subscriber"), Location 1:
+	 *            phoneNumber (String) or subscriberId (Integer), Location 2: email
+	 *            (String) - only if typeCustomer is "customer"]
+	 * @return An ArrayList of Integer representing the lost confirmation codes.
+	 */
+	private ArrayList<Integer> LostConfCode(Message msg)
+	{
+		@SuppressWarnings("unchecked") 
+		ArrayList<Object> list = (ArrayList<Object>) msg.content;//get the details from the message content
+		
+		
+		
+		String typeCustomer= new String();
+		int customerId=-1;
+
+		
+		//Setting customer type from the list we got from the message content
+		if (list.get(0) instanceof String) 
+		{
+			typeCustomer = (String) list.get(0);
+		} else 
+		{
+	    	  System.out.println("Error: Index 0 is not a String!");
+	    	  return null;
+		}
+		
+		
+		if (typeCustomer.equals("customer")) 
+		{
+			Customer customer = new Customer();
+			
+			if (list.get(1) instanceof String) 
+			{
+				customer.setPhoneNumber((String) list.get(1))  ;// Setting phone Number from the list we got from the message content
+				if (list.get(2) instanceof String) 
+				{
+					customer.setEmail((String) list.get(2));// Setting email from the list we got from the message content
+				}
+				else if (list.get(2)==null)//if the email is null
+                 {
+                        customer.setEmail(null);
+                 }
+				else 
+				{
+					System.out.println("Error: Index 2 is not a String!");
+					return null;
+				}
+			}
+			else if (list.get(1)==null)//if the phone number is null
+			{
+				customer.setPhoneNumber(null);
+				if (list.get(2) instanceof String) 
+				{
+					customer.setEmail((String) list.get(2))  ;//Setting email from the list we got from the message content
+				}
+				else 
+				{
+					System.out.println("Error: Index 2 is not a String!");
+					return null;
+				}
+			}
+			else 
+			{
+				System.out.println("Error: Index 1 is not a String!");
+				return null;
+			}
+
+			//return customer ID from the DB . if customer not exists he created in the DB and return his ID else return his ID
+			customerId=DBC.getCustomerId(customer);//Getting customer ID from the DB based on the phone number or email provided
+		}
+
+		else if (typeCustomer.equals("subscriber")) 
+		{
+			// Setting subscriber ID from the list we got from the message content
+			if (list.get(1) instanceof Integer) {
+				customerId = (int) list.get(1);
+			} else {
+				System.out.println("Error: Index 1 is not a Integer!");
+				return null;
+			}
+		}
+		
+		//Getting all reservations of the customer from the DB
+		ArrayList<TableReservation> allRes = ReservationControler.getAllReservationsAsTableReservation(DBC.getAllReservationsQueryByCustomerId(customerId));
+		if (allRes == null) 
+		{
+				System.out.println("error return all reservayion by customer id" + customerId);
+				return null;
+
+		}
+		ArrayList<Integer> confCodes = new ArrayList<>();
+		
+		for (TableReservation res : allRes) 
+		{
+			if (res.getStatus().equals("active"))//Checking only active reservations
+			{
+				LocalDate resDate = res.getReservationDate().toLocalDateTime().toLocalDate();
+				if (resDate.equals(LocalDate.now()))//Checking if the reservation date is today
+				{
+					confCodes.add(res.getConfirmationCode());//Adding the existing confirmation code to the list to return to the server
+						
+				}
+				
+			}
+		}
+		return confCodes;
+	}
 }
 

@@ -33,7 +33,7 @@ CREATE TABLE restaurant_tables (
     tableId INT AUTO_INCREMENT,
     seatsNumber INT NOT NULL, 
     location ENUM('inside', 'bar', 'outside') NOT NULL, 
-    status ENUM('available', 'reserved', 'occupied') NOT NULL,
+    status ENUM('available', 'occupied', 'deleted') NOT NULL,
     
     PRIMARY KEY (tableId)
 );
@@ -85,12 +85,26 @@ CREATE TABLE bills (
     totalAmountAfterDiscount DECIMAL(10, 2) DEFAULT 0.00,
     discountPercentage DECIMAL(5,2) DEFAULT 0.00,
     isPaid BOOLEAN DEFAULT FALSE,
-    paymentMethod ENUM('Cash', 'Credit', 'App') DEFAULT NULL,
+    discountType ENUM('subscriber', 'customer') DEFAULT NULL,
+    paymentMethod ENUM('cash', 'credit', 'app') DEFAULT NULL,
     
    
     
     PRIMARY KEY (billId) ,
     FOREIGN KEY (reservationId) REFERENCES table_reservations(reservationId)
+);
+
+CREATE TABLE waiting_list (
+    waitingId INT NOT NULL AUTO_INCREMENT,
+    customerId INT NOT NULL,
+    numberOfDiners INT NOT NULL,
+    confirmationCode INT NOT NULL UNIQUE,
+    entryTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status ENUM('waiting', 'seated', 'cancelled') DEFAULT 'waiting',
+    
+    
+    PRIMARY KEY (waiting_id),
+    FOREIGN KEY (customer_id) REFERENCES customers(customer_id)
 );
 
 

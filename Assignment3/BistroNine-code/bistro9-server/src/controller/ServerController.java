@@ -18,6 +18,7 @@ public class ServerController extends AbstractServer {
 	// initialized in the constructor.
 	private ReservationControler reservationsController;
 	private CustomerController customerController;
+	private BillController billController;
 	private TableController tableController;
 	
 	// Scheduler for outonomous tasks
@@ -32,7 +33,8 @@ public class ServerController extends AbstractServer {
 		DataBaseController.initiateDBC(dbPassword);
 		this.reservationsController = new ReservationControler();
 		this.customerController = new CustomerController();
-		this.tableController = new TableController();
+		this.billController = new BillController();
+		this.tableController=new TableController();
 		startAutoTasks();
 	}
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -110,7 +112,7 @@ public class ServerController extends AbstractServer {
             		
                 reservationsController.deleteLateReservations();//clean up reservations that were not confirmed befor 15 minutes
                 reservationsController.sendReminderAlertsForReservation();//send reminders for upcoming reservations 2 hours before
-                tableController.sendBillReservation();//send bills for reservations 
+                BillController.sendBillReservation();//send bills for reservations 
             } catch (Exception e) {
                 System.err.println("Error during auto-cleanup: " + e.getMessage());
             }

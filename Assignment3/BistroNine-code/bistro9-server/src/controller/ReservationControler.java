@@ -9,6 +9,7 @@ import java.util.Random;
 import data.Customer;
 import data.Message;
 import data.OpeningHoursPerDay;
+import data.Subscriber;
 import data.Table;
 import data.TableReservation;
 import data.TimeSlot;
@@ -54,6 +55,12 @@ public class ReservationControler
 	    case DELETE_RESERVATION:
 	    	return deleteReservation(msg);
 	    	
+	    	case GET_ALL_RESERVATIONS_ACTIVE:
+	    		return 	getAllReservationsActive();
+	    		
+		case GET_ALL_DINERS_AT_RESTAURANT:
+				return getAllDinersAtRestaurant(msg);
+		
 	    default:
 	        System.out.println("Unknown task received.");
 	        return null;
@@ -64,6 +71,115 @@ public class ReservationControler
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////Helper methods//////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	
+	public static boolean createReservationWithWait( int numberOfDiners,int confirmationCode, int customerId )
+	{
+		TableReservation newRes = new TableReservation();//Creating a new reservation object
+		
+		//reservationId giveing by DB auto increment
+		
+		// table ID set when the customer is get in to the restaurant
+		newRes.setNumberOfDiners(numberOfDiners);//Setting number of diners to the reservation
+
+
+        newRes.setConfirmationCode(confirmationCode);//Set the unique confirmation code to the reservation
+        newRes.setCustomerId(customerId);//Setting customer ID to the reservation
+        
+        newRes.setReservationDate(new Timestamp(System.currentTimeMillis()));//Setting reservation date to the reservation
+		
+
+		//DateOfMakeReservation giveing by DB auto CURRENT_TIMESTAMP
+        
+
+		//ArrivalTime and leavingTime not set at the beginning,changed when the customer get into and leaves the restaurant
+		
+        newRes.setStatus("active");//Setting status to the reservation to "active" because the customer did not arrive yet
+		
+		if (DBC.createNewReservation(newRes))//Return that the reservation was created successfully in the DB
+		{
+			
+			return true;//Return the confirmation code of the new reservation
+			//No need to update table status because the table is not assigned yet
+			//no need to create bill because the customer did not arrive yet
+				
+            
+		}
+		return false;//Return false if the reservation was not created successfully in the DB
+	}
+	
+	/**
+	 * Creates a new table reservation without waitlist in the database when the
+	 * customer arrives at the restaurant immediately
+	 * .occupies  table immediately for the reservation.
+	 * .creates a bill for the reservation.
+	 *
+	 * @param tableId        The ID of the table to be reserved.
+	 * @param numberOfDiners The number of diners for the reservation.
+	 * @param customerId     The ID of the customer making the reservation.
+	 * @param status         The status of the reservation.
+	 * @return true if the reservation was created successfully, false otherwise.
+	 */
+	public static boolean createReservationWithoutWait(int tableId, int numberOfDiners, int customerId )
+	{
+		Random rand = new Random();//Random object to generate a random confirmation code
+		TableReservation newRes = new TableReservation();//Creating a new reservation object
+		
+		//reservationId giveing by DB auto increment
+		newRes.setTableId(tableId);//Setting table ID to the reservation
+		newRes.setNumberOfDiners(numberOfDiners);//Setting number of diners to the reservation
+		
+		
+		int code=0;
+        boolean exists=true;
+
+        
+        while (exists)
+        {
+        	code = 100000 + rand.nextInt(900000);//Generate a random 6-digit confirmation code
+        	exists = DBC.checkIfConfCodeExistsInDB(code);//Check if the generated code already exists in the DB
+        }
+
+        newRes.setConfirmationCode(code);//Set the unique confirmation code to the reservation
+        newRes.setCustomerId(customerId);//Setting customer ID to the reservation
+        
+        newRes.setReservationDate(new Timestamp(System.currentTimeMillis()));//Setting reservation date to the reservation
+		
+
+		//DateOfMakeReservation giveing by DB auto CURRENT_TIMESTAMP
+        
+       
+        newRes.setArrivalTime(new Timestamp(System.currentTimeMillis()));
+        
+        
+		
+		//leavingTime not set at the beginning,changed when the customer leaves the restaurant
+		
+        newRes.setStatus("arrived");//Setting status to the reservation to "arrived" because the customer is already at the restaurant
+		
+		if (DBC.createNewReservation(newRes))//Return that the reservation was created successfully in the DB
+		{
+			if (TableController.updateTable(newRes.getTableId(),"status", "occupied"))//Update the status of the table to "occupied" in the DB
+            {
+			
+				if (BillController.createNewBill(newRes))
+				{
+					return true;//Return to server the confirmation code of the new reservation);
+				}
+				else
+				{
+					return false;//Return false if bill was not created successfully in the DB
+				}
+            }
+			else
+            {
+                return false;//Return false if table status was not updated successfully in the DB
+            }
+		}
+		return false;//Return false if the reservation was not created successfully in the DB
+		
+	}
+	
+	
 	/**
 	 * Converts a list of reservations from the database into TableReservation
 	 * objects.
@@ -73,7 +189,7 @@ public class ReservationControler
 	 * @return An ArrayList of TableReservation objects representing the
 	 *         reservations.
 	 */
-	private static ArrayList<TableReservation> getAllReservationsAsTableReservation(ArrayList<ArrayList<Object>> allReservations)
+	public static ArrayList<TableReservation> getAllReservationsAsTableReservation(ArrayList<ArrayList<Object>> allReservations)
 	{
 		
 	
@@ -252,77 +368,7 @@ public class ReservationControler
 	    	
 	    return reservationsListAsTableRes;
 	}
-
-	/**
-	 * Retrieves the opening time slots for a specific date from the database.
-	 *
-	 * @param date The date for which to retrieve opening time slots.
-	 * @return An ArrayList of TimeSlot objects representing the opening time slots
-	 *         for the specified date.
-	 */
-	private ArrayList<TimeSlot> getOpeningTime(LocalDate day)
-	{
-		OpeningHoursPerDay openingHours = new OpeningHoursPerDay(day);
-		
-		DBC.getOpeningHoursByDate(openingHours);//update opening hours for the specific date from the DB in the OpeningHoursPerDay object else put null in the slots list
-		
-		return openingHours.getSlots();
-	}
-	
-	/**
-	 * Retrieves all tables in the restaurant from the database.
-	 *
-	 * @return An ArrayList of Table objects representing all tables in the
-	 *         restaurant.
-	 */
-	private ArrayList<Table> getTableInRestaurant()
-	{
-		ArrayList<ArrayList<Object>> allTables = new ArrayList<>();// List to hold all tables from the DB as a list of
-																	// lists of objects
-		ArrayList<Table> tablesListAsTable = new ArrayList<>();// List to hold all tables as Table objects
-		//b3
-		allTables = DBC.getAllTablesInRestaurant();//return all tables  from the DB as a list of lists of objects else return null
-		for (ArrayList<Object> tableAsList : allTables) {// For each table in the list of tables
-			Table table = new Table();// Create a new Table object
-
-			// Set table ID in the Table object
-			if (tableAsList.get(0) instanceof Integer) {
-				table.setTableId((Integer) tableAsList.get(0));
-			} else {
-				System.out.println("Error: Index 0 is not a Integer!");
-				return null;
-			}
-
-			// Set number of seats in the Table object
-			if (tableAsList.get(1) instanceof Integer) {
-				table.setSeatsNumber((Integer) tableAsList.get(1));
-			} else {
-				System.out.println("Error: Index 1 is not a Integer!");
-				return null;
-			}
-
-			// Set location in the Table object
-			if (tableAsList.get(2) instanceof String) {
-				table.setLocation((String) tableAsList.get(2));
-			} else {
-				System.out.println("Error: Index 2 is not a String!");
-				return null;
-			}
-
-			//set status in the Table object
-			if (tableAsList.get(3) instanceof String) {
-				table.setStatus((String) tableAsList.get(3));
-			} else {
-				System.out.println("Error: Index 3 is not a String!");
-				return null;
-			}
-			
-			tablesListAsTable.add(table);// Add the table to the list of tables as Table objects
-		}
-
-		return tablesListAsTable;
-	}
-		    
+    
 	/**
 	* Finds the best fit table for a given number of diners from a list of tables.
 	*
@@ -353,7 +399,7 @@ public class ReservationControler
 	*
 	* @param reservations The list of TableReservation objects to be sorted.
 	*/
-	private void sortReservationsByDinersDescending(ArrayList<TableReservation> reservations) 
+	public static void sortReservationsByDinersDescending(ArrayList<TableReservation> reservations) 
 	{
 		int n = reservations.size();
 			for (int i = 0; i < n; i++) {
@@ -368,6 +414,10 @@ public class ReservationControler
 				    }
 				}
 			}
+	
+	
+	
+	
 	}
 
 	/**
@@ -380,14 +430,112 @@ public class ReservationControler
 	    System.out.println("Sending Reminder to Customer ID: " + res.getCustomerId() + " for reservation at " + res.getReservationDate());
 	}
 	
+	/**
+	 * Updates a specific column of a reservation in the database.
+	 *
+	 * @param reservationId The ID of the reservation to be updated.
+	 * @param columnName    The name of the column to be updated.
+	 * @param newValue      The new value to be set for the specified column.
+	 * @return true if the update was successful, false otherwise.
+	 */
+	public static boolean updateReservation(int reservationId, String columnName, Object newValue) 
+	{
+		
+		if (columnName.equals("status")) 
+        {
+			if (newValue instanceof String) 
+			{
+				return DBC.updateReservationStatus(reservationId, (String) newValue);
+			} 
+			else 
+			{
+				System.out.println("Error: newValue is not a String!");
+				return false;
+			}
+        }
+		else if (columnName.equals("leavingTime")) 
+        {
+            if (newValue instanceof Timestamp) 
+            {
+                return DBC.updateReservationLeavingTime(reservationId, (Timestamp) newValue);
+            } 
+            else 
+            {
+                System.out.println("Error: newValue is not a Timestamp!");
+                return false;
+            }
+        }
+	}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////Logic methods//////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	/**
+	 * Retrieves all active,arrived table reservations from the database.
+	 *
+	 * 
+	 * @return An ArrayList of TableReservation objects representing all active
+	 *         reservations in the database.
+	 */
+	public static  ArrayList<TableReservation> getAllReservationsActive()
+	{
+		ArrayList<ArrayList<Object>> allReservations = new ArrayList<>();//List to hold all reservations from the DB as a list of lists of objects
+		ArrayList<TableReservation> reservationsListAsTableRes = new ArrayList<>();//List to hold all reservations as TableReservation objects
+		
+		allReservations = DBC.getAllReservationsActiveQuery();//Get all reservations active,arrived from the DB as a list of lists of objects
+		reservationsListAsTableRes=	getAllReservationsAsTableReservation(allReservations);//Convert the list of reservations from the DB into list of TableReservation objects
+
+		return reservationsListAsTableRes;//Return to server the list of reservations as TableReservation 
+	}
+	
+	/**
+	 * Retrieves all diners currently at the restaurant.
+	 *
+	 * @param msg The message not containing any specific details.
+	 * @return An ArrayList of Customer objects representing all diners at the
+	 *         restaurant.
+	 */
+	private ArrayList<Customer> getAllDinersAtRestaurant(Message msg)
+	{
+		ArrayList<ArrayList<Object>> allReservations = new ArrayList<>();//List to hold all reservations from the DB as a list of lists of objects
+		ArrayList<TableReservation> reservationsListAsTableRes = new ArrayList<>();//List to hold all reservations as TableReservation objects
+		ArrayList<Customer> subscribersAtRestaurant = new ArrayList<>();//List to hold all subscribers at the restaurant
+		
+		allReservations = DBC.getAllReservationsQueryByDay(LocalDate.now());//Get all reservations of today from the DB as a list of lists of objects
+		reservationsListAsTableRes=	getAllReservationsAsTableReservation(allReservations);//Convert the list of reservations from the DB into list of TableReservation objects
+		
+		for (TableReservation res : reservationsListAsTableRes) 
+		{
+			if (res.getStatus().equals("arrived")) 
+			{
+				Subscriber sub=new Subscriber();
+
+				sub.setCustomerId(res.getCustomerId());
+				DBC.getCustomerByCustomerId(sub);//update subscriber/customer details in Subscriber object from the DB based on customer ID in the reservation
+				
+				if (sub.getUsername() == null) //if the subscriber is actually a regular customer
+				{
+	                Customer cust = new Customer();
+	                cust.setCustomerId(sub.getCustomerId());
+	                cust.setPhoneNumber(sub.getPhoneNumber());
+	                cust.setEmail(sub.getEmail());
+	                
+	                subscribersAtRestaurant.add(cust);
+	            } else {
+	                // זה מנוי אמיתי - נוסיף אותו כמו שהוא
+	            	subscribersAtRestaurant.add(sub);
+	            } 
+			}
+		}
+		return subscribersAtRestaurant;
+
+	}
+	
+	/**
 	 * Retrieves all table reservations from the database.
 	 *
-	 * @param msg The message requesting all reservations.
+	 * @param msg The message containing the customer ID. The content of the
 	 * @return An ArrayList of TableReservation objects representing all
 	 *         reservations in the database.
 	 */
@@ -604,13 +752,13 @@ public class ReservationControler
 			System.out.println("error return all reservayion" + reservationDay.toString());
 			return null;
 		}
-		ArrayList<Table> tables = getTableInRestaurant();
+		ArrayList<Table> tables = TableController.getTableInRestaurant();
 		if (tables==null) 
         {
             System.out.println("No tables found for " + numberOfDiners + " diners.");
             return null;
         }
-		ArrayList<TimeSlot> OpeningTime = getOpeningTime(reservationDay);
+		ArrayList<TimeSlot> OpeningTime = OpeningTimeController .getOpeningTime(reservationDay);
 		if (OpeningTime==null) 
         {
             System.out.println("The restaurant is closed on " + reservationDay.toString() );

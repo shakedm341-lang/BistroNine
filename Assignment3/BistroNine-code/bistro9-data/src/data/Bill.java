@@ -2,12 +2,13 @@ package data;
 
 public class Bill 
 {
-	private int billId ;//incremente otomatically in the DB
-	private int reservationId ; 	//foreign key from Reservation table
-	private double totalAmount ;
-	private double totalAmountAfterDiscount;
-	private double discountSize;
-	private boolean isPaid  ;//DEFAULT FALSE
+	private int billId ;//incremente otomatically in the DB//
+	private int reservationId ; 	//foreign key from Reservation table//
+	private double totalAmount ;//
+	private double totalAmountAfterDiscount;//
+	private double discountSize;//
+	private boolean isPaid  ;//DEFAULT FALSE//FALSE,true//
+	private String discountType;//subscriber,customer //
 	private String paymentMethod ;//Cash, Credit, App
 
 	public Bill() 
@@ -69,6 +70,14 @@ public class Bill
 
 	public void setDiscountSize(double discountSize) {
 		this.discountSize = discountSize;
+	}
+
+	public String getDiscountType() {
+		return discountType;
+	}
+
+	public void setDiscountType(String discountType) {
+		this.discountType = discountType;
 	}
 	
 	
