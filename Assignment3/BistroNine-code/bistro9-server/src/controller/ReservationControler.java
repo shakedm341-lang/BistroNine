@@ -43,8 +43,11 @@ public class ReservationControler
 		
 		switch (msg.command) //Checking the type of message sent from the server (what action should be performed in the DB Controller)
 		{
-	    case GET_ALL_RESERVATIONS:
+	    case GET_ALL_RESERVATIONS_BY_CUSTOMER:
 	    	return getAllReservationsByCustomerId(msg);
+	    	
+	    case GET_ALL_RESERVATIONS:
+	    	return getAllReservations(msg);
 	    	
 	    case CREATE_NEW_RESERVATION:
 	    	return createNewReservation(msg);
@@ -470,7 +473,24 @@ public class ReservationControler
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////Logic methods//////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	/**
+	 * Retrieves all table reservations from the database.
+	 *
+	 * 
+	 * @return An ArrayList of TableReservation objects representing all
+	 *         reservations in the database.
+	 */
+	private ArrayList<TableReservation> getAllReservations()
+    {
+        ArrayList<ArrayList<Object>> allReservations = new ArrayList<>();//List to hold all reservations from the DB as a list of lists of objects
+        ArrayList<TableReservation> reservationsListAsTableRes = new ArrayList<>();//List to hold all reservations as TableReservation objects
+        
+        allReservations = DBC.getAllReservationsQuery();//Get all reservations from the DB as a list of lists of objects
+        reservationsListAsTableRes=	getAllReservationsAsTableReservation(allReservations);//Convert the list of reservations from the DB into list of TableReservation objects
 
+        return reservationsListAsTableRes;//Return to server the list of reservations as TableReservation 
+    }
+	
 	/**
 	 * Retrieves all active,arrived table reservations from the database.
 	 *
@@ -533,11 +553,16 @@ public class ReservationControler
 	}
 	
 	/**
-	 * Retrieves all table reservations from the database.
+	 * Retrieves all table reservations for a specific customer from the database.
 	 *
-	 * @param msg The message containing the customer ID. The content of the
+	 * @param msg The message containing the customer details. The content of the
+	 *            message is expected to be an ArrayList<Object> with the following
+	 *            order: [Location 0 :typeCustomer (String), if
+	 *            customer Location 1,2: phone number(String) and/or email(String) if 
+	 *            subscribers Location 1:customerId ]
+	 * 
 	 * @return An ArrayList of TableReservation objects representing all
-	 *         reservations in the database.
+	 *         reservations for the specified customer.
 	 */
 	private ArrayList<TableReservation> getAllReservationsByCustomerId(Message msg)
 	{
@@ -548,13 +573,74 @@ public class ReservationControler
     	@SuppressWarnings("unchecked") 
 		ArrayList<Object> list = (ArrayList<Object>) msg.content;//get the reservation details from the message content
     	int customerId=0;
-    	// Setting customer ID from the list we got from the message content
-    				if (list.get(0) instanceof Integer) {
-    					 customerId = (int) list.get(0);
-    				} else {
-    					System.out.println("Error: Index 0 is not a Integer!");
+    	
+    	String typeCustomer= new String();
+    	//Setting customer type from the list we got from the message content
+    			if (list.get(0) instanceof String) 
+    			{
+    				typeCustomer = (String) list.get(0);
+    			} else 
+    			{
+    		    	  System.out.println("Error: Index 0 is not a String!");
+    		    	  return null;
+    			}
+    			
+    			
+    			if (typeCustomer.equals("customer")) 
+    			{
+    				Customer customer = new Customer();
+    				
+    				if (list.get(1) instanceof String) 
+    				{
+    					customer.setPhoneNumber((String) list.get(1))  ;// Setting phone Number from the list we got from the message content
+    					if (list.get(2) instanceof String) 
+    					{
+    						customer.setEmail((String) list.get(2));// Setting email from the list we got from the message content
+    					}
+    					else if (list.get(2)==null)//if the email is null
+    	                 {
+    	                        customer.setEmail(null);
+    	                 }
+    					else 
+    					{
+    						System.out.println("Error: Index 2 is not a String!");
+    						return null;
+    					}
+    				}
+    				else if (list.get(1)==null)//if the phone number is null
+    				{
+    					customer.setPhoneNumber(null);
+    					if (list.get(2) instanceof String) 
+    					{
+    						customer.setEmail((String) list.get(2))  ;//Setting email from the list we got from the message content
+    					}
+    					else 
+    					{
+    						System.out.println("Error: Index 2 is not a String!");
+    						return null;
+    					}
+    				}
+    				else 
+    				{
+    					System.out.println("Error: Index 1 is not a String!");
     					return null;
     				}
+
+    				//return customer ID from the DB . if customer not exists he created in the DB and return his ID else return his ID
+    				customerId=DBC.getCustomerId(customer);//Getting customer ID from the DB based on the phone number or email provided
+    				
+    			}
+
+    			else if (typeCustomer.equals("subscriber")) 
+    			{
+    				// Setting subscriber ID from the list we got from the message content
+    				if (list.get(1) instanceof Integer) {
+    					customerId = (int) list.get(1);
+    				} else {
+    					System.out.println("Error: Index 1 is not a Integer!");
+    					return null;
+    				}
+    			}
     	
     	
     	allReservations = DBC.getAllReservationsQueryByCustomerId(customerId);//Get all reservations from the DB as a list of lists of objects
