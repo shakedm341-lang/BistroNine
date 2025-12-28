@@ -153,7 +153,7 @@ public class ReservationBoundry {
         //Send LocalDate directly
        params.add(selectedDate);
 
-        System.out.println("Sending request: Date=" + selectedDate + ", Diners=" + diners);
+        
 
         // Send the request to the server
         if (client != null) {
@@ -165,6 +165,7 @@ public class ReservationBoundry {
         } else {
             System.err.println("Error: Client connection is null.");
         }
+        System.out.println("Sending request: Date=" + selectedDate + ", Diners=" + diners);
     }
     
     public void updateAvailableHours(ArrayList<LocalTime> availableTimes) {

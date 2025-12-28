@@ -34,6 +34,9 @@ public class UserDashboardController {
     public void setClient(ClientController client) {
         this.client = client;
     }
+    public void setCurrentUser(Subscriber user) {
+		this.currentUser = user;
+	}
 
     /**
      * Sets up the dashboard based on the logged-in user's role.
@@ -74,8 +77,19 @@ public class UserDashboardController {
 
     @FXML
     void goToHome(ActionEvent event) {
-        System.out.println("DEBUG: Go to Home / Profile");
-        // TODO: Load Profile screen
+    	 try {
+             FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/ProfileView.fxml"));
+             Parent root = loader.load();
+
+             ProfileController controller = loader.getController();
+             controller.setDependencies(this.client, this.currentUser,this);
+
+             contentArea.getChildren().clear();
+             contentArea.getChildren().add(root);
+
+         } catch (IOException e) {
+             e.printStackTrace();
+         }
     }
 
     @FXML

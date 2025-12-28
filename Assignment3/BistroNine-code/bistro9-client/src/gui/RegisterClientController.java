@@ -69,6 +69,7 @@ public class RegisterClientController {
     
     public void setClientController(ClientController client) {
 		this.client = client;
+		client.registerClientController = this;
 	}
     
    

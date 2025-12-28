@@ -20,6 +20,9 @@ public class RestaurantManagementController {
     
     @FXML
     private Tab registerClientTab;
+    
+    @FXML
+    private Tab subscribersTab;
 
     // =================================================================================
     // Nested Controllers Injection
@@ -43,6 +46,9 @@ public class RestaurantManagementController {
     
     @FXML
     private RegisterClientController registerClientViewController;
+    
+    @FXML
+    private SubscribersViewController subscribersViewController;
 
     // =================================================================================
     // Data Fields
@@ -84,6 +90,9 @@ public class RestaurantManagementController {
         if (registerClientViewController != null) {
             registerClientViewController.setClientController(client);
         }
+        if (subscribersViewController != null) {
+			subscribersViewController.setClientController(client);
+		}
     }
 
     /**
