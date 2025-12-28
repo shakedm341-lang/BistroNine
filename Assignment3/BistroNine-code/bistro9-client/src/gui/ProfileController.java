@@ -38,6 +38,7 @@ public class ProfileController {
 		this.client = client;
 		this.currentUser = currentUser;
 		this.mainDashboardController = dashboard; // Save the reference
+		ClientController.profileController = this;
 		populateFields();
 	}
 	

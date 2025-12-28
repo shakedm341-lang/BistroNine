@@ -11,6 +11,9 @@ import gui.MyReservationsController;
 import gui.ReservationBoundry;
 import gui.ReservationManagementController;
 import gui.UpdateReservtionBoundry;
+import gui.ProfileController;
+import gui.SubscribersViewController;
+
 
 public class ClientController extends AbstractClient {
 
@@ -22,8 +25,11 @@ public class ClientController extends AbstractClient {
     public static MyReservationsController MyReservation;
     public static ReservationManagementController reservationManagementController;
     public static gui.RegisterClientController registerClientController;
+    public static ProfileController profileController;
+    public static SubscribersViewController subscribersViewController;
     private gui.IReservationViewer currentReservationViewer;
     private gui.IReservationDeleter currentReservationDeleter;
+    
     
 
     // Constructor
@@ -111,6 +117,14 @@ public class ClientController extends AbstractClient {
             case ADD_NEW_SUBSCRIBER: 
                 handleRegistrationResponse(message);
                 break;
+                
+            case GET_ALL_SUBSCRIBERS:
+                handleGetAllSubscribersResponse(message);
+                break;
+                
+            case UPDATE_SUBSCRIBER_DETAILS:
+                handleUpdateProfileResponse(message);
+                break;
 
             default:
                 System.out.println("Unknown Customer command: " + message.command);
@@ -188,6 +202,23 @@ public class ClientController extends AbstractClient {
     private void handleRegistrationResponse(Message message) {
         if (registerClientController != null) {
             registerClientController.handleServerResponse(message.content); // Pass response to registration controller
+        }
+    }
+    
+    // Helper method for handling the list of subscribers response
+    private void handleGetAllSubscribersResponse(Message message) {
+        if (subscribersViewController != null) {
+            @SuppressWarnings("unchecked")
+            ArrayList<Subscriber> list = (ArrayList<Subscriber>) message.content;
+            subscribersViewController.updateSubscriberTable(list); // Update the subscribers table in the boundary
+        }
+    }
+    
+    // Helper method for handling the profile update response
+    private void handleUpdateProfileResponse(Message message) {
+        if (profileController != null) {
+            Boolean isSuccess = (Boolean) message.content;
+            profileController.updateProfileSuccess(isSuccess); // Pass success status to profile controller
         }
     }
 

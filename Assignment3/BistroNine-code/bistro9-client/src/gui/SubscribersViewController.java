@@ -117,6 +117,7 @@ public class SubscribersViewController implements Initializable {
     
     public void setClientController(ClientController client) {
 		this.client = client;
+		ClientController.subscribersViewController = this;
 	}
     
 }
