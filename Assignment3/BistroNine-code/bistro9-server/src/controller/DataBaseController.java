@@ -30,7 +30,7 @@ public class DataBaseController {
 
 	// this are the public methods that the
 	// controllers can call to get OR set data.
-
+	//.
 	// 1. getAllReservationsQueryByCustomerId(int) : ArrayList<ArrayList<Object>>
 	// 2. getAllReservationsQueryByDay(LocalDate) : ArrayList<ArrayList<Object>>
 	// 3. getOpeningHoursByDate(OpeningHoursPerDay) : OpeningHoursPerDay
