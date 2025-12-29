@@ -68,7 +68,7 @@ public class DataBaseController {
 	// 35. updateStatusInWaitingListQuery(WaitList) : boolean
 	// 36. checkIfConfCodeExistsInWaitingList(int) : boolean
 	// 37. createNewWaitQuery(WaitList) : boolean
-	
+	//.
 	// END OF API.
 
 	private static DataBaseController instance;
