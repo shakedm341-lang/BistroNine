@@ -791,48 +791,80 @@ public class DataBaseController {
 		return bill;
 	}
 
-	// הושלם
+	// n6
 	public boolean createNewReservation(TableReservation res) {
-		// FIX 1: Get the pooled connection properly
-		PooledConnection pConn = this.getConnection();
+	    // 1. Get the pooled connection
+	    PooledConnection pConn = this.getConnection();
 
-		// FIX 2: Check if pool returned null
-		if (pConn == null) {
-			return false;
-		}
+	    // 2. Check if pool returned null
+	    if (pConn == null) {
+	        return false;
+	    }
 
-		Connection conn = pConn.getConnection(); // Get physical connection
-		PreparedStatement ps = null;
+	    Connection conn = pConn.getConnection();
+	    PreparedStatement psInsert = null;
+	    PreparedStatement psSelect = null;
+	    ResultSet rsKeys = null;
+	    ResultSet rsData = null;
 
-		try {
-			String query = "INSERT INTO table_reservations "
-					+ "(tableId, numberOfDiners, confirmationCode, customerId, reservationDate, arrivalTime, leavingTime) "
-					+ "VALUES (?, ?, ?, ?, ?, ?, ?)";
+	    try {
+	        // STEP A: Insert the reservation
+	        String insertQuery = "INSERT INTO table_reservations "
+	                + "(tableId, numberOfDiners, confirmationCode, customerId, reservationDate, arrivalTime, leavingTime) "
+	                + "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
-			ps = conn.prepareStatement(query);
+	        // ADDED: Statement.RETURN_GENERATED_KEYS to get the ID back
+	        psInsert = conn.prepareStatement(insertQuery, Statement.RETURN_GENERATED_KEYS);
 
-			ps.setNull(1, java.sql.Types.INTEGER);
+	        // tableId is nullable (might be assigned later)
+	        if (res.getTableId() > 0) {
+	            psInsert.setInt(1, res.getTableId());
+	        } else {
+	            psInsert.setNull(1, java.sql.Types.INTEGER);
+	        }
+	        
+	        psInsert.setInt(2, res.getNumberOfDiners());
+	        psInsert.setInt(3, res.getConfirmationCode());
+	        psInsert.setInt(4, res.getCustomerId());
+	        psInsert.setTimestamp(5, res.getReservationDate());
+	        psInsert.setTimestamp(6, res.getArrivalTime());
+	        psInsert.setTimestamp(7, res.getLeavingTime());
 
-			ps.setInt(2, res.getNumberOfDiners());
-			ps.setInt(3, res.getConfirmationCode());
-			ps.setInt(4, res.getCustomerId());
-			ps.setTimestamp(5, res.getReservationDate());
-			ps.setTimestamp(6, res.getArrivalTime());
-			ps.setTimestamp(7, res.getLeavingTime());
+	        int result = psInsert.executeUpdate();
 
-			int result = ps.executeUpdate();
+	        if (result == 1) {
+	            // STEP B: Retrieve the generated reservationId
+	            rsKeys = psInsert.getGeneratedKeys();
+	            if (rsKeys.next()) {
+	                res.setReservationId(rsKeys.getInt(1)); // Update object reference with new ID
+	            }
 
-			if (result == 1) {
-				return true;
-			}
+	            // STEP C: Retrieve the DB-generated defaults (dateOfMakeReservation, status)
+	            // We need a separate SELECT because getGeneratedKeys only returns the ID.
+	            String selectQuery = "SELECT dateOfMakeReservation, status FROM table_reservations WHERE reservationId = ?";
+	            psSelect = conn.prepareStatement(selectQuery);
+	            psSelect.setInt(1, res.getReservationId());
+	            
+	            rsData = psSelect.executeQuery();
+	            
+	            if (rsData.next()) {
+	                // Update object reference with DB timestamps and defaults
+	                res.setDateOfMakeReservation(rsData.getTimestamp("dateOfMakeReservation"));
+	                res.setStatus(rsData.getString("status"));
+	            }
 
-		} catch (SQLException e) {
-			e.printStackTrace();
-		} finally {
-			closeResources(ps, null);
-			releaseConnection(pConn); // Release back to pool
-		}
-		return false;
+	            return true;
+	        }
+
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    } finally {
+	        // Close all resources
+	        closeResources(psInsert, rsKeys);
+	        closeResources(psSelect, rsData);
+	        releaseConnection(pConn); // Release back to pool
+	    }
+	    return false;
 	}
 
 	/**
@@ -1267,7 +1299,7 @@ public class DataBaseController {
 	    return false;
 	}
 	
-	
+	//n17
 	/**
 	 * Retrieves reservation details using the confirmation code.
 	 * Updates the passed TableReservation object with the data found.
@@ -1302,9 +1334,14 @@ public class DataBaseController {
 	            res.setNumberOfDiners(rs.getInt("numberOfDiners"));
 	            res.setCustomerId(rs.getInt("customerId"));
 	            res.setReservationDate(rs.getTimestamp("reservationDate"));
+	            
+	            // --- THIS LINE WAS MISSING ---
+	            res.setDateOfMakeReservation(rs.getTimestamp("dateOfMakeReservation")); 
+	            // -----------------------------
+
 	            res.setArrivalTime(rs.getTimestamp("arrivalTime"));
 	            res.setLeavingTime(rs.getTimestamp("leavingTime"));
-	            res.setStatus(rs.getString("status")); // ENUM as String
+	            res.setStatus(rs.getString("status")); 
 
 	            return true;
 	        }
