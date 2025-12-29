@@ -9,110 +9,150 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<BorderPane prefHeight="700.0" prefWidth="1024.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gui.UserDashboardController">   <left>
-      <VBox prefHeight="650.0" prefWidth="220.0" spacing="8.0" style="-fx-background-color: #F4F4F4;" BorderPane.alignment="CENTER">
-         <children>
-            <VBox alignment="CENTER_LEFT" prefHeight="80.0" spacing="5.0">
-               <children>
-                  <Label text="BistroNine" textFill="#2196f3">
-                     <font>
-                        <Font name="System Bold" size="24.0" />
-                     </font>
-                  </Label>
-                  <Label fx:id="lblWelcome" text="Welcome, User" textFill="#666666">
-                     <font>
-                        <Font size="14.0" />
-                     </font>
-                  </Label>
-               </children>
-               <padding>
-                  <Insets left="20.0" />
-               </padding>
-            </VBox>
-            
-            <Separator prefWidth="200.0" />
-            
-            <Button mnemonicParsing="false" onAction="#goToHome" prefHeight="45.0" prefWidth="220.0" style="-fx-background-color: transparent; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;" text="Home / Profile" textFill="#333333">
-               <padding>
-                  <Insets left="20.0" />
-               </padding>
-               <font>
-                  <Font size="14.0" />
-               </font>
-            </Button>
-            
-            <Button mnemonicParsing="false" onAction="#goToMyReservations" prefHeight="45.0" prefWidth="220.0" style="-fx-background-color: transparent; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;" text="My Reservations" textFill="#333333">
-               <padding>
-                  <Insets left="20.0" />
-               </padding>
-               <font>
-                  <Font size="14.0" />
-               </font>
-            </Button>
-            
-            <Button mnemonicParsing="false" onAction="#openNewReservation" prefHeight="45.0" prefWidth="220.0" style="-fx-background-color: transparent; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;" text="New Reservation" textFill="#333333">
-               <padding>
-                  <Insets left="20.0" />
-               </padding>
-               <font>
-                  <Font size="14.0" />
-               </font>
-            </Button>
+<BorderPane prefHeight="700.0" prefWidth="1024.0"
+	xmlns="http://javafx.com/javafx/8.0.171"
+	xmlns:fx="http://javafx.com/fxml/1"
+	fx:controller="gui.UserDashboardController">
+	<left>
+		<VBox prefHeight="650.0" prefWidth="220.0" spacing="8.0"
+			style="-fx-background-color: #F4F4F4;" BorderPane.alignment="CENTER">
+			<children>
+				<VBox alignment="CENTER_LEFT" prefHeight="80.0" spacing="5.0">
+					<children>
+						<Label text="BistroNine" textFill="#2196f3">
+							<font>
+								<Font name="System Bold" size="24.0" />
+							</font>
+						</Label>
+						<Label fx:id="lblWelcome" text="Welcome, User"
+							textFill="#666666">
+							<font>
+								<Font size="14.0" />
+							</font>
+						</Label>
+					</children>
+					<padding>
+						<Insets left="20.0" />
+					</padding>
+				</VBox>
 
-            <Separator prefWidth="200.0" />
+				<Separator prefWidth="200.0" />
 
-            <Button fx:id="btnRestaurantOps" mnemonicParsing="false" onAction="#goToRestaurantOps" prefHeight="45.0" prefWidth="220.0" style="-fx-background-color: transparent; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;" text="Restaurant Operations" textFill="#333333">
-               <padding>
-                  <Insets left="20.0" />
-               </padding>
-               <font>
-                  <Font name="System Bold" size="14.0" />
-               </font>
-            </Button>
-            
-            <Button fx:id="btnViewReports" mnemonicParsing="false" onAction="#goToViewReports" prefHeight="45.0" prefWidth="220.0" style="-fx-background-color: transparent; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;" text="View Reports" textFill="#333333">
-               <padding>
-                  <Insets left="20.0" />
-               </padding>
-               <font>
-                  <Font size="14.0" />
-               </font>
-            </Button>
-            
-            <VBox VBox.vgrow="ALWAYS" />
-            
-            <Separator prefWidth="200.0" />
-            
-            <Button mnemonicParsing="false" onAction="#doLogout" prefHeight="50.0" prefWidth="220.0" style="-fx-background-color: transparent; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;" text="Logout" textFill="#d32f2f">
-               <padding>
-                  <Insets left="20.0" />
-               </padding>
-               <font>
-                  <Font name="System Bold" size="14.0" />
-               </font>
-            </Button>
-         </children>
-      </VBox>
-   </left>
-   
-   <center>
-      <StackPane fx:id="contentArea" style="-fx-background-color: white;" BorderPane.alignment="CENTER">
-         <children>
-            <VBox alignment="CENTER" spacing="10.0">
-               <children>
-                  <Label text="Welcome to BistroNine" textFill="#cccccc">
-                     <font>
-                        <Font name="System Bold" size="32.0" />
-                     </font>
-                  </Label>
-                  <Label text="Select an action from the left menu" textFill="#999999">
-                     <font>
-                        <Font size="16.0" />
-                     </font>
-                  </Label>
-               </children>
-            </VBox>
-         </children>
-      </StackPane>
-   </center>
+				
+
+				<Button mnemonicParsing="false" onAction="#goToHome"
+					prefHeight="45.0" prefWidth="220.0"
+					style="-fx-background-color: transparent; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;"
+					text="Home / Profile" textFill="#333333">
+					<padding>
+						<Insets left="20.0" />
+					</padding>
+					<font>
+						<Font size="14.0" />
+					</font>
+				</Button>
+
+				<Button mnemonicParsing="false"
+					onAction="#goToMyReservations" prefHeight="45.0" prefWidth="220.0"
+					style="-fx-background-color: transparent; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;"
+					text="My Reservations" textFill="#333333">
+					<padding>
+						<Insets left="20.0" />
+					</padding>
+					<font>
+						<Font size="14.0" />
+					</font>
+				</Button>
+
+				<Button mnemonicParsing="false"
+					onAction="#openNewReservation" prefHeight="45.0" prefWidth="220.0"
+					style="-fx-background-color: transparent; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;"
+					text="New Reservation" textFill="#333333">
+					<padding>
+						<Insets left="20.0" />
+					</padding>
+					<font>
+						<Font size="14.0" />
+					</font>
+				</Button>
+
+				<Separator prefWidth="200.0" />
+				
+				<Button fx:id="btnLiveDashboard" mnemonicParsing="false"
+					onAction="#goToLiveDashboard" prefHeight="45.0" prefWidth="220.0"
+					style="-fx-background-color: transparent; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;"
+					text="Live Dashboard" textFill="#333333">
+					<padding>
+						<Insets left="20.0" />
+					</padding>
+					<font>
+						<Font name="System Bold" size="14.0" />
+					</font>
+				</Button>
+
+				<Button fx:id="btnRestaurantOps" mnemonicParsing="false"
+					onAction="#goToRestaurantOps" prefHeight="45.0" prefWidth="220.0"
+					style="-fx-background-color: transparent; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;"
+					text="Restaurant Operations" textFill="#333333">
+					<padding>
+						<Insets left="20.0" />
+					</padding>
+					<font>
+						<Font name="System Bold" size="14.0" />
+					</font>
+				</Button>
+
+				<Button fx:id="btnViewReports" mnemonicParsing="false"
+					onAction="#goToViewReports" prefHeight="45.0" prefWidth="220.0"
+					style="-fx-background-color: transparent; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;"
+					text="View Reports" textFill="#333333">
+					<padding>
+						<Insets left="20.0" />
+					</padding>
+					<font>
+						<Font size="14.0" />
+					</font>
+				</Button>
+
+				<VBox VBox.vgrow="ALWAYS" />
+
+				<Separator prefWidth="200.0" />
+
+				<Button mnemonicParsing="false" onAction="#doLogout"
+					prefHeight="50.0" prefWidth="220.0"
+					style="-fx-background-color: transparent; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;"
+					text="Logout" textFill="#d32f2f">
+					<padding>
+						<Insets left="20.0" />
+					</padding>
+					<font>
+						<Font name="System Bold" size="14.0" />
+					</font>
+				</Button>
+			</children>
+		</VBox>
+	</left>
+
+	<center>
+		<StackPane fx:id="contentArea"
+			style="-fx-background-color: white;" BorderPane.alignment="CENTER">
+			<children>
+				<VBox alignment="CENTER" spacing="10.0">
+					<children>
+						<Label text="Welcome to BistroNine" textFill="#cccccc">
+							<font>
+								<Font name="System Bold" size="32.0" />
+							</font>
+						</Label>
+						<Label text="Select an action from the left menu"
+							textFill="#999999">
+							<font>
+								<Font size="16.0" />
+							</font>
+						</Label>
+					</children>
+				</VBox>
+			</children>
+		</StackPane>
+	</center>
 </BorderPane>

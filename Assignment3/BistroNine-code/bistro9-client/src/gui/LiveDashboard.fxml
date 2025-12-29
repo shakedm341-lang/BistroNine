@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<VBox prefHeight="600.0" prefWidth="800.0" spacing="10.0"
+	style="-fx-background-color: white;"
+	xmlns="http://javafx.com/javafx/8.0.171"
+	xmlns:fx="http://javafx.com/fxml/1"
+	fx:controller="gui.LiveDashboardController">
+	<padding>
+		<Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+	</padding>
+	<children>
+		<Label text="Live Dashboard" textFill="#2196f3">
+			<font>
+				<Font name="System Bold" size="24.0" />
+			</font>
+		</Label>
+
+		<TabPane fx:id="mainTabPane" prefHeight="200.0"
+			prefWidth="200.0" tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS">
+			<tabs>
+
+				<Tab fx:id="tabActiveReservations" text="Active Reservations">
+					<content>
+						<fx:include fx:id="activeResView" source="TabActiveReservation.fxml" />
+					</content>
+				</Tab>
+
+				<Tab fx:id="tabWaitingList" text="Waiting List">
+					<content>
+						<fx:include fx:id="waitingListView" source="TabWaitingList.fxml" />
+					</content>
+				</Tab>
+
+				<Tab fx:id="tabCurrentDiners" text="Current Diners">
+					<content>
+						<fx:include fx:id="currentDinersView" source="TabCurrentDiners.fxml" />
+					</content>
+				</Tab>
+
+			</tabs>
+		</TabPane>
+	</children>
+</VBox>

@@ -27,6 +27,9 @@ public class UserDashboardController {
     private Button btnRestaurantOps; 
     @FXML
     private Button btnViewReports;   
+    
+    @FXML
+    private Button btnLiveDashboard;
 
     private ClientController client;
     private Subscriber currentUser;
@@ -40,7 +43,7 @@ public class UserDashboardController {
 
     /**
      * Sets up the dashboard based on the logged-in user's role.
-     * Logic updated to support the new unified "Restaurant Operations" button.
+     * UPDATED: Both Manager and Representative can see the "Live Dashboard".
      */
     public void loadUserDetails(Subscriber user) {
         this.currentUser = user;
@@ -48,21 +51,24 @@ public class UserDashboardController {
 
         String type = user.getType(); // Assuming format like "restaurant manager"
 
-        // Default: Hide operations buttons
+        // 1. Reset all admin/staff buttons to hidden by default
         setButtonVisible(btnRestaurantOps, false);
         setButtonVisible(btnViewReports, false);
+        setButtonVisible(btnLiveDashboard, false);
 
-        // Role-based visibility
+        // 2. Turn on buttons based on specific roles
         if (type.equals("restaurant manager")) {
-        	
-            // Manager sees Operations (Tables/Clients) AND Reports 
+            // Manager sees ALL operational buttons
             setButtonVisible(btnRestaurantOps, true);
             setButtonVisible(btnViewReports, true);
+            setButtonVisible(btnLiveDashboard, true); // Visible for Manager
+
         } else if (type.equals("restaurant representative")) {
-            // Representative sees Operations 
+            // Representative sees Operations AND Live Dashboard
             setButtonVisible(btnRestaurantOps, true);
-            // Usually, specific analytical reports are for managers, 
-            // but Reps see lists/orders inside Operations tabs
+            setButtonVisible(btnLiveDashboard, true); // Visible for Representative
+            
+            // Note: btnViewReports remains hidden for Representative (default behavior)
         }
     }
 
@@ -125,6 +131,26 @@ public class UserDashboardController {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+    
+    @FXML
+    void goToLiveDashboard(ActionEvent event) {
+        System.out.println("DEBUG: Go to Live Dashboard");
+         
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/LiveDashboard.fxml"));
+            Parent root = loader.load();
+            
+            // Assume the controller needs client/user dependencies
+             LiveDashboardController controller = loader.getController();
+             controller.setDependencies(this.client);
+
+            contentArea.getChildren().clear();
+            contentArea.getChildren().add(root);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        
     }
 
     /**
