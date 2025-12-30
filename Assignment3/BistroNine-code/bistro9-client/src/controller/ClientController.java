@@ -13,7 +13,8 @@ import gui.ReservationManagementController;
 import gui.UpdateReservtionBoundry;
 import gui.ProfileController;
 import gui.SubscribersViewController;
-
+import gui.TabCurrentDinersController;
+import gui.TabActiveReservationController;
 
 public class ClientController extends AbstractClient {
 
@@ -27,6 +28,8 @@ public class ClientController extends AbstractClient {
     public static gui.RegisterClientController registerClientController;
     public static ProfileController profileController;
     public static SubscribersViewController subscribersViewController;
+    public static TabCurrentDinersController tabCurrentDinersController;
+    public static TabActiveReservationController tabActiveReservationController;
     private gui.IReservationViewer currentReservationViewer;
     private gui.IReservationDeleter currentReservationDeleter;
     
@@ -100,6 +103,14 @@ public class ClientController extends AbstractClient {
             case DELETE_RESERVATION:
                 handleDeleteReservationResponse(message);
                 break;
+                
+            case GET_ALL_DINERS_AT_RESTAURANT:
+                handleGetAllDinersResponse(message);
+                break;
+                
+            case GET_ALL_RESERVATIONS_ACTIVE:
+                handleGetActiveReservationsResponse(message);
+                break;   
 
             default:
                 System.out.println("Unknown Reservation command: " + message.command);
@@ -219,6 +230,24 @@ public class ClientController extends AbstractClient {
         if (profileController != null) {
             Boolean isSuccess = (Boolean) message.content;
             profileController.updateProfileSuccess(isSuccess); // Pass success status to profile controller
+        }
+    }
+    
+    // Helper method for handling the list of current diners response
+    private void handleGetAllDinersResponse(Message message) {
+        if (tabCurrentDinersController != null) {
+            @SuppressWarnings("unchecked")
+            ArrayList<Customer> list = (ArrayList<Customer>) message.content;
+            tabCurrentDinersController.updateTableData(list); // Update the diners table in the boundary
+        }
+    }
+    
+    // Helper method for handling the list of active reservations response
+    private void handleGetActiveReservationsResponse(Message message) {
+        if (tabActiveReservationController != null) {
+            @SuppressWarnings("unchecked")
+            ArrayList<TableReservation> list = (ArrayList<TableReservation>) message.content;
+            tabActiveReservationController.updateTableData(list); // Update the active reservations table in the boundary
         }
     }
 

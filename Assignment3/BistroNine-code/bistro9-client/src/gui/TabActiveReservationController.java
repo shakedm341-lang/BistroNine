@@ -93,7 +93,7 @@ public class TabActiveReservationController implements Initializable {
 
     public void initData(ClientController client) {
         this.client = client;
-        
+        ClientController.tabActiveReservationController = this;      
     }
 
     /**
@@ -145,7 +145,7 @@ public class TabActiveReservationController implements Initializable {
             }
         });
     }
-
+    
     @FXML
     void onRefreshClicked(ActionEvent event) {
         refreshData();

@@ -92,6 +92,7 @@ public class TabCurrentDinersController implements Initializable {
 
     public void initData(ClientController client) {
         this.client = client;
+        ClientController.tabCurrentDinersController = this;
        
     }
 
