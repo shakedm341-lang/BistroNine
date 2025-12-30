@@ -19,9 +19,9 @@ public class LiveDashboardController implements Initializable {
     @FXML 
     private Tab tabActiveOrders;
     @FXML 
-    private Tab tabWaitingList;
+    private Tab tabWaitingListTab;
     @FXML 
-    private Tab tabCurrentDiners;
+    private Tab tabCurrentDinersTab;
 
     // =================================================================================
     // Nested Controllers Injection
@@ -73,10 +73,9 @@ public class LiveDashboardController implements Initializable {
             tabCurrentDinersController.initData(client);
         }
 
-        // 2. Manually trigger data load for the default tab (Active Orders)
-        // because the listener might not fire for the initial default selection.
-        if (tabActiveReservationController != null) {
-            tabActiveReservationController.refreshData();
+        Tab selectedTab = mainTabPane.getSelectionModel().getSelectedItem();
+        if (selectedTab != null) {
+            loadDataForTab(selectedTab);
         }
     }
 
@@ -84,6 +83,13 @@ public class LiveDashboardController implements Initializable {
      * Logic to determine which tab was selected and trigger the specific data refresh.
      */
     private void loadDataForTab(Tab tab) {
+    	
+    	if (this.client == null) {
+            System.out.println("DEBUG: Client not yet set, skipping data load for tab: " + tab.getText());
+            return;
+        }
+    	
+    	
         // Check which tab object is currently selected
         if (tab == tabActiveOrders) {
             System.out.println("Switched to Active Orders tab");
@@ -91,13 +97,13 @@ public class LiveDashboardController implements Initializable {
             	tabActiveReservationController.refreshData();
             }
         } 
-        else if (tab == tabWaitingList) {
+        else if (tab == tabWaitingListTab) {
             System.out.println("Switched to Waiting List tab");
             if (tabWaitingListController != null) {
                 tabWaitingListController.refreshData();
             }
         } 
-        else if (tab == tabCurrentDiners) {
+        else if (tab == tabCurrentDinersTab) {
             System.out.println("Switched to Current Diners tab");
             if (tabCurrentDinersController != null) {
                 tabCurrentDinersController.refreshData();

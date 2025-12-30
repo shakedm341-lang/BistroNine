@@ -26,21 +26,21 @@
 			prefWidth="200.0" tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS">
 			<tabs>
 
-				<Tab fx:id="tabActiveReservations" text="Active Reservations">
+				<Tab fx:id="tabActiveOrders" text="Active Reservations">
 					<content>
-						<fx:include fx:id="activeResView" source="TabActiveReservation.fxml" />
+						<fx:include fx:id="tabActiveReservation" source="TabActiveReservation.fxml" />
 					</content>
 				</Tab>
 
-				<Tab fx:id="tabWaitingList" text="Waiting List">
+				<Tab fx:id="tabWaitingListTab" text="Waiting List">
 					<content>
-						<fx:include fx:id="waitingListView" source="TabWaitingList.fxml" />
+						<fx:include fx:id="tabWaitingList" source="TabWaitingList.fxml" />
 					</content>
 				</Tab>
 
-				<Tab fx:id="tabCurrentDiners" text="Current Diners">
+				<Tab fx:id="tabCurrentDinersTab" text="Current Diners">
 					<content>
-						<fx:include fx:id="currentDinersView" source="TabCurrentDiners.fxml" />
+						<fx:include fx:id="tabCurrentDiners" source="TabCurrentDiners.fxml" />
 					</content>
 				</Tab>
 
