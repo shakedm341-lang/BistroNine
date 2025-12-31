@@ -4,14 +4,18 @@ import java.sql.Timestamp;
 
 public class WaitList 
 {
-
-	private int waitingId ;// AUTO_INCREMENT in DB
-	private int customerId ;
-    private int numberOfDiners ;
-    private int confirmationCode ;
-    private Timestamp entryTime ;//DEFAULT CURRENT_TIMESTAMP in DB
-    private String status ; //waiting, seated, cancelled //DEFAULT 'waiting', in DB
+	private int waitingId ;// AUTO_INCREMENT in DB//
+	private int reservationId;
+	private int numberOfDiners;//
+    private Timestamp  entryTimeToList ;//DEFAULT CURRENT_TIMESTAMP in DB//
+    private Timestamp exitTimeFromList;
+    private String status ; //waiting, seated, cancelled //DEFAULT 'waiting', in DB//
+    private String type ; //walk_in, check_in//
 	
+
+    
+    
+    
 	public WaitList() 
 	{
 		// TODO Auto-generated constructor stub
@@ -25,12 +29,39 @@ public class WaitList
 		this.waitingId = waiting_id;
 	}
 
-	public int getCustomerId() {
-		return customerId;
+	
+
+	public String getStatus() {
+		return status;
 	}
 
-	public void setCustomerId(int customer_id) {
-		this.customerId = customer_id;
+	public void setStatus(String status) {
+		this.status = status;
+	}
+
+	public int getReservationId() {
+		return reservationId;
+	}
+
+	public void setReservationId(int reservationId) {
+		this.reservationId = reservationId;
+	}
+
+	public Timestamp getEntryTimeToList() {
+		return entryTimeToList;
+	}
+
+	public void setEntryTimeToList(Timestamp entryTimeToList) {
+		this.entryTimeToList = entryTimeToList;
+	}
+
+
+	public String getType() {
+		return type;
+	}
+
+	public void setType(String type) {
+		this.type = type;
 	}
 
 	public int getNumberOfDiners() {
@@ -41,30 +72,17 @@ public class WaitList
 		this.numberOfDiners = numberOfDiners;
 	}
 
-	public Timestamp getEntryTime() {
-		return entryTime;
+
+
+	public Timestamp getExitTimeFromList() {
+		return exitTimeFromList;
 	}
 
-	public void setEntryTime(Timestamp entry_time) {
-		this.entryTime = entry_time;
+	public void setExitTimeFromList(Timestamp exitTimeFromList) {
+		this.exitTimeFromList = exitTimeFromList;
 	}
 
-	public String getStatus() {
-		return status;
-	}
-
-	public void setStatus(String status) {
-		this.status = status;
-	}
-
-	public int getConfirmationCode() {
-		return confirmationCode;
-	}
-
-	public void setConfirmationCode(int confirmationCode) {
-		this.confirmationCode = confirmationCode;
-	}
-
+	
 	
 	
 	

@@ -9,5 +9,7 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/OCSF"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/BistroNine-data"/>
 	<classpathentry kind="lib" path="src/controller/mysql-connector-j-9.5.0.jar"/>
+	<classpathentry kind="lib" path="C:/javax.activation-1.2.0.jar"/>
+	<classpathentry kind="lib" path="C:/javax.mail-1.6.2.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -47,7 +47,7 @@ public class ReservationControler
 	    	return getAllReservationsByCustomerId(msg);
 	    	
 	    case GET_ALL_RESERVATIONS:
-	    	return getAllReservations(msg);
+	    	return getAllReservations();
 	    	
 	    case CREATE_NEW_RESERVATION:
 	    	return createNewReservation(msg);
@@ -75,17 +75,28 @@ public class ReservationControler
 ////////////////////////////////Helper methods//////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	
-	public static boolean createReservationWithWait( int numberOfDiners,int confirmationCode, int customerId )
+	public static 	TableReservation createReservationWithWait( int numberOfDiners, int customerId )
 	{
+		Random rand = new Random();//Random object to generate a random confirmation code
 		TableReservation newRes = new TableReservation();//Creating a new reservation object
 		
 		//reservationId giveing by DB auto increment
 		
 		// table ID set when the customer is get in to the restaurant
 		newRes.setNumberOfDiners(numberOfDiners);//Setting number of diners to the reservation
+		int code=0;
+        boolean exists=true;
 
+        while (exists)
+        {
+        		code = 100000 + rand.nextInt(900000); 
 
-        newRes.setConfirmationCode(confirmationCode);//Set the unique confirmation code to the reservation
+            boolean existsInReservations = DBC.checkIfConfCodeExistsInDB(code);
+
+            exists = existsInReservations ;
+        }
+
+        newRes.setConfirmationCode(code);//Set the unique confirmation code to the reservation
         newRes.setCustomerId(customerId);//Setting customer ID to the reservation
         
         newRes.setReservationDate(new Timestamp(System.currentTimeMillis()));//Setting reservation date to the reservation
@@ -96,18 +107,18 @@ public class ReservationControler
 
 		//ArrivalTime and leavingTime not set at the beginning,changed when the customer get into and leaves the restaurant
 		
-        newRes.setStatus("active");//Setting status to the reservation to "active" because the customer did not arrive yet
+        newRes.setStatus("waiting");//Setting status to the reservation to "active" because the customer did not arrive yet
 		
 		if (DBC.createNewReservation(newRes))//Return that the reservation was created successfully in the DB
 		{
 			
-			return true;//Return the confirmation code of the new reservation
+			return newRes;//Return the confirmation code of the new reservation
 			//No need to update table status because the table is not assigned yet
 			//no need to create bill because the customer did not arrive yet
 				
             
 		}
-		return false;//Return false if the reservation was not created successfully in the DB
+		return null;//Return false if the reservation was not created successfully in the DB
 	}
 	
 	/**
@@ -423,15 +434,6 @@ public class ReservationControler
 	
 	}
 
-	/**
-	 * Sends email and SMS reminders to the customer for an upcoming reservation 2 hours before the reservation time.
-	 *
-	 * @param res The TableReservation object representing the reservation.
-	 */
-	private void sendEmailAndSMS(TableReservation res) 
-	{
-	    System.out.println("Sending Reminder to Customer ID: " + res.getCustomerId() + " for reservation at " + res.getReservationDate());
-	}
 	
 	/**
 	 * Updates a specific column of a reservation in the database.
@@ -468,6 +470,7 @@ public class ReservationControler
                 return false;
             }
         }
+		return false;
 	}
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1010,7 +1013,7 @@ public class ReservationControler
 	}
 	
 	/**
-	 * Sends reminder alerts to customers for upcoming reservations. This method
+	 * Sends email to customers for upcoming reservations. This method
 	 * checks today's reservations and sends reminders to customers whose
 	 * reservations are scheduled to start in 2 hours. this method is called
 	 * periodically by schedulere to run every minute at the server.
@@ -1037,7 +1040,22 @@ public class ReservationControler
 	            // If the reservation is 2 hours away
 	            if (minutesUntilRes >= 119 && minutesUntilRes <= 120) 
 	            {
-	                sendEmailAndSMS(res);// Send reminder to the customer
+	            	Subscriber sub = new Subscriber();
+	            	sub.setCustomerId( res.getCustomerId());
+	            	
+	            	if (!DBC.getCustomerByCustomerId(sub))
+	            	{
+						System.out.println("Error: could not find customer for reservation " + res.getConfirmationCode());
+						return;
+	            	}
+
+	            		EmailSendController.sendEmail(sub.getEmail(), "bistro9 is waiting for you! 🎉🥂🎉", "Hi"+ sub.getFirstName()+ " " +sub.getLastName() + ", we just wanted to remind you that your table for "+res.getNumberOfDiners()+" diners at Bistro9 is reserved for today in 2 hours ("+res.getReservationDate()+").\r\n"
+	            				+ "The restaurant staff is already preparing for you.\r\n"
+	            				+ "We look forward to seeing you and wish you an enjoyable meal.");// Send email reminder to the customer
+	            		SmsSendController.sendSms(sub.getPhoneNumber(), "bistro9 is waiting for you! 🎉🥂🎉","Hi"+ sub.getFirstName()+ " " +sub.getLastName() + ", we just wanted to remind you that your table for "+res.getNumberOfDiners()+" diners at Bistro9 is reserved for today in 2 hours ("+res.getReservationDate()+").\r\n"
+	            				+ "The restaurant staff is already preparing for you.\r\n"
+	            				+ "We look forward to seeing you and wish you an enjoyable meal.");// Send sms reminder to the customer
+	            
 	            }
 	        }
 	    }

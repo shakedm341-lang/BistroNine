@@ -9,6 +9,7 @@ import data.Bill;
 import data.Message;
 import data.Table;
 import data.TableReservation;
+import data.WaitList;
 
 public class TableController 
 {
@@ -36,14 +37,17 @@ public class TableController
 		{
 	    case RECEIVE_TABLE_ID:
 	    	return receiveTableIdByConfCode(msg);
-	    case ADD_TABLE: // וודאי שיש לך את הקבוע הזה ב-ENUM
+	    case ADD_TABLE: 
 			return addTable(msg);
 			
-		case DELETE_TABLE: // וודאי שיש לך את הקבוע הזה ב-ENUM
+		case DELETE_TABLE: 
 			return deleteTable(msg);
 			
-		case UPDATE_TABLE_SEATS: // וודאי שיש לך את הקבוע הזה ב-ENUM
+		case UPDATE_TABLE_SEATS: 
 			return updateTableSeatsNumber(msg);
+			
+		case GET_ALL_AVAILABLE_TABLES:
+			return getAllAvailableTables();
 	    default:
 	        System.out.println("Unknown task received.");
 	        return null;
@@ -53,6 +57,14 @@ public class TableController
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////Helper methods//////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	/**
+	 * "Finds the smallest available table for immediate seating that does not conflict with 
+	 * incoming reservations for the next 2 hours
+	 *
+	 * @param requiredSeats The number of seats required for the table.
+	 * @return The best available Table object that meets the criteria, or null if
+	 *         no suitable table is found.
+	 */
 	public static Table findBestTableForNow(int requiredSeats) 
 	{
 	    ArrayList<Table> allTables = TableController.getTableInRestaurant();//get all tables in the restaurant
@@ -64,38 +76,41 @@ public class TableController
 
 	    if (allTables == null) return null;
 
+	    ///////////fins best table available now and for the next 2 hours for immediate seating/////////////////
+	    
+	    
 	    for (Table t : allTables) 
 	    {
-	        // 1. סינון ראשוני: שולחן פנוי ומתאים בגודל
+	        // Check if the table is available and meets the required seats 
 	        if (t.getStatus().equalsIgnoreCase("available") && t.getSeatsNumber() >= requiredSeats) 
 	        {
-	            // =================================================================
-	            // שלב בדיקת המלאי (Capacity Check)
-	            // =================================================================
-	            
-	            // א. ספירה: כמה שולחנות פנויים *נוספים* יש לי בגודל הזה או יותר?
-	            // (כולל השולחן הנוכחי שאנו בודקים)
+	        		// loop that ran again on all tables
 	            int availableTablesCount = 0;
-	            for (Table otherT : allTables) {
-	                if (otherT.getStatus().equalsIgnoreCase("available") && otherT.getSeatsNumber() >= t.getSeatsNumber()) {
+	            for (Table otherT : allTables) 
+	            {
+		            	//Counting the tables that are both vacant and the same size (or larger) than the current table (t)
+			        	//This gives us the total "stock" we have to offer for reservations
+	                if (otherT.getStatus().equals("available") && otherT.getSeatsNumber() >= t.getSeatsNumber()) {
 	                    availableTablesCount++;
 	                }
 	            }
 
-	            // ב. ספירה: כמה הזמנות active יש לשעתיים הקרובות שיכולות להיכנס בשולחנות האלו?
-	            int imminentReservationsCount = 0;
-	            if (futureReservations != null) {
-	                for (TableReservation res : futureReservations) {
-	                    // בודקים רק הזמנות פעילות או מאושרות
-	                    if (res.getStatus().equalsIgnoreCase("active") || res.getStatus().equalsIgnoreCase("approved")) {
+	            // counting "threatening" reservations that may need this table (t)
+	            int imminentReservationsCount = 0;//Variable for counting "threatening" orders
+	            if (futureReservations != null) 
+	            {
+	                for (TableReservation res : futureReservations) 
+	                {
+	                    // check only active or arrived reservations for counting the reservations that may need this table (t)
+	                    if (res.getStatus().equals("active") || res.getStatus().equals("arrived")) {
 	                        
-	                        // בדיקה אם ההזמנה "מאיימת" על המלאי (צריכה שולחן בגודל הזה או קטן יותר)
+	                        // check if the reservation can fit on this table (t)
 	                        if (res.getNumberOfDiners() <= t.getSeatsNumber()) {
 	                            
-	                            // בדיקת זמנים: האם ההזמנה היא בטווח הזמן הקריטי?
-	                            // (מ-30 דקות לפני ועד שעתיים אחרי)
+	                          // check if the reservation time is within the next 2 hours and after now minus 15 minutes(laters)
 	                            LocalDateTime resTime = res.getReservationDate().toLocalDateTime();
-	                            if (resTime.isBefore(safetyTimeLimit) && resTime.isAfter(nowTime.minusMinutes(30))) {
+	                            if (resTime.isBefore(safetyTimeLimit) && resTime.isAfter(nowTime.minusMinutes(15))) 
+	                            {
 	                                imminentReservationsCount++;
 	                            }
 	                        }
@@ -103,21 +118,19 @@ public class TableController
 	                }
 	            }
 
-	            // ג. המבחן הקובע:
-	            // האם יש לי יותר שולחנות פנויים מאשר הזמנות שמחכות להיכנס?
-	            // אם כן - יש לי "עודף" ואפשר לתת את השולחן ללקוח המזדמן
+	          
+	            //check if there are more available tables than imminent reservations that may need this table (t)
 	            if (availableTablesCount > imminentReservationsCount) 
 	            {
-	                // אלגוריתם Best Fit (נבחר את השולחן הכי קטן שעדיין מתאים)
 	                if (bestTable == null || t.getSeatsNumber() < bestTable.getSeatsNumber()) {
 	                    bestTable = t;
 	                }
 	            }
-	            // אחרת: השולחן הזה "שמור וירטואלית" להזמנות שבדרך
+	            //else, this table (t) is not suitable as it may be needed for imminent reservations
 	        }
 	    }
 	    
-	    return bestTable;
+	    return bestTable;//return the best table found or null if none found
 	}
 	
 	/**
@@ -209,6 +222,7 @@ public class TableController
                 return false;
             }
 		}
+		return false;
 		
 		
     }
@@ -446,7 +460,24 @@ public class TableController
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////Logic methods//////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+	/**
+	 * Retrieves all available/occupied tables in the restaurant from the database.
+	 *
+	 * @return An ArrayList of Table objects representing all available tables in
+	 *         the restaurant.
+	 */
+	private ArrayList<Table> getAllAvailableTables()
+	{
+		ArrayList<Table> tables = getTableInRestaurant();//get all tables in the restaurant today available/occupied/deleted
+		for (Table table : tables) 
+		{
+			if (table.getStatus().equals("deleted")) 
+			{
+				tables.remove(table);//remove deleted tables from the list
+			}
+		}
+		return tables;//return the list of available/occupied tables to server
+	}
 	/**
 	 * Receives a table ID based on the provided conference code in the message."check in" process and create a bill for the reservation.
 	 *
@@ -454,7 +485,7 @@ public class TableController
 	 *            message is expected to be an ArrayList<Object> with the following
 	 *            order:[Location 0 :  conferenceCode (Integer)]
 	 * @return A TableReservation object with updated details, or null if not found
-	 *         or an error occurs.
+	 *         or an error occurs.check the status of the reservation and update the customer if getting a table or get in to waitlisted.
 	 */
 	private TableReservation receiveTableIdByConfCode(Message msg)
 	{
@@ -478,7 +509,7 @@ public class TableController
 		checkInRes.setConfirmationCode(conferenceCode);//set the conference code in the reservation object
 		
 		//return the reservation details from the DB in the table reservation object or null if not found
-		if (DBC.getReservationsByConferenceCodeQuery(checkInRes)==null)
+		if (!DBC.getReservationsByConferenceCodeQuery(checkInRes))
 		{
 			System.out.println("Reservation not found.");
 			return null;//reservation not found
@@ -508,7 +539,7 @@ public class TableController
 		//find the best suitable table for the reservation that available
 		for (Table table : tables) 
 		{     
-		    // if the table can accommodate the number of diners in the reservation
+		    // if the table can accommodate the number of diners in the check In reservation
 		    if (table.getSeatsNumber() >= checkInRes.getNumberOfDiners()) 
 		    {
 		         //if the table is available
@@ -527,7 +558,7 @@ public class TableController
 		 if (bestTable != null)//if a suitable table is found 
 		 {
 
-			bestTable.setStatus("occupied");
+			
 			//update the table data in the DB returning true if successful or false if failed
 			
 			if (!updateTable(bestTable.getTableId(), "status", "occupied")) 
@@ -536,20 +567,73 @@ public class TableController
 					return null; // failed to update table status
 			}
 			
-			checkInRes.setTableId(bestTable.getTableId());
 			//update the reservation data in the DB return true if successful or false if failed
+			checkInRes.setTableId(bestTable.getTableId());
+			
+			
 			if (!DBC.updateReservation(checkInRes)) 
 			{
 				System.out.println("Failed to update reservation.");
+				TableController.updateTable(bestTable.getTableId(), "status", "available");
 				return null; // failed to update reservation
 			}
 			
-			BillController.createNewBill(checkInRes);
-			} 
-		 else 
+			//create a new bill for the reservation 
+			if (!BillController.createNewBill(checkInRes))
+		    {
+		         System.out.println("Warning: Reservation completed but Bill creation failed.");
+		         return null; // Bill creation failed
+		    }
+			
+			ArrayList<WaitList> allWaiter = WaitListController.getAllWaitingAsWaitList(DBC.getWaitingListQuery());
+			
+			if (allWaiter != null) 
+			{
+				for (WaitList waiter : allWaiter) 
+				{
+					if (waiter.getReservationId() == checkInRes.getReservationId()) 
+					{
+						// update the waitlist status to seated in the DB 
+						if (!DBC.updateStatusInWaitingListQuery(waiter)) 
+						{
+							System.out.println("Failed to remove from waitlist.");
+							return null; // failed to remove from waitlist
+						}
+						break;
+					}
+				}
+			}
+			
+		 } 
+		 else //no suitable table found get in to the waitlist
 		 {
-		     System.out.println("No suitable table found at this moment.");
-		     return null; //no suitable table found
+				System.out.println("No suitable table available for immediate seating. Adding to waitlist.");
+
+				WaitList waitListEntry = new WaitList();
+				
+				waitListEntry.setReservationId(checkInRes.getReservationId());
+				waitListEntry.setEntryTimeToList(new Timestamp(System.currentTimeMillis()));
+				waitListEntry.setStatus("waiting");
+				waitListEntry.setType("check_in");
+				
+				
+				if (!DBC.addToWaitList(waitListEntry)) 
+				{
+					System.out.println("Failed to add to waitlist.");
+					return null; // failed to add to waitlist
+				}
+
+				// update the reservation status to waiting in the DB return true if successful
+				// or false if failed
+				checkInRes.setStatus("waiting");
+				if (!DBC.updateReservation(checkInRes)) 
+				{
+					System.out.println("Failed to update reservation to waiting.");
+					return null; // failed to update reservation
+				}
+				
+				
+				
 		 }
 		
 		 return checkInRes;
@@ -732,5 +816,13 @@ public class TableController
 		return null;
 	}
 }
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////Automated tasks//////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
 
 

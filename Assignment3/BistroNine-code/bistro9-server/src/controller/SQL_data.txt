@@ -33,7 +33,7 @@ CREATE TABLE restaurant_tables (
     tableId INT AUTO_INCREMENT,
     seatsNumber INT NOT NULL, 
     location ENUM('inside', 'bar', 'outside') NOT NULL, 
-    status ENUM('available', 'occupied', 'deleted') NOT NULL,
+    status ENUM('available', 'occupied', 'cancelled') NOT NULL,
     
     PRIMARY KEY (tableId)
 );
@@ -48,7 +48,7 @@ CREATE TABLE table_reservations (
     dateOfMakeReservation DATETIME DEFAULT CURRENT_TIMESTAMP, 
     arrivalTime DATETIME, 
     leavingTime DATETIME,
-    status ENUM('active','arrived' ,'cancelled', 'completed') NOT NULL DEFAULT 'active',
+    status ENUM('active','arrived' ,'cancelled', 'completed','waiting' ) NOT NULL DEFAULT 'active',
     
     PRIMARY KEY (reservationId),
     FOREIGN KEY (customerId) REFERENCES customer(customerId) ON UPDATE CASCADE,
@@ -96,15 +96,16 @@ CREATE TABLE bills (
 
 CREATE TABLE waiting_list (
     waitingId INT NOT NULL AUTO_INCREMENT,
-    customerId INT NOT NULL,
-    numberOfDiners INT NOT NULL,
-    confirmationCode INT NOT NULL UNIQUE,
-    entryTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    status ENUM('waiting', 'seated', 'cancelled') DEFAULT 'waiting',
+	reservationId INT ,
+	numberOfDiners INT NOT NULL,
+    entryTimeToList TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    exitTimeFromList TIMESTAMP,
+    status ENUM('waiting', 'seated', 'cancelled','notified') DEFAULT 'waiting',
+    type ENUM('walk_in', 'check_in') NOT NULL,
     
     
     PRIMARY KEY (waiting_id),
-    FOREIGN KEY (customer_id) REFERENCES customers(customer_id)
+    FOREIGN KEY (reservationId) REFERENCES table_reservations(reservationId)
 );
 
 

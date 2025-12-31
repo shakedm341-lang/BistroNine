@@ -6,6 +6,7 @@ import java.util.Random;
 
 import data.Customer;
 import data.Message;
+import data.Subscriber;
 import data.Table;
 import data.TableReservation;
 import data.WaitList;
@@ -34,18 +35,96 @@ public class WaitListController
 		{
 		case GET_IN_TO_WAIT_LIST:
 			return getInToWaitList(msg);
-		
+			
+		case GET_WAIT_LIST:
+			return getWaitList();
+			
+		case DELETE_FROM_WAIT_LIST:
+			return deleteFromWaitList(msg);
+		default:
+		    System.out.println("Unknown task received.");
+		    return null;
 		}
 	}
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////Helper methods//////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-	////לבדוק אם יש הסתכלות על סטטוס הממתינים כשבודקים את מי להושיב בשולחן שהתפנה או פנוי
+	/**
+	 * Seats a waiter by updating their status in wait list and reservation details.
+	 *check_in will get tableId updated and status to arrived
+	 * walk_in will get reservation date to now and status to active without tableId because 
+	 * he need to do check-in to get his table id
+	 *
+	 * @param waiter    The WaitList object representing the waiter to be seated.
+	 * @param freeTable The Table object representing the free table.
+	 * @param res       The TableReservation object associated with the waiter.
+	 * @return true if the waiter was successfully seated; false otherwise.
+	 */
+	public static boolean seatWaiter(WaitList waiter, Table freeTable,TableReservation res)
+	{
 	
+		//update waitlist status to seated and set exitTimeFromList to now
+		waiter.setStatus("seated");
+		waiter.setExitTimeFromList(new Timestamp(System.currentTimeMillis())); 
+		if (!DBC.updateStatusAndExitTimeInWaitingListQuery(waiter)) 
+		{
+			return false;
+		}
+
+		//update reservation details in each case check-in / walk-in
+		if (waiter.getType().equals("check_in")) 
+		{
+			res.setTableId(freeTable.getTableId());//update tableId because now we have a table for him and he in the restaurant
+			res.setStatus("arrived");//update status to arrived
+
+			if (!DBC.updateReservation(res)) 
+			{
+				System.out.println("Error linking table to reservation.");
+				return false; // Error updating reservation
+
+			}
+
+			return true; //Successfully seated the waiter
+
+		} 
+		else if (waiter.getType().equals("walk_in"))
+		{//walk-in customer can come after a 15 minutes he got a table 
+			//if he come he need to do receiveTableIdByConfCode to get his table id
+			
+			//update waitlist status to seated and set exitTimeFromList to now
+			waiter.setStatus("notified");
+			waiter.setExitTimeFromList(new Timestamp(System.currentTimeMillis())); 
+			if (!DBC.updateStatusAndExitTimeInWaitingListQuery(waiter)) 
+			{
+				return false;
+			}
+			
+			res.setReservationDate(new Timestamp(System.currentTimeMillis()));//update reservation date to now because now the reservation begins
+			res.setStatus("active");//update status to active because now the reservation begins
+			
+			if (!DBC.updateReservation(res)) 
+			{
+				System.out.println("Error linking table to reservation.");
+				return false; // Error updating reservation
+
+			}
+
+			return true; 
+		}
+		return false;
+
+
+	}
+	
+	/**
+     * Converts a list of waitlist data from the database into a list of WaitList objects.
+     *
+     * @param allallWaits An ArrayList of ArrayLists, where each inner list contains the attributes of a waitlist entry.
+     * @return An ArrayList of WaitList objects representing the waitlist entries.
+     */
 	public static ArrayList<WaitList> getAllWaitingAsWaitList(ArrayList<ArrayList<Object>> allallWaits)
 	{
+
 		ArrayList<WaitList> WaitsListAsWaitList = new ArrayList<>();
 
 		for (ArrayList<Object> WaitAsList : allallWaits)
@@ -56,16 +135,16 @@ public class WaitListController
 			//Set waiting_id in the WaitList object
 			if (WaitAsList.get(0) instanceof Integer) 
 			{
-				waitAsWaitList.setWaiting_id((Integer) WaitAsList.get(0));
+				waitAsWaitList.setWaitingId((Integer) WaitAsList.get(0));
 			} else {
 				System.out.println("Error: Index 0 is not a Integer!");
 				return null; 
 			}
 
-			//Set customer_id in the WaitList object
+			//Set reservationId in the WaitList object
 			if (WaitAsList.get(1) instanceof Integer) 
 			{
-				waitAsWaitList.setCustomer_id((Integer) WaitAsList.get(1));
+				waitAsWaitList.setReservationId((Integer) WaitAsList.get(1));
 			} else {
 				System.out.println("Error: Index 1 is not a Integer!");
 				return null; 
@@ -80,84 +159,323 @@ public class WaitListController
 				return null; 
 			}
 			
-			//Set  entry_time in the WaitList object
+			//Set  entry Time To List in the WaitList object
 			if (WaitAsList.get(3) instanceof Timestamp) 
 			{
-				waitAsWaitList.setEntry_time((Timestamp) WaitAsList.get(3));
+				waitAsWaitList.setEntryTimeToList((Timestamp) WaitAsList.get(3));
 			} else {
 				System.out.println("Error: Index 3 is not a Timestamp!");
 				return null; 
 			}
-	
-			//Set status in the WaitList object
-			if (WaitAsList.get(4) instanceof  String ) 
+			
+			//Set  exit Time From List in the WaitList object
+			if (WaitAsList.get(4) instanceof Timestamp) 
 			{
-				waitAsWaitList.setStatus(( String ) WaitAsList.get(4));
+				waitAsWaitList.setExitTimeFromList((Timestamp) WaitAsList.get(4));
 			} else {
-				System.out.println("Error: Index 4 is not a  String !");
+				System.out.println("Error: Index 4 is not a Timestamp!");
+				return null; 
+			}
+			
+			//Set status in the WaitList object
+			if (WaitAsList.get(5) instanceof  String ) 
+			{
+				waitAsWaitList.setStatus(( String ) WaitAsList.get(5));
+			} else {
+				System.out.println("Error: Index 5 is not a  String !");
 				return null; 
 			}
 
+			//Set type in the WaitList object
+			if (WaitAsList.get(6) instanceof  String ) 
+			{
+				waitAsWaitList.setType(( String ) WaitAsList.get(6));
+			} else {
+				System.out.println("Error: Index 6 is not a  String !");
+				return null; 
+			}
 			
+
 			WaitsListAsWaitList.add(waitAsWaitList);
 		}
 		return WaitsListAsWaitList;
 	}
-
-	public static boolean findMatchInWaitingList(int freeTable)
+	
+	
+	/**
+	 * * Finds a matching waiter in the waiting list for a given free table and
+	 * seats the waiter if a match is found.
+	 *updates the waitlist and reservation in the DB
+	 *
+	 * @param freeTable The Table object representing the free table.
+	 * @return true if a matching waiter was found and seated; false otherwise.
+	 */
+	public static WaitList findMatchInWaitingList(Table freeTable)
 	{
-	    
+
 		ArrayList<ArrayList<Object>> allWaits = new ArrayList<>();
+
+		allWaits = DBC.getWaitingListQuery(); //return all Waiting List as ArrayList<WaitList> ,the first one on the list is the one that waited the longest. 
+
+		if (allWaits == null || allWaits.isEmpty()) 
+		{
+			return null; 
+		}
+
+		//list of all people Waiting/seated/canceled as list of WaitList objects
+		ArrayList<WaitList> queue = getAllWaitingAsWaitList(allWaits);
+
+
+
+		for (WaitList waiter : queue) 
+		{
+			if (waiter.getStatus().equals("waiting") && waiter.getType().equals("check_in"))
+			{
+				//Check if the table can accommodate the number of diners for this waiter check-in
+				if (freeTable.getSeatsNumber() >= waiter.getNumberOfDiners()) 
+				{
+					
+					TableReservation res = new TableReservation();
+					res.setReservationId(waiter.getReservationId());
+					if(!DBC.getReservationByReservationId(res))
+					{
+						System.out.println("Error fetching reservation for waiter ID: " + waiter.getWaitingId());
+						continue; // failed to get reservation details
+					}
+
+					if (seatWaiter(waiter, freeTable,res)) 
+					{
+						return waiter; // Successfully seated the waiter
+					}
+				}
+			}
+		}
 		
-	    allWaits = DBC.getWaitingListQuery(); //return all Waiting List as ArrayList<WaitList> ,the first one on the list is the one that waited the longest. 
-	    
-	    if (allWaits == null || allWaits.isEmpty()) 
-	    {
-	        return false; 
-	    }
+		//if no check-in found , try to find walk-in
+		for (WaitList waiter : queue) 
+		{
+			//Check if the table can accommodate the number of diners for this waiter walk_in
+			if (waiter.getStatus().equals("waiting") &&   waiter.getType().equals("walk_in"))
+			{
+				TableReservation res = new TableReservation();
+				res.setReservationId(waiter.getReservationId());
+				if(!DBC.getReservationByReservationId(res))
+				{
+					System.out.println("Error fetching reservation for waiter ID: " + waiter.getWaitingId());
+					continue; // failed to get reservation details
+				}
+				
+				if (seatWaiter(waiter, freeTable,res )) 
+				{
+					return waiter; 
+				}
+			}
+		}
 
-	  //list of all people Waiting
-	    ArrayList<WaitList> queue = getAllWaitingAsWaitList(allWaits);
-	    
-	    Table table=new Table();
-	    table.setTableId(freeTable);
-	    
-	    if (DBC.getTableByTableIdQuery(table)==null)//update table data in table Object else return false
-	    {
-	    		return false;
-	    }
-
-	    for (WaitList waiter : queue) 
-	    {
-		    	if ( waiter.getStatus().equals("waiting"))
-		    	{
-		    		// בדיקה: האם השולחן שהתפנה מתאים לכמות הסועדים של הממתין?
-		    		if (table.getSeatsNumber() >= waiter.getNumberOfDiners()) 
-		    		{
-	
-		    			int luckyCustomerId = waiter.getCustomerId();
-	
-		    			DBC.updateStatusInWaitingListQuery(waiter);//change status to seated return true if sucss else false
-	
-		    			
-		    			if (ReservationControler.createReservationWithWait(waiter.getNumberOfDiners(),waiter.getConfirmationCode(), waiter.getCustomerId()))
-		    			{
-		    				return false;
-		    			}
-	
-		    			return true;
-		    		}
-		    	}
-	    }
-
-	    return false; // לא נמצא ממתין שמתאים לשולחן הספציפי הזה
+		return null;//not found suitable waiter for this table 
 	}
-	
+
+
+
+
+
 	
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////Logic methods//////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	//מחזיר קוד אישור אם נכנס לרשימת המתנה או מספר שולחן(עם מינוס) אם יש שולחן פנוי ונכנס ישר למסעדה
+	/**
+	 * Deletes a customer from the wait list based on the provided message content.
+	 *
+	 * @param msg The message containing the confirmation code of the reservation to
+	 *            be deleted. The content of the message is expected to be an
+	 *            ArrayList<Object> with the following order: [Location 0 : String
+	 *            type of customer ("customer" or "subscriber"), Location 1 : String
+	 *            phone number (if type is "customer") or Integer subscriber ID (if type is
+	 *            "subscriber"), Location 2 : String email (if type is "customer")]
+	 * @return true if the customer was successfully deleted from the wait list;
+	 *         false otherwise.
+	 */
+	private boolean deleteFromWaitList(Message msg)
+	{
+		@SuppressWarnings("unchecked") 
+		ArrayList<Object> list = (ArrayList<Object>) msg.content;
+
+		String typeCustomer= new String();
+		int customerId=-1;
+
+
+		//Setting customer type from the list we got from the message content
+		if (list.get(0) instanceof String) 
+		{
+			typeCustomer = (String) list.get(0);
+		} else 
+		{
+			System.out.println("Error: Index 0 is not a String!");
+			return false;
+		}
+
+
+		if (typeCustomer.equals("customer")) 
+		{
+			Customer customer = new Customer();
+
+			if (list.get(1) instanceof String) 
+			{
+				customer.setPhoneNumber((String) list.get(1))  ;// Setting phone Number from the list we got from the message content
+				if (list.get(2) instanceof String) 
+				{
+					customer.setEmail((String) list.get(2));// Setting email from the list we got from the message content
+				}
+				else if (list.get(2)==null)//if the email is null
+				{
+					customer.setEmail(null);
+				}
+				else 
+				{
+					System.out.println("Error: Index 2 is not a String!");
+					return false;
+				}
+			}
+			else if (list.get(1)==null)//if the phone number is null
+			{
+				customer.setPhoneNumber(null);
+				if (list.get(2) instanceof String) 
+				{
+					customer.setEmail((String) list.get(2))  ;//Setting email from the list we got from the message content
+				}
+				else 
+				{
+					System.out.println("Error: Index 2 is not a String!");
+					return false;
+				}
+			}
+			else 
+			{
+				System.out.println("Error: Index 1 is not a String!");
+				return false;
+			}
+
+			//return customer ID from the DB . if customer not exists he created in the DB and return his ID else return his ID
+			customerId=DBC.getCustomerId(customer);//Getting customer ID from the DB based on the phone number or email provided
+
+		}
+
+		else if (typeCustomer.equals("subscriber")) 
+		{
+			// Setting subscriber ID from the list we got from the message content
+			if (list.get(1) instanceof Integer) {
+				customerId = (int) list.get(1);
+			} else {
+				System.out.println("Error: Index 1 is not a Integer!");
+				return false;
+			}
+		}
+
+
+		ArrayList<WaitList> allWaiter = getAllWaitingAsWaitList(DBC.getWaitingListQuery());//Getting all wait list from the DB as list of WaitList objects
+		if (allWaiter.isEmpty()) 
+		{
+			System.out.println("No waiters in the wait list.");
+			return false; // No waiters to delete
+		}
+
+		for (WaitList waiter : allWaiter) 
+		{
+			TableReservation res = new TableReservation();
+			res.setReservationId(waiter.getReservationId());
+
+			if (!DBC.getReservationByReservationId(res)) 
+			{
+				System.out.println("Error retrieving reservation for wait list.");
+				continue; // Error retrieving reservation
+			}
+
+			if (  waiter.getStatus().equals("waiting")) 
+			{
+				if (res.getCustomerId() == customerId)// Found the matching waiter to delete
+				{
+					
+					if (DBC.deleteFromWaitList(waiter)) //Deleting the waiter from the wait list in the DB by Changeing his status to canceled
+					{
+						if (!DBC.deleteReservationByConfCode(res.getConfirmationCode())) //Deleting the reservation associated with the deleted waiter
+						{
+							System.out.println("Error cancelling reservation for deleted waiter.");
+							return false; // Error cancelling reservation
+						}
+						return true; // Successfully deleted the waiter from the wait list
+					} else {
+						System.out.println("Error deleting waiter from wait list.");
+						return false; // Error deleting waiter
+					}
+				}
+			}
+		}
+		return false;
+	}
+	/**
+	 * Retrieves the current wait list of customers who are waiting for a table.
+	 *
+	 *
+	 * @return An ArrayList of ManWaiting objects representing the current wait
+	 *         list.
+	 */
+	private ArrayList<ManWaiting> getWaitList()
+	{
+		ArrayList<ManWaiting> waitList = new ArrayList<>();
+		
+		ArrayList<WaitList> allWaiter = getAllWaitingAsWaitList(DBC.getWaitingListQuery());//Getting all wait list from the DB as list of WaitList objects
+		
+		for (WaitList waiter : allWaiter) 
+		{
+			if (waiter.getStatus().equals("waiting")) 
+            {
+
+				TableReservation res = new TableReservation();
+				res.setReservationId(waiter.getReservationId());
+				
+				if (!DBC.getReservationsByConferenceCodeQuery(res))
+				{
+					System.out.println("Error retrieving reservation for wait list.");
+					return null; // Error retrieving reservation
+				}
+				
+				Subscriber sub= new Subscriber();
+				sub.setCustomerId(res.getCustomerId());
+				if (!DBC.getCustomerByCustomerId(sub))
+				{
+					System.out.println("Error retrieving customer for wait list.");
+                    return null; // Error retrieving customer
+				}
+				
+				ManWaiting manWait = new ManWaiting();
+				manWait.setFirstName(sub.getFirstName());
+				manWait.setLastName(sub.getLastName());
+				manWait.setPhoneNumber(sub.getPhoneNumber());
+				manWait.setEmail(sub.getEmail());
+				manWait.setEntryTimeToList(waiter.getEntryTimeToList());
+				waitList.add(manWait);
+
+            }
+
+		}
+		return waitList;//Returning the list of waiters currently waiting
+		
+	}
+
+	
+	/**
+	 * Handles the process of adding a walk-in customer to the wait list. It checks
+	 * for immediate table availability(now and for 2 hours) . If a table is
+	 * available, it creates a reservation and bill and returns the negative table ID 
+	 *  If no table is available, it adds the customer to the wait list and creates a reservation
+	 *  and returns the confirmation code. 
+	 *!!!!!walk-in customer that added to wait list need to do receiveTableIdByConfCode when he arrives to get his table ID
+	 * @param msg The Message object containing customer details and number of
+	 *            diners.
+	 * @return An Integer representing either the confirmation code for the wait
+	 *         list or a negative table ID if seated immediately. Returns null on
+	 *         failure.
+	 */
 	private Integer getInToWaitList(Message msg)
 	{
 		@SuppressWarnings("unchecked") 
@@ -165,7 +483,7 @@ public class WaitListController
 		
 		WaitList newWait = new WaitList();//Creating a new reservation object
 		
-		Random rand = new Random();//Random object to generate a random confirmation code
+		
 		String typeCustomer= new String();
 		int customerId=-1;
 
@@ -239,8 +557,8 @@ public class WaitListController
 		
 		//waitingId  AUTO_INCREMENT in DB
 		
-		newWait.setCustomerId(customerId);
-
+		// reservationId first null
+		
 		// Setting numberOfDiners from the list we got from the message content
 		if (list.get(3) instanceof Integer) {
 			newWait.setNumberOfDiners((int) list.get(3));
@@ -250,23 +568,42 @@ public class WaitListController
 		}
 
         
-        //entryTime DEFAULT CURRENT_TIMESTAMP in DB
+        //entryTimeToList DEFAULT CURRENT_TIMESTAMP in DB
 		
 		//status DEFAULT 'waiting', in DB
         
 		
-		//בדיקה האם יש שולחן פנוי ללקוח שהגע הרגע למסעדה 
+		newWait.setType("walk_in");//Setting type to walk_in since this method is for walk-in customers only
+		
+		
+		//check for available table right now for the number of diners 
 		Table bestTable = TableController.findBestTableForNow(newWait.getNumberOfDiners());
 
-        // 3. אם נמצא שולחן פנוי - יוצרים הזמנה במקום כניסה לרשימת המתנה
-        if (bestTable != null) 
+		
+		boolean canSitImmediately = false;
+
+		//if there is a table available right now , check if there is someone that waiting for this table
+		if (bestTable != null) 
+		{
+		     
+		    boolean neededByQueue = DBC.isTableNeededQueue(bestTable.getSeatsNumber());//return true if there is someone in the wait list that his number of diners <= table size and in status waiting
+		    
+		    if (!neededByQueue) 
+		    {
+		        
+		        canSitImmediately = true;//There is a table available right now and no one is waiting for it, so the customer can sit immediately
+		    }
+		}
+		
+        // if found a table available right now , create reservation and return table number with minus sign
+        if (bestTable != null && canSitImmediately) 
         {
-        	//מחזירה אמת אם ההזמנה נוצרה והשולחן נתפס
-        boolean result=ReservationControler.createReservationWithoutWait(bestTable.getTableId(),newWait.getNumberOfDiners(),newWait.getCustomerId());
+        	//Create reservation without wait for walk-in customer
+        boolean result=ReservationControler.createReservationWithoutWait(bestTable.getTableId(),newWait.getNumberOfDiners(),customerId);
             
             if (result)
             {
-                return -bestTable.getTableId(); 
+                return -bestTable.getTableId(); //return table number with minus sign to indicate immediate seating
             }
             else
             {
@@ -274,41 +611,28 @@ public class WaitListController
             }
         }
         
-        else//לא נמצא שולחן פנוי אז נכנסים לרשימת המתנה
+		else// no available table right now , enter to wait list
         {
-        
-        	int code=0;
-            boolean exists=true;
 
-            
-            while (exists)
-            {
-            		code = 100000 + rand.nextInt(900000); // יצירת קוד רנדומלי
-                
-                // בדיקה 1: האם קיים בטבלת ההזמנות?
-                boolean existsInReservations = DBC.checkIfConfCodeExistsInDB(code);
-                
-                // בדיקה 2: האם קיים בטבלת ההמתנה? (צריך להוסיף את המתודה הזו ב-DBC)
-                boolean existsInWaitingList = DBC.checkIfConfCodeExistsInWaitingList(code);//בודקקת אם הקוד אישור כבר קיים ברשימת ההמתנה
-                
-                // אם קיים באחד מהם - הדגל יהיה true והלולאה תרוץ שוב
-                exists = existsInReservations || existsInWaitingList;
-            }
-    		
-            newWait.setConfirmationCode(code);//Set the unique confirmation code 
-        
-        if (DBC.createNewWaitQuery(newWait))//Return that the Wait List was created successfully in the DB
+		TableReservation newRes =ReservationControler.createReservationWithWait(newWait.getNumberOfDiners(), customerId);
+		if (newRes == null) 
 		{
-			return newWait.getConfirmationCode();//Return to server the confirmation code of the new reservation);
+			
+			return null;// Return null if the reservation was not created successfully in the DB
+		}
+		newWait.setReservationId(newRes.getReservationId());
+        
+        if (DBC.addToWaitList(newWait))//Return that the add to Wait List was created successfully in the DB 
+		{
+			return newRes.getConfirmationCode();//Return to server the confirmation code of the new reservation);
 		}
 		
 		return null;//Return null if the reservation was not created successfully in the DB
         }
 	}
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////Automated tasks//////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+	
+	
 	
 }

@@ -10,6 +10,7 @@ import data.Message;
 import data.Subscriber;
 import data.Table;
 import data.TableReservation;
+import data.WaitList;
 
 public class BillController 
 {
@@ -56,17 +57,47 @@ public class BillController
 	/**
 	 * Sends a bill Automatic to the customer after dining for 2 hours.
 	 *
-	 * @param resId The reservation ID for which to send the bill message.
+	 * @param res The reservation ID for which to send the bill message.
 	 */
-	private static void sendBillMessage(int resId) 
+	private static void sendBillMessage(TableReservation res) 
 	{
 		Bill bill=new Bill(); 
-		bill.setReservationId(resId);
+		bill.setReservationId(res.getReservationId());
 
-		DBC.getBillDetails(bill);//update the bill object with the details from the DB
+		if (DBC.getBillDetails(bill)==null)//update the bill object with the details from the DB
+		{
+			System.out.println("Error: No bill found for reservation ID " + res.getReservationId());
+			return;
+		}
+		
+		Subscriber sub = new Subscriber();
+		sub.setCustomerId( res.getCustomerId());
+		if (!DBC.getCustomerByCustomerId(sub)) 
+		{
+			System.out.println("Error: could not find customer for reservation " + res.getConfirmationCode());
+			return;
+		}
+		
+		String formattedAmount = String.format("%.2f", bill.getTotalAmount());
+		String formattedTotal = String.format("%.2f", bill.getTotalAmountAfterDiscount());
 
-		// Simulating sending the bill to the customer
-		System.out.println("Hello, you have been dining with us for 2 hours. Here is your bill details:\n "+ "Total Amount: $" + bill.getTotalAmountAfterDiscount() + "\n" + "Please proceed to payment at your earliest convenience. Thank you! good day!" );
+		int discountAsInt = (int) bill.getDiscountSize();
+		
+		EmailSendController.sendEmail(sub.getEmail(), "Your BistroNine bill is ready🧾", "Hi "+sub.getFirstName()+" "+sub.getLastName()+", Thank you for dining with us at Bistro9! It was a pleasure to host you.\r\n"
+				+ "\r\n"
+				+ "Attached is your bill summary:\r\n"
+				+ "Amount before discount: "+formattedAmount+" ₪\r\n"
+				+ "Discount: "+discountAsInt+" %\r\n"
+				+ "Total to pay: "+formattedTotal+" ₪\r\n"
+				+ "We look forward to seeing you again soon, Bistro9 Team 🍷");// Send email reminder to the customer
+		SmsSendController.sendSms(sub.getPhoneNumber(), "Your BistroNine bill is ready🧾",
+		        "Hi " + sub.getFirstName() + " " + sub.getLastName() + ", Thank you for dining with us at Bistro9! It was a pleasure to host you.\r\n"
+		        + "\r\n"
+		        + "Attached is your bill summary:\r\n"
+		        + "Amount before discount: " + formattedAmount + " ₪\r\n"
+		        + "Discount: " + discountAsInt + " %\r\n"
+		        + "Total to pay: " + formattedTotal + " ₪\r\n"
+		        + "We look forward to seeing you again soon, Bistro9 Team 🍷");// Send sms reminder to the customer
 
 	}
 
@@ -175,8 +206,8 @@ public class BillController
     }
 	
 	/**
-	 * Processes the payment of a bill based on the bill ID provided in the message.calls after the method showBill
-	 *
+	 * Processes the payment of a bill based on the bill ID provided in the message.
+	 *!!!!!!call to this method after the method showBill
 	 * @param msg The message containing the bill ID. The content of the message is
 	 *            expected to be an ArrayList<Object> with the following order:
 	 *            [Location 0 :bill ID (int)]
@@ -188,7 +219,7 @@ public class BillController
 		ArrayList<Object> list = (ArrayList<Object>) msg.content;//get bill Id from the message
 
 		int billId = 0;
-		
+
 		//Set bill Id in the Bill object
 		if (list.get(0) instanceof Integer) 
 		{
@@ -197,36 +228,77 @@ public class BillController
 		else 
 		{
 			System.out.println("Error: Index 0 is not a Integer!");
-    	    		return false;
+			return false;
 		}
 
-		
+
 		int reservationId = DBC.payBill(billId,true,"credit");//return reservation Id if the bill is paid successfully (chancg to isPaid=true,paymentMethod=Credit ) in the DB else return 0
 		if (reservationId == 0) {
-	        return false;
-	    }
-		
+			return false;
+		}
 
-			//update the table status to "available" after paying the bill
+
+		//update reservation status to "completed" and set leaving time to now after payment is successful
+
+		TableReservation res = new TableReservation();
+
+		res.setReservationId(reservationId);
+
+		if (!DBC.getReservationByReservationId(res))//update the reservation object with the details from the DB and return true if found else false
+		{
+			return  false;
+		}
+
+		ReservationControler.updateReservation(reservationId,"status", "completed");
+		Timestamp nowTime = java.sql.Timestamp.valueOf(LocalDateTime.now());
+		ReservationControler.updateReservation(reservationId,"leavingTime", nowTime);
+
+		Table freeTable=new Table();
+		freeTable.setTableId(res.getTableId());
+
+		if (DBC.getTableByTableIdQuery(freeTable)==null)//update table data in table Object else return false
+		{
+			return false;
+		}
+		
+		
+		//find match in the waiting list for the freed table
+		WaitList waiter = WaitListController.findMatchInWaitingList(freeTable);
+		if (waiter!=null)
+		{
+			//status of the table is already  occupied from the last customer that was seated from the waiting list
+			TableReservation waiterRes=new TableReservation();
+			waiterRes.setReservationId(waiter.getReservationId());
+			if (!DBC.getReservationByReservationId(waiterRes))// update the reservation object with the details from the
+																// DB and return true if found else false
+			{
+				System.out.println("Error: could not find reservation for waitlist entry " );
+				return false;
+			}
 			
-			TableReservation res = new TableReservation();
-			res.setReservationId(reservationId);
-		
-			if (!DBC.getReservationByReservationId(res))//update the reservation object with the details from the DB and return true if found else false
-            {
-                return  false;
-            }
+			
+			Subscriber sub = new Subscriber();
+			sub.setCustomerId( waiterRes.getCustomerId());
 
-             ReservationControler.updateReservation(reservationId,"status", "completed");
-             Timestamp nowTime = java.sql.Timestamp.valueOf(LocalDateTime.now());
-             ReservationControler.updateReservation(reservationId,"leavingTime", nowTime);
-                		
-             TableController.updateTable(res.getTableId(),"status", "available");
-             
-             WaitListController.findMatchInWaitingList(res.getTableId());
+			if (!DBC.getCustomerByCustomerId(sub))
+			{
+				System.out.println("Error: could not find customer for reservation " + res.getConfirmationCode());
+				return false;
+			}
 
-             return true;
-          
+			EmailSendController.sendEmail(sub.getEmail(), "Your table is ready 🍽️","Hey "+sub.getFirstName()+" "+sub.getLastName()+", good news! A table has become available for "+ waiterRes.getNumberOfDiners() +" diners at Bistro 9 .\r\n"
+					+ "Looking forward to seeing you at the entrance!");// send email to the customer with all his confirmation codes for today
+
+			SmsSendController.sendSms(sub.getPhoneNumber(), "Your table is ready 🍽️","Hey "+sub.getFirstName()+" "+sub.getLastName()+", good news! A table has become available for "+ waiterRes.getNumberOfDiners() +" diners at Bistro 9 .\r\n"
+					+ "Looking forward to seeing you at the entrance!");
+			return true;
+		}
+		else //no match in the waiting list found, set table status to available
+		{
+			TableController.updateTable(res.getTableId(), "status", "available");
+		}
+		return true;
+
 	}
 	
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -270,7 +342,7 @@ public class BillController
 				if (minutesSeated >= 120 && minutesSeated < 125) 
 				{
 
-					sendBillMessage(res.getReservationId());//send the bill message to the customer
+					sendBillMessage(res);//send the bill message to the customer
 				}
 			}
 		}

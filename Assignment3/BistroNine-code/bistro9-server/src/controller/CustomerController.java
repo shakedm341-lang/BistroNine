@@ -61,8 +61,7 @@ public class CustomerController
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////Helper methods//////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
+	
 	/**
 	 * Retrieves the customer type based on the provided customer ID.
 	 *
@@ -381,32 +380,32 @@ public class CustomerController
 	 *            (String) - only if typeCustomer is "customer"]
 	 * @return An ArrayList of Integer representing the lost confirmation codes.
 	 */
-	private ArrayList<Integer> LostConfCode(Message msg)
+	private boolean LostConfCode(Message msg)
 	{
 		@SuppressWarnings("unchecked") 
 		ArrayList<Object> list = (ArrayList<Object>) msg.content;//get the details from the message content
-		
-		
-		
+
+
+
 		String typeCustomer= new String();
 		int customerId=-1;
 
-		
+
 		//Setting customer type from the list we got from the message content
 		if (list.get(0) instanceof String) 
 		{
 			typeCustomer = (String) list.get(0);
 		} else 
 		{
-	    	  System.out.println("Error: Index 0 is not a String!");
-	    	  return null;
+			System.out.println("Error: Index 0 is not a String!");
+			return false;
 		}
-		
-		
+
+
 		if (typeCustomer.equals("customer")) 
 		{
 			Customer customer = new Customer();
-			
+
 			if (list.get(1) instanceof String) 
 			{
 				customer.setPhoneNumber((String) list.get(1))  ;// Setting phone Number from the list we got from the message content
@@ -415,13 +414,13 @@ public class CustomerController
 					customer.setEmail((String) list.get(2));// Setting email from the list we got from the message content
 				}
 				else if (list.get(2)==null)//if the email is null
-                 {
-                        customer.setEmail(null);
-                 }
+				{
+					customer.setEmail(null);
+				}
 				else 
 				{
 					System.out.println("Error: Index 2 is not a String!");
-					return null;
+					return false;
 				}
 			}
 			else if (list.get(1)==null)//if the phone number is null
@@ -434,13 +433,13 @@ public class CustomerController
 				else 
 				{
 					System.out.println("Error: Index 2 is not a String!");
-					return null;
+					return false;
 				}
 			}
 			else 
 			{
 				System.out.println("Error: Index 1 is not a String!");
-				return null;
+				return false;
 			}
 
 			//return customer ID from the DB . if customer not exists he created in the DB and return his ID else return his ID
@@ -454,20 +453,20 @@ public class CustomerController
 				customerId = (int) list.get(1);
 			} else {
 				System.out.println("Error: Index 1 is not a Integer!");
-				return null;
+				return false;
 			}
 		}
-		
+
 		//Getting all reservations of the customer from the DB
 		ArrayList<TableReservation> allRes = ReservationControler.getAllReservationsAsTableReservation(DBC.getAllReservationsQueryByCustomerId(customerId));
 		if (allRes == null) 
 		{
-				System.out.println("error return all reservayion by customer id" + customerId);
-				return null;
+			System.out.println("error return all reservayion by customer id" + customerId);
+			return false;
 
 		}
 		ArrayList<Integer> confCodes = new ArrayList<>();
-		
+
 		for (TableReservation res : allRes) 
 		{
 			if (res.getStatus().equals("active"))//Checking only active reservations
@@ -476,12 +475,45 @@ public class CustomerController
 				if (resDate.equals(LocalDate.now()))//Checking if the reservation date is today
 				{
 					confCodes.add(res.getConfirmationCode());//Adding the existing confirmation code to the list to return to the server
-						
+
 				}
-				
+
 			}
 		}
-		return confCodes;
+		Subscriber sub = new Subscriber();
+		sub.setCustomerId( customerId);
+
+		if (!DBC.getCustomerByCustomerId(sub))
+		{
+			System.out.println("Error: could not find customer  ");
+			return false;
+		}
+
+		if (!confCodes.isEmpty()) 
+        {
+			StringBuilder codesAsString = new StringBuilder();
+
+			
+			for (Integer code : confCodes) 
+			{
+			    codesAsString.append("confirmation code: ").append(code).append("\n"); 
+			}
+			
+			
+			EmailSendController.sendEmail(sub.getEmail(), "Confirmation Code Recovery","Don't worry bistro9 is here for you, everything is saved with us!\n"+"Here are all the confirmation codes for your orders for today:"+codesAsString);// send email to the customer with all his confirmation codes for today
+
+			SmsSendController.sendSms(sub.getPhoneNumber(), "Confirmation Code Recovery","Don't worry bistro9 is here for you, everything is saved with us!\n"+"Here are all the confirmation codes for your orders for today:"+codesAsString);
+
+        }
+		else {
+			EmailSendController.sendEmail(sub.getEmail(), "Oops, we couldn't find any confirmation codes for today","We searched the system, but we didn't find any active confirmation codes for today.\n"+" Could it be that the reservation is for a different date?");// send email to the customer with all his confirmation codes for today
+
+			SmsSendController.sendSms(sub.getPhoneNumber(), "Oops, we couldn't find any confirmation codes for today","We searched the system, but we didn't find any active confirmation codes for today.\n"+" Could it be that the reservation is for a different date?");
+			
+		}
+		
+		
+		return true;
 	}
 }
 
