@@ -83,8 +83,8 @@ public class ClientController extends AbstractClient {
     // 2. Second Switch: Handle Reservation related commands
     private void handleReservationResponse(Message message) {
         switch (message.command) {
-            case GET_ALL_RESERVATIONS:
-                handleGetAllReservations(message);
+            case GET_ALL_RESERVATIONS_BY_CUSTOMER:
+                handleGetAllReservationsByCustomer(message);
                 break;
 
             case UPDATE_RESERVATION_DETAILS:
@@ -113,7 +113,7 @@ public class ClientController extends AbstractClient {
                 break;   
 
             default:
-                System.out.println("Unknown Reservation command: " + message.command);
+                System.out.println("CLIENT:Unknown Reservation command: " + message.command);
                 break;
         }
     }
@@ -183,7 +183,7 @@ public class ClientController extends AbstractClient {
     }
 
     // Helper method for handling the list of reservations
-    private void handleGetAllReservations(Message message) {
+    private void handleGetAllReservationsByCustomer(Message message) {
         if (currentReservationViewer != null) {
             @SuppressWarnings("unchecked")
             ArrayList<TableReservation> list = (ArrayList<TableReservation>) message.content;

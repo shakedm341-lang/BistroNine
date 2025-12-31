@@ -127,23 +127,27 @@ public class ReservationManagementController implements Initializable, IReservat
 	@FXML
 	private void handleSearchByCustomer() {
 
-		if (customerIdField.getText().isEmpty()) {
-			showError("Please enter a customer ID");
-			return;
-		}
+	    if (customerIdField.getText().isEmpty()) {
+	        showError("Please enter a customer ID");
+	        return;
+	    }
 
-		int customerId;
-		try {
-			customerId = Integer.parseInt(customerIdField.getText());
-		} catch (NumberFormatException e) {
-			showError("Customer ID must be numeric");
-			return;
-		}
+	    int customerId;
+	    try {
+	        customerId = Integer.parseInt(customerIdField.getText());
+	    } catch (NumberFormatException e) {
+	        showError("Customer ID must be numeric");
+	        return;
+	    }
 
-		ArrayList<Object> params = new ArrayList<>();
-		params.add(customerId);
-		client.setReservationViewer(this);
-		client.handleMessageFromBoundary(TypeMessage.RESERVATION, params, Command.GET_ALL_RESERVATIONS);
+	    ArrayList<Object> params = new ArrayList<>();
+	    
+	    params.add("subscriber"); 
+	    
+	    params.add(customerId);
+
+	    client.setReservationViewer(this);
+	    client.handleMessageFromBoundary(TypeMessage.RESERVATION, params, Command.GET_ALL_RESERVATIONS_BY_CUSTOMER);
 	}
 
 	@FXML

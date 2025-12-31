@@ -156,25 +156,28 @@ public class MyReservationsController implements Initializable, IReservationView
 	 */
 	private void loadReservationsData() {
 
-		int customerId = currentUser.getCustomerId();
+	    int customerId = currentUser.getCustomerId();
 
-		ArrayList<Object> params = new ArrayList<>();
-		params.add(customerId);
-		
-		if (clientController != null) {
-			
-			// Set this controller as the reservation viewer
-			clientController.setReservationViewer(this);
-			
-			// Request all reservations for the current customer
-			clientController.handleMessageFromBoundary(
-					TypeMessage.RESERVATION, // The broad category
-					params, // The data (customer ID)
-					Command.GET_ALL_RESERVATIONS // The specific command
-			);
-		} else {
-			System.err.println("Error: Client connection is null.");
-		}
+	    ArrayList<Object> params = new ArrayList<>();
+	    
+	    params.add("subscriber");
+	    
+	    params.add(customerId);
+	    
+	    if (clientController != null) {
+	        
+	        // Set this controller as the reservation viewer
+	        clientController.setReservationViewer(this);
+	        
+	        // Request all reservations for the current customer
+	        clientController.handleMessageFromBoundary(
+	                TypeMessage.RESERVATION, // The broad category
+	                params, // The data (now includes type + ID)
+	                Command.GET_ALL_RESERVATIONS_BY_CUSTOMER // The specific command
+	        );
+	    } else {
+	        System.err.println("Error: Client connection is null.");
+	    }
 	}
 
 	/**
