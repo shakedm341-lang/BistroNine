@@ -104,7 +104,7 @@ CREATE TABLE waiting_list (
     type ENUM('walk_in', 'check_in') NOT NULL,
     
     
-    PRIMARY KEY (waiting_id),
+    PRIMARY KEY (waitingId),
     FOREIGN KEY (reservationId) REFERENCES table_reservations(reservationId)
 );
 
