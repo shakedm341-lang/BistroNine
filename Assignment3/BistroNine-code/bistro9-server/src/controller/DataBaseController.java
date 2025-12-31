@@ -647,48 +647,50 @@ public class DataBaseController {
 	 */
 
 	// d1
-
+	
+	
+	//updated 31/12/25 to logically delete by changing
+	// the status to cancelled.
 	/**
-	 * Deletes a reservation from the database based on its unique confirmation
-	 * code. * @param confirmationCode The unique confirmation code of the
-	 * reservation to delete.
-	 * 
-	 * @return true if the reservation was found and deleted, false otherwise.
+	 * Cancels a reservation by updating its status to 'cancelled' based on the confirmation code.
+	 * @param confirmationCode The unique confirmation code of the reservation.
+	 * @return true if the reservation was found and status updated, false otherwise.
 	 */
 	public boolean deleteReservationByConfCode(int confirmationCode) {
-		// 1. Get connection from the pool
-		PooledConnection pConn = this.getConnection();
+	    // 1. Get connection from the pool
+	    PooledConnection pConn = this.getConnection();
 
-		// Safety check
-		if (pConn == null) {
-			return false;
-		}
+	    // Safety check
+	    if (pConn == null) {
+	        return false;
+	    }
 
-		Connection conn = pConn.getConnection();
-		PreparedStatement ps = null;
+	    Connection conn = pConn.getConnection();
+	    PreparedStatement ps = null;
 
-		try {
-			String query = "DELETE FROM table_reservations WHERE confirmationCode = ?";
+	    try {
+	        // CHANGED: Update status instead of DELETE
+	        String query = "UPDATE table_reservations SET status = 'cancelled' WHERE confirmationCode = ?";
 
-			ps = conn.prepareStatement(query);
-			ps.setInt(1, confirmationCode);
+	        ps = conn.prepareStatement(query);
+	        ps.setInt(1, confirmationCode);
 
-			// executeUpdate returns the number of rows affected
-			int rowsAffected = ps.executeUpdate();
+	        // executeUpdate returns the number of rows affected
+	        int rowsAffected = ps.executeUpdate();
 
-			// If rowsAffected > 0, it means the reservation existed and was deleted
-			if (rowsAffected > 0) {
-				return true;
-			}
+	        // If rowsAffected > 0, it means the reservation was found and updated
+	        if (rowsAffected > 0) {
+	            return true;
+	        }
 
-		} catch (SQLException e) {
-			e.printStackTrace();
-		} finally {
-			closeResources(ps, null);
-			releaseConnection(pConn); // Release back to pool
-		}
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    } finally {
+	        closeResources(ps, null);
+	        releaseConnection(pConn); // Release back to pool
+	    }
 
-		return false;
+	    return false;
 	}
 
 	// d2
@@ -2131,13 +2133,13 @@ public class DataBaseController {
 	    return null;
 	}
 	
-	
+	// updated 31/12/25 to only change the status
+	// to cancelled instead of real delete.
 	/**
-	 * Deletes a table from the database.
-	 * Warning: This will fail if there are existing reservations (past or future) linked to this table
-	 * due to Foreign Key constraints, unless those reservations are deleted first.
-	 * @param tableId The ID of the table to delete.
-	 * @return true if the deletion was successful, false otherwise.
+	 * "Soft deletes" a table by changing its status to 'cancelled'.
+	 * This prevents Foreign Key errors while removing the table from active use.
+	 * @param tableId The ID of the table to remove.
+	 * @return true if the table was found and status updated, false otherwise.
 	 */
 	public boolean deleteTableQuery(int tableId) {
 	    // 1. Get connection from the pool
@@ -2152,7 +2154,8 @@ public class DataBaseController {
 	    PreparedStatement ps = null;
 
 	    try {
-	        String query = "DELETE FROM restaurant_tables WHERE tableId = ?";
+	        // CHANGED: Update status to 'cancelled' (Soft Delete) instead of DELETE
+	        String query = "UPDATE restaurant_tables SET status = 'cancelled' WHERE tableId = ?";
 
 	        ps = conn.prepareStatement(query);
 	        ps.setInt(1, tableId);
@@ -2164,8 +2167,6 @@ public class DataBaseController {
 	        }
 
 	    } catch (SQLException e) {
-	        // This will print if you try to delete a table that has reservations linked to it
-	        System.out.println("Error deleting table: " + e.getMessage());
 	        e.printStackTrace();
 	    } finally {
 	        closeResources(ps, null);
