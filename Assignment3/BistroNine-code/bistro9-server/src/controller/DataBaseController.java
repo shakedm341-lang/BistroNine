@@ -30,7 +30,7 @@ public class DataBaseController {
 
 	// this are the public methods that the
 	// controllers can call to get OR set data.
-	//.
+	// .
 	// 1. getAllReservationsQueryByCustomerId(int) : ArrayList<ArrayList<Object>>
 	// 2. getAllReservationsQueryByDay(LocalDate) : ArrayList<ArrayList<Object>>
 	// 3. getOpeningHoursByDate(OpeningHoursPerDay) : OpeningHoursPerDay
@@ -65,10 +65,12 @@ public class DataBaseController {
 	// 32. deleteTableQuery(int) : boolean
 	// 33. getWaitingListQuery() : ArrayList<ArrayList<Object>>
 	// 34. getTableByTableIdQuery(Table) : Table
-	// 35. updateStatusInWaitingListQuery(WaitList) : boolean
-	// 36. checkIfConfCodeExistsInWaitingList(int) : boolean
-	// 37. createNewWaitQuery(WaitList) : boolean
-	//.
+	// 35. checkIfConfCodeExistsInWaitingList(int) : boolean
+	// 36. updateStatusAndExitTimeInWaitingListQuery(WaitList) : boolean
+	// 37. deleteFromWaitList(WaitList) : boolean
+	// 38. isTableNeededQueue(int) : boolean
+	// 39. addToWaitList(WaitList) : boolean
+	// .
 	// END OF API.
 
 	private static DataBaseController instance;
@@ -520,177 +522,53 @@ public class DataBaseController {
 		return null; // Credentials are incorrect
 	}
 
-	/**
-	 * Checks the availability of tables for a given number of diners and
-	 * reservation time.
-	 * 
-	 * @param numberOfDiners  The number of diners for the reservation.
-	 * @param reservationTime The desired reservation time.
-	 * @return A list of available time slots as Timestamps.
-	 */
-	// הושלם
-//	public ArrayList<Timestamp> checkingTableAvailability(int numberOfDiners, Timestamp reservationTime) {
-//		ArrayList<Timestamp> availableSlots = new ArrayList<>();
-//		PooledConnection pConn = null;
-//		Connection conn = null; // משתנה ל-Connection הפיזי
-//
-//		PreparedStatement psHours = null;
-//		PreparedStatement psAvailability = null;
-//		ResultSet rs = null;
-//
-//		try {
-//			// *תיקון קריטי: חילוץ ה-Connection פעם אחת*
-//			conn = pConn.getConnection();
-//			if (conn == null)
-//				return availableSlots;
-//
-//			// ---------------------------------------------
-//			// שלב 1: שליפת שעות הפתיחה והסגירה ליום המבוקש
-//			// ---------------------------------------------
-//			String hoursQuery = "SELECT openingTime, closingTime FROM restaurant_hours WHERE operatingDate = ?";
-//			// שימוש ב-conn במקום pConn.getConnection()
-//			psHours = conn.prepareStatement(hoursQuery);
-//
-//			// יצירת java.sql.Date מחלק התאריך של ה-Timestamp
-//			psHours.setDate(1, new java.sql.Date(reservationTime.getTime()));
-//
-//			ResultSet rsHours = psHours.executeQuery();
-//
-//			if (!rsHours.next()) {
-//				// המסעדה סגורה או שאין נתונים ליום זה
-//				return availableSlots;
-//			}
-//
-//			Time openTime = rsHours.getTime("openingTime");
-//			Time closeTime = rsHours.getTime("closingTime");
-//
-//			// סגירת ה-Statement של השעות
-//			psHours.close();
-//
-//			// חילוץ השעות כ-int ללולאה
-//			Calendar openCal = Calendar.getInstance();
-//			openCal.setTime(openTime);
-//			int startHour = openCal.get(Calendar.HOUR_OF_DAY);
-//
-//			Calendar closeCal = Calendar.getInstance();
-//			closeCal.setTime(closeTime);
-//			int endHour = closeCal.get(Calendar.HOUR_OF_DAY);
-//
-//			// הבדיקה המתוקנת לחצות (endHour == 0)
-//			if (endHour == 0 && closeCal.get(Calendar.MINUTE) == 0 && closeCal.get(Calendar.SECOND) == 0) {
-//				endHour = 24;
-//			}
-//
-//			// ---------------------------------------------
-//			// שלב 2: לולאה ובדיקת זמינות לכל שעה אפשרית
-//			// ---------------------------------------------
-//
-//			String availabilityQuery = "SELECT count(*) FROM restaurant_tables t " + "WHERE t.seatsNumber >= ? "
-//					+ "AND t.tableId NOT IN ( " + "    SELECT r.tableId FROM table_reservations r "
-//					+ "    WHERE r.status = 'active' " + "    AND r.reservationDate < ? " + // r.Start < New.End
-//					"    AND r.leavingTime > ? " + // r.End > New.Start
-//					")";
-//
-//			// שימוש ב-conn במקום pConn.getConnection()
-//			psAvailability = conn.prepareStatement(availabilityQuery);
-//
-//			Calendar cal = Calendar.getInstance();
-//			cal.setTimeInMillis(reservationTime.getTime());
-//
-//			// איפוס לדקות, שניות ומילי-שניות של התאריך המבוקש
-//			cal.set(Calendar.MINUTE, 0);
-//			cal.set(Calendar.SECOND, 0);
-//			cal.set(Calendar.MILLISECOND, 0);
-//
-//			for (int hour = startHour; hour < endHour; hour++) {
-//
-//				cal.set(Calendar.HOUR_OF_DAY, hour);
-//
-//				Timestamp checkStartTime = new Timestamp(cal.getTimeInMillis());
-//
-//				// חישוב זמן סיום משוער: שעה אחת בלבד
-//				Calendar endCal = (Calendar) cal.clone();
-//				endCal.add(Calendar.HOUR_OF_DAY, 1);
-//				Timestamp checkEndTime = new Timestamp(endCal.getTimeInMillis());
-//
-//				// מציבים פרמטרים לבדיקת הזמינות
-//				psAvailability.setInt(1, numberOfDiners);
-//				psAvailability.setTimestamp(2, checkEndTime);
-//				psAvailability.setTimestamp(3, checkStartTime);
-//
-//				rs = psAvailability.executeQuery();
-//
-//				if (rs.next() && rs.getInt(1) > 0) {
-//					// נמצא לפחות שולחן אחד פנוי
-//					availableSlots.add(checkStartTime);
-//				}
-//				rs.close(); // סוגרים את ה-ResultSet לכל איטרציה
-//			}
-//
-//		} catch (SQLException e) {
-//			e.printStackTrace();
-//		} finally {
-//			// סגירת משאבים מסודרת
-//			closeResources(psAvailability, rs);
-//			releaseConnection(pConn); // pConn משחרר את conn
-//		}
-//
-//		return availableSlots;
-//	}
-
-	/**
-	 * Inserts a new reservation record into the database.
-	 * 
-	 * @param t The TableReservation object containing all reservation details.
-	 * @return true if the reservation was successfully saved to the database, false
-	 *         otherwise.
-	 */
-
 	// d1
-	
-	
-	//updated 31/12/25 to logically delete by changing
+
+	// updated 31/12/25 to logically delete by changing
 	// the status to cancelled.
 	/**
-	 * Cancels a reservation by updating its status to 'cancelled' based on the confirmation code.
+	 * Cancels a reservation by updating its status to 'cancelled' based on the
+	 * confirmation code.
+	 * 
 	 * @param confirmationCode The unique confirmation code of the reservation.
-	 * @return true if the reservation was found and status updated, false otherwise.
+	 * @return true if the reservation was found and status updated, false
+	 *         otherwise.
 	 */
 	public boolean deleteReservationByConfCode(int confirmationCode) {
-	    // 1. Get connection from the pool
-	    PooledConnection pConn = this.getConnection();
+		// 1. Get connection from the pool
+		PooledConnection pConn = this.getConnection();
 
-	    // Safety check
-	    if (pConn == null) {
-	        return false;
-	    }
+		// Safety check
+		if (pConn == null) {
+			return false;
+		}
 
-	    Connection conn = pConn.getConnection();
-	    PreparedStatement ps = null;
+		Connection conn = pConn.getConnection();
+		PreparedStatement ps = null;
 
-	    try {
-	        // CHANGED: Update status instead of DELETE
-	        String query = "UPDATE table_reservations SET status = 'cancelled' WHERE confirmationCode = ?";
+		try {
+			// CHANGED: Update status instead of DELETE
+			String query = "UPDATE table_reservations SET status = 'cancelled' WHERE confirmationCode = ?";
 
-	        ps = conn.prepareStatement(query);
-	        ps.setInt(1, confirmationCode);
+			ps = conn.prepareStatement(query);
+			ps.setInt(1, confirmationCode);
 
-	        // executeUpdate returns the number of rows affected
-	        int rowsAffected = ps.executeUpdate();
+			// executeUpdate returns the number of rows affected
+			int rowsAffected = ps.executeUpdate();
 
-	        // If rowsAffected > 0, it means the reservation was found and updated
-	        if (rowsAffected > 0) {
-	            return true;
-	        }
+			// If rowsAffected > 0, it means the reservation was found and updated
+			if (rowsAffected > 0) {
+				return true;
+			}
 
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	    } finally {
-	        closeResources(ps, null);
-	        releaseConnection(pConn); // Release back to pool
-	    }
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			closeResources(ps, null);
+			releaseConnection(pConn); // Release back to pool
+		}
 
-	    return false;
+		return false;
 	}
 
 	// d2
@@ -795,78 +673,78 @@ public class DataBaseController {
 
 	// n6
 	public boolean createNewReservation(TableReservation res) {
-	    // 1. Get the pooled connection
-	    PooledConnection pConn = this.getConnection();
+		// 1. Get the pooled connection
+		PooledConnection pConn = this.getConnection();
 
-	    // 2. Check if pool returned null
-	    if (pConn == null) {
-	        return false;
-	    }
+		// 2. Check if pool returned null
+		if (pConn == null) {
+			return false;
+		}
 
-	    Connection conn = pConn.getConnection();
-	    PreparedStatement psInsert = null;
-	    PreparedStatement psSelect = null;
-	    ResultSet rsKeys = null;
-	    ResultSet rsData = null;
+		Connection conn = pConn.getConnection();
+		PreparedStatement psInsert = null;
+		PreparedStatement psSelect = null;
+		ResultSet rsKeys = null;
+		ResultSet rsData = null;
 
-	    try {
-	        // STEP A: Insert the reservation
-	        String insertQuery = "INSERT INTO table_reservations "
-	                + "(tableId, numberOfDiners, confirmationCode, customerId, reservationDate, arrivalTime, leavingTime) "
-	                + "VALUES (?, ?, ?, ?, ?, ?, ?)";
+		try {
+			// STEP A: Insert the reservation
+			String insertQuery = "INSERT INTO table_reservations "
+					+ "(tableId, numberOfDiners, confirmationCode, customerId, reservationDate, arrivalTime, leavingTime) "
+					+ "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
-	        // ADDED: Statement.RETURN_GENERATED_KEYS to get the ID back
-	        psInsert = conn.prepareStatement(insertQuery, Statement.RETURN_GENERATED_KEYS);
+			// ADDED: Statement.RETURN_GENERATED_KEYS to get the ID back
+			psInsert = conn.prepareStatement(insertQuery, Statement.RETURN_GENERATED_KEYS);
 
-	        // tableId is nullable (might be assigned later)
-	        if (res.getTableId() > 0) {
-	            psInsert.setInt(1, res.getTableId());
-	        } else {
-	            psInsert.setNull(1, java.sql.Types.INTEGER);
-	        }
-	        
-	        psInsert.setInt(2, res.getNumberOfDiners());
-	        psInsert.setInt(3, res.getConfirmationCode());
-	        psInsert.setInt(4, res.getCustomerId());
-	        psInsert.setTimestamp(5, res.getReservationDate());
-	        psInsert.setTimestamp(6, res.getArrivalTime());
-	        psInsert.setTimestamp(7, res.getLeavingTime());
+			// tableId is nullable (might be assigned later)
+			if (res.getTableId() > 0) {
+				psInsert.setInt(1, res.getTableId());
+			} else {
+				psInsert.setNull(1, java.sql.Types.INTEGER);
+			}
 
-	        int result = psInsert.executeUpdate();
+			psInsert.setInt(2, res.getNumberOfDiners());
+			psInsert.setInt(3, res.getConfirmationCode());
+			psInsert.setInt(4, res.getCustomerId());
+			psInsert.setTimestamp(5, res.getReservationDate());
+			psInsert.setTimestamp(6, res.getArrivalTime());
+			psInsert.setTimestamp(7, res.getLeavingTime());
 
-	        if (result == 1) {
-	            // STEP B: Retrieve the generated reservationId
-	            rsKeys = psInsert.getGeneratedKeys();
-	            if (rsKeys.next()) {
-	                res.setReservationId(rsKeys.getInt(1)); // Update object reference with new ID
-	            }
+			int result = psInsert.executeUpdate();
 
-	            // STEP C: Retrieve the DB-generated defaults (dateOfMakeReservation, status)
-	            // We need a separate SELECT because getGeneratedKeys only returns the ID.
-	            String selectQuery = "SELECT dateOfMakeReservation, status FROM table_reservations WHERE reservationId = ?";
-	            psSelect = conn.prepareStatement(selectQuery);
-	            psSelect.setInt(1, res.getReservationId());
-	            
-	            rsData = psSelect.executeQuery();
-	            
-	            if (rsData.next()) {
-	                // Update object reference with DB timestamps and defaults
-	                res.setDateOfMakeReservation(rsData.getTimestamp("dateOfMakeReservation"));
-	                res.setStatus(rsData.getString("status"));
-	            }
+			if (result == 1) {
+				// STEP B: Retrieve the generated reservationId
+				rsKeys = psInsert.getGeneratedKeys();
+				if (rsKeys.next()) {
+					res.setReservationId(rsKeys.getInt(1)); // Update object reference with new ID
+				}
 
-	            return true;
-	        }
+				// STEP C: Retrieve the DB-generated defaults (dateOfMakeReservation, status)
+				// We need a separate SELECT because getGeneratedKeys only returns the ID.
+				String selectQuery = "SELECT dateOfMakeReservation, status FROM table_reservations WHERE reservationId = ?";
+				psSelect = conn.prepareStatement(selectQuery);
+				psSelect.setInt(1, res.getReservationId());
 
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	    } finally {
-	        // Close all resources
-	        closeResources(psInsert, rsKeys);
-	        closeResources(psSelect, rsData);
-	        releaseConnection(pConn); // Release back to pool
-	    }
-	    return false;
+				rsData = psSelect.executeQuery();
+
+				if (rsData.next()) {
+					// Update object reference with DB timestamps and defaults
+					res.setDateOfMakeReservation(rsData.getTimestamp("dateOfMakeReservation"));
+					res.setStatus(rsData.getString("status"));
+				}
+
+				return true;
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			// Close all resources
+			closeResources(psInsert, rsKeys);
+			closeResources(psSelect, rsData);
+			releaseConnection(pConn); // Release back to pool
+		}
+		return false;
 	}
 
 	/**
@@ -1211,1205 +1089,1261 @@ public class DataBaseController {
 
 		return allSubscribers;
 	}
-	
+
 	/**
 	 * Retrieves the discount percentage for a specific customer type.
+	 * 
 	 * @param type The type of customer (e.g., 'subscriber', 'customer').
-	 * @return The discount percentage as a float (e.g., 10.0 for 10%), or 0.0 if not found.
+	 * @return The discount percentage as a float (e.g., 10.0 for 10%), or 0.0 if
+	 *         not found.
 	 */
 	public float getDiscountQuery(String type) {
-	    float discount = 0.0f;
+		float discount = 0.0f;
 
-	    // 1. Get connection from the pool
-	    PooledConnection pConn = this.getConnection();
+		// 1. Get connection from the pool
+		PooledConnection pConn = this.getConnection();
 
-	    // Safety check
-	    if (pConn == null) {
-	        return 0.0f;
-	    }
+		// Safety check
+		if (pConn == null) {
+			return 0.0f;
+		}
 
-	    Connection conn = pConn.getConnection();
-	    PreparedStatement ps = null;
-	    ResultSet rs = null;
+		Connection conn = pConn.getConnection();
+		PreparedStatement ps = null;
+		ResultSet rs = null;
 
-	    try {
-	        String query = "SELECT discount FROM restaurant_discount WHERE type_customer = ?";
+		try {
+			String query = "SELECT discount FROM restaurant_discount WHERE type_customer = ?";
 
-	        ps = conn.prepareStatement(query);
-	        ps.setString(1, type);
+			ps = conn.prepareStatement(query);
+			ps.setString(1, type);
 
-	        rs = ps.executeQuery();
+			rs = ps.executeQuery();
 
-	        if (rs.next()) {
-	            discount = rs.getFloat("discount");
-	        }
+			if (rs.next()) {
+				discount = rs.getFloat("discount");
+			}
 
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	    } finally {
-	        closeResources(ps, rs);
-	        releaseConnection(pConn); // Release back to pool
-	    }
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			closeResources(ps, rs);
+			releaseConnection(pConn); // Release back to pool
+		}
 
-	    return discount;
+		return discount;
 	}
-	
-	
-	
-	
+
 	/**
 	 * Inserts a new bill record into the database.
-	 * @param bill The Bill object containing reservationId, amounts, and discount info.
+	 * 
+	 * @param bill The Bill object containing reservationId, amounts, and discount
+	 *             info.
 	 * @return true if the bill was successfully created, false otherwise.
 	 */
 	public boolean createNewBillQuery(Bill bill) {
-	    // 1. Get connection from the pool
-	    PooledConnection pConn = this.getConnection();
+		// 1. Get connection from the pool
+		PooledConnection pConn = this.getConnection();
 
-	    // Safety check
-	    if (pConn == null) {
-	        return false;
-	    }
+		// Safety check
+		if (pConn == null) {
+			return false;
+		}
 
-	    Connection conn = pConn.getConnection();
-	    PreparedStatement ps = null;
+		Connection conn = pConn.getConnection();
+		PreparedStatement ps = null;
 
-	    try {
-	        String query = "INSERT INTO bills (reservationId, totalAmount, discountPercentage, totalAmountAfterDiscount) "
-	                     + "VALUES (?, ?, ?, ?)";
+		try {
+			String query = "INSERT INTO bills (reservationId, totalAmount, discountPercentage, totalAmountAfterDiscount) "
+					+ "VALUES (?, ?, ?, ?)";
 
-	        ps = conn.prepareStatement(query);
-	        
-	        ps.setInt(1, bill.getReservationId());
-	        ps.setDouble(2, bill.getTotalAmount());
-	        ps.setDouble(3, bill.getDiscountSize()); // Assuming getDiscountSize() returns the percentage
-	        ps.setDouble(4, bill.getTotalAmountAfterDiscount());
+			ps = conn.prepareStatement(query);
 
-	        int rowsAffected = ps.executeUpdate();
+			ps.setInt(1, bill.getReservationId());
+			ps.setDouble(2, bill.getTotalAmount());
+			ps.setDouble(3, bill.getDiscountSize()); // Assuming getDiscountSize() returns the percentage
+			ps.setDouble(4, bill.getTotalAmountAfterDiscount());
 
-	        if (rowsAffected > 0) {
-	            return true;
-	        }
+			int rowsAffected = ps.executeUpdate();
 
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	    } finally {
-	        closeResources(ps, null);
-	        releaseConnection(pConn); // Release back to pool
-	    }
+			if (rowsAffected > 0) {
+				return true;
+			}
 
-	    return false;
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			closeResources(ps, null);
+			releaseConnection(pConn); // Release back to pool
+		}
+
+		return false;
 	}
-	
-	//n17
+
+	// n17
 	/**
-	 * Retrieves reservation details using the confirmation code.
-	 * Updates the passed TableReservation object with the data found.
+	 * Retrieves reservation details using the confirmation code. Updates the passed
+	 * TableReservation object with the data found.
+	 * 
 	 * @param res The TableReservation object containing the confirmation code.
-	 * @return true if the reservation was found and object updated, false otherwise.
+	 * @return true if the reservation was found and object updated, false
+	 *         otherwise.
 	 */
 	public boolean getReservationsByConferenceCodeQuery(TableReservation res) {
-	    // 1. Get connection from the pool
-	    PooledConnection pConn = this.getConnection();
+		// 1. Get connection from the pool
+		PooledConnection pConn = this.getConnection();
 
-	    // Safety check
-	    if (pConn == null) {
-	        return false;
-	    }
+		// Safety check
+		if (pConn == null) {
+			return false;
+		}
 
-	    Connection conn = pConn.getConnection();
-	    PreparedStatement ps = null;
-	    ResultSet rs = null;
+		Connection conn = pConn.getConnection();
+		PreparedStatement ps = null;
+		ResultSet rs = null;
 
-	    try {
-	        String query = "SELECT * FROM table_reservations WHERE confirmationCode = ?";
+		try {
+			String query = "SELECT * FROM table_reservations WHERE confirmationCode = ?";
 
-	        ps = conn.prepareStatement(query);
-	        ps.setInt(1, res.getConfirmationCode());
+			ps = conn.prepareStatement(query);
+			ps.setInt(1, res.getConfirmationCode());
 
-	        rs = ps.executeQuery();
+			rs = ps.executeQuery();
 
-	        if (rs.next()) {
-	            // Found the reservation, update the object
-	            res.setReservationId(rs.getInt("reservationId"));
-	            res.setTableId(rs.getInt("tableId"));
-	            res.setNumberOfDiners(rs.getInt("numberOfDiners"));
-	            res.setCustomerId(rs.getInt("customerId"));
-	            res.setReservationDate(rs.getTimestamp("reservationDate"));
-	            
-	            // --- THIS LINE WAS MISSING ---
-	            res.setDateOfMakeReservation(rs.getTimestamp("dateOfMakeReservation")); 
-	            // -----------------------------
+			if (rs.next()) {
+				// Found the reservation, update the object
+				res.setReservationId(rs.getInt("reservationId"));
+				res.setTableId(rs.getInt("tableId"));
+				res.setNumberOfDiners(rs.getInt("numberOfDiners"));
+				res.setCustomerId(rs.getInt("customerId"));
+				res.setReservationDate(rs.getTimestamp("reservationDate"));
 
-	            res.setArrivalTime(rs.getTimestamp("arrivalTime"));
-	            res.setLeavingTime(rs.getTimestamp("leavingTime"));
-	            res.setStatus(rs.getString("status")); 
+				// --- THIS LINE WAS MISSING ---
+				res.setDateOfMakeReservation(rs.getTimestamp("dateOfMakeReservation"));
+				// -----------------------------
 
-	            return true;
-	        }
+				res.setArrivalTime(rs.getTimestamp("arrivalTime"));
+				res.setLeavingTime(rs.getTimestamp("leavingTime"));
+				res.setStatus(rs.getString("status"));
 
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	    } finally {
-	        closeResources(ps, rs);
-	        releaseConnection(pConn); // Release back to pool
-	    }
+				return true;
+			}
 
-	    return false;
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			closeResources(ps, rs);
+			releaseConnection(pConn); // Release back to pool
+		}
+
+		return false;
 	}
-	
-	
+
 	/**
-	 * Retrieves bill details using the reservation ID.
-	 * Updates the passed Bill object with the data found.
+	 * Retrieves bill details using the reservation ID. Updates the passed Bill
+	 * object with the data found.
+	 * 
 	 * @param bill The Bill object containing the reservationId.
 	 * @return true if the bill was found and object updated, false otherwise.
 	 */
 	public boolean getBillByReservationId(Bill bill) {
-	    // 1. Get connection from the pool
-	    PooledConnection pConn = this.getConnection();
+		// 1. Get connection from the pool
+		PooledConnection pConn = this.getConnection();
 
-	    // Safety check
-	    if (pConn == null) {
-	        return false;
-	    }
+		// Safety check
+		if (pConn == null) {
+			return false;
+		}
 
-	    Connection conn = pConn.getConnection();
-	    PreparedStatement ps = null;
-	    ResultSet rs = null;
+		Connection conn = pConn.getConnection();
+		PreparedStatement ps = null;
+		ResultSet rs = null;
 
-	    try {
-	        String query = "SELECT * FROM bills WHERE reservationId = ?";
+		try {
+			String query = "SELECT * FROM bills WHERE reservationId = ?";
 
-	        ps = conn.prepareStatement(query);
-	        ps.setInt(1, bill.getReservationId());
+			ps = conn.prepareStatement(query);
+			ps.setInt(1, bill.getReservationId());
 
-	        rs = ps.executeQuery();
+			rs = ps.executeQuery();
 
-	        if (rs.next()) {
-	            // Found the bill, update the object
-	            bill.setBillId(rs.getInt("billId"));
-	            bill.setTotalAmount(rs.getDouble("totalAmount"));
-	            bill.setDiscountSize(rs.getFloat("discountPercentage")); // Matches the column 'discountPercentage'
-	            bill.setTotalAmountAfterDiscount(rs.getDouble("totalAmountAfterDiscount"));
-	            bill.setPaid(rs.getBoolean("isPaid"));
-	            
-	            String method = rs.getString("paymentMethod");
-	            if (method != null) {
-	                bill.setPaymentMethod(method);
-	            }
+			if (rs.next()) {
+				// Found the bill, update the object
+				bill.setBillId(rs.getInt("billId"));
+				bill.setTotalAmount(rs.getDouble("totalAmount"));
+				bill.setDiscountSize(rs.getFloat("discountPercentage")); // Matches the column 'discountPercentage'
+				bill.setTotalAmountAfterDiscount(rs.getDouble("totalAmountAfterDiscount"));
+				bill.setPaid(rs.getBoolean("isPaid"));
 
-	            return true;
-	        }
+				String method = rs.getString("paymentMethod");
+				if (method != null) {
+					bill.setPaymentMethod(method);
+				}
 
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	    } finally {
-	        closeResources(ps, rs);
-	        releaseConnection(pConn); // Release back to pool
-	    }
+				return true;
+			}
 
-	    return false;
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			closeResources(ps, rs);
+			releaseConnection(pConn); // Release back to pool
+		}
+
+		return false;
 	}
-	
-	
+
 	/**
-	 * Updates a bill to status 'Paid' and sets the payment method.
-	 * Returns the associated reservationId upon success.
-	 * @param billId The ID of the bill to pay.
-	 * @param isPaid The new payment status (true).
+	 * Updates a bill to status 'Paid' and sets the payment method. Returns the
+	 * associated reservationId upon success.
+	 * 
+	 * @param billId        The ID of the bill to pay.
+	 * @param isPaid        The new payment status (true).
 	 * @param paymentMethod The method used ('Cash', 'Credit', 'App').
-	 * @return The reservationId associated with the bill if successful, or 0 if failed.
+	 * @return The reservationId associated with the bill if successful, or 0 if
+	 *         failed.
 	 */
 	public int payBill(int billId, boolean isPaid, String paymentMethod) {
-	    // 1. Get connection from the pool
-	    PooledConnection pConn = this.getConnection();
+		// 1. Get connection from the pool
+		PooledConnection pConn = this.getConnection();
 
-	    // Safety check
-	    if (pConn == null) {
-	        return 0;
-	    }
+		// Safety check
+		if (pConn == null) {
+			return 0;
+		}
 
-	    Connection conn = pConn.getConnection();
-	    PreparedStatement psUpdate = null;
-	    PreparedStatement psSelect = null;
-	    ResultSet rs = null;
-	    int reservationId = 0;
+		Connection conn = pConn.getConnection();
+		PreparedStatement psUpdate = null;
+		PreparedStatement psSelect = null;
+		ResultSet rs = null;
+		int reservationId = 0;
 
-	    try {
-	        // Step 1: Update the bill status
-	        String updateQuery = "UPDATE bills SET isPaid = ?, paymentMethod = ? WHERE billId = ?";
-	        psUpdate = conn.prepareStatement(updateQuery);
-	        
-	        psUpdate.setBoolean(1, isPaid);
-	        psUpdate.setString(2, paymentMethod);
-	        psUpdate.setInt(3, billId);
+		try {
+			// Step 1: Update the bill status
+			String updateQuery = "UPDATE bills SET isPaid = ?, paymentMethod = ? WHERE billId = ?";
+			psUpdate = conn.prepareStatement(updateQuery);
 
-	        int rowsAffected = psUpdate.executeUpdate();
+			psUpdate.setBoolean(1, isPaid);
+			psUpdate.setString(2, paymentMethod);
+			psUpdate.setInt(3, billId);
 
-	        // Step 2: If update was successful, retrieve the reservationId
-	        if (rowsAffected > 0) {
-	            String selectQuery = "SELECT reservationId FROM bills WHERE billId = ?";
-	            psSelect = conn.prepareStatement(selectQuery);
-	            psSelect.setInt(1, billId);
-	            
-	            rs = psSelect.executeQuery();
-	            
-	            if (rs.next()) {
-	                reservationId = rs.getInt("reservationId");
-	            }
-	        }
+			int rowsAffected = psUpdate.executeUpdate();
 
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	    } finally {
-	        closeResources(psUpdate, null);
-	        closeResources(psSelect, rs);
-	        releaseConnection(pConn); // Release back to pool
-	    }
+			// Step 2: If update was successful, retrieve the reservationId
+			if (rowsAffected > 0) {
+				String selectQuery = "SELECT reservationId FROM bills WHERE billId = ?";
+				psSelect = conn.prepareStatement(selectQuery);
+				psSelect.setInt(1, billId);
 
-	    return reservationId;
+				rs = psSelect.executeQuery();
+
+				if (rs.next()) {
+					reservationId = rs.getInt("reservationId");
+				}
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			closeResources(psUpdate, null);
+			closeResources(psSelect, rs);
+			releaseConnection(pConn); // Release back to pool
+		}
+
+		return reservationId;
 	}
-	
-	
+
 	/**
-	 * Retrieves reservation details using the reservation ID.
-	 * Updates the passed TableReservation object with the data found.
+	 * Retrieves reservation details using the reservation ID. Updates the passed
+	 * TableReservation object with the data found.
+	 * 
 	 * @param res The TableReservation object containing the reservationId.
-	 * @return true if the reservation was found and object updated, false otherwise.
+	 * @return true if the reservation was found and object updated, false
+	 *         otherwise.
 	 */
 	public boolean getReservationByReservationId(TableReservation res) {
-	    // 1. Get connection from the pool
-	    PooledConnection pConn = this.getConnection();
+		// 1. Get connection from the pool
+		PooledConnection pConn = this.getConnection();
 
-	    // Safety check
-	    if (pConn == null) {
-	        return false;
-	    }
+		// Safety check
+		if (pConn == null) {
+			return false;
+		}
 
-	    Connection conn = pConn.getConnection();
-	    PreparedStatement ps = null;
-	    ResultSet rs = null;
+		Connection conn = pConn.getConnection();
+		PreparedStatement ps = null;
+		ResultSet rs = null;
 
-	    try {
-	        String query = "SELECT * FROM table_reservations WHERE reservationId = ?";
+		try {
+			String query = "SELECT * FROM table_reservations WHERE reservationId = ?";
 
-	        ps = conn.prepareStatement(query);
-	        ps.setInt(1, res.getReservationId());
+			ps = conn.prepareStatement(query);
+			ps.setInt(1, res.getReservationId());
 
-	        rs = ps.executeQuery();
+			rs = ps.executeQuery();
 
-	        if (rs.next()) {
-	            res.setTableId(rs.getInt("tableId"));
-	            res.setNumberOfDiners(rs.getInt("numberOfDiners"));
-	            res.setConfirmationCode(rs.getInt("confirmationCode"));
-	            res.setCustomerId(rs.getInt("customerId"));
-	            res.setReservationDate(rs.getTimestamp("reservationDate"));
-	            res.setArrivalTime(rs.getTimestamp("arrivalTime"));
-	            res.setLeavingTime(rs.getTimestamp("leavingTime"));
-	            res.setStatus(rs.getString("status"));
+			if (rs.next()) {
+				res.setTableId(rs.getInt("tableId"));
+				res.setNumberOfDiners(rs.getInt("numberOfDiners"));
+				res.setConfirmationCode(rs.getInt("confirmationCode"));
+				res.setCustomerId(rs.getInt("customerId"));
+				res.setReservationDate(rs.getTimestamp("reservationDate"));
+				res.setArrivalTime(rs.getTimestamp("arrivalTime"));
+				res.setLeavingTime(rs.getTimestamp("leavingTime"));
+				res.setStatus(rs.getString("status"));
 
-	            return true;
-	        }
+				return true;
+			}
 
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	    } finally {
-	        closeResources(ps, rs);
-	        releaseConnection(pConn); // Release back to pool
-	    }
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			closeResources(ps, rs);
+			releaseConnection(pConn); // Release back to pool
+		}
 
-	    return false;
+		return false;
 	}
-	
-	
+
 	/**
 	 * Retrieves the customer type string based on the customer ID.
+	 * 
 	 * @param customerId The ID to check.
-	 * @return The type string (e.g., 'subscriber', 'customer') or null if ID not found.
+	 * @return The type string (e.g., 'subscriber', 'customer') or null if ID not
+	 *         found.
 	 */
 	public String getCustomerType(int customerId) {
-	    String type = null;
+		String type = null;
 
-	    // 1. Get connection from the pool
-	    PooledConnection pConn = this.getConnection();
+		// 1. Get connection from the pool
+		PooledConnection pConn = this.getConnection();
 
-	    // Safety check
-	    if (pConn == null) {
-	        return null;
-	    }
+		// Safety check
+		if (pConn == null) {
+			return null;
+		}
 
-	    Connection conn = pConn.getConnection();
-	    PreparedStatement ps = null;
-	    ResultSet rs = null;
+		Connection conn = pConn.getConnection();
+		PreparedStatement ps = null;
+		ResultSet rs = null;
 
-	    try {
-	        // Use LEFT JOIN to check both tables in one query
-	        String query = "SELECT s.type FROM customer c " 
-	                     + "LEFT JOIN subscriber s ON c.customerId = s.customerId " 
-	                     + "WHERE c.customerId = ?";
+		try {
+			// Use LEFT JOIN to check both tables in one query
+			String query = "SELECT s.type FROM customer c " + "LEFT JOIN subscriber s ON c.customerId = s.customerId "
+					+ "WHERE c.customerId = ?";
 
-	        ps = conn.prepareStatement(query);
-	        ps.setInt(1, customerId);
+			ps = conn.prepareStatement(query);
+			ps.setInt(1, customerId);
 
-	        rs = ps.executeQuery();
+			rs = ps.executeQuery();
 
-	        if (rs.next()) {
-	            String dbType = rs.getString("type");
-	            
-	            if (dbType != null) {
-	                // User is in the subscriber table (return 'subscriber', 'restaurant manager', etc.)
-	                type = dbType;
-	            } else {
-	                // User exists in customer table but NOT in subscriber table
-	                type = "customer";
-	            }
-	        }
+			if (rs.next()) {
+				String dbType = rs.getString("type");
 
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	    } finally {
-	        closeResources(ps, rs);
-	        releaseConnection(pConn); // Release back to pool
-	    }
+				if (dbType != null) {
+					// User is in the subscriber table (return 'subscriber', 'restaurant manager',
+					// etc.)
+					type = dbType;
+				} else {
+					// User exists in customer table but NOT in subscriber table
+					type = "customer";
+				}
+			}
 
-	    return type;
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			closeResources(ps, rs);
+			releaseConnection(pConn); // Release back to pool
+		}
+
+		return type;
 	}
-	
-	
+
 	/**
-	 * Updates the opening hours for a specific day by deleting old entries 
-	 * and inserting new ones (Transaction-based).
-	 * @param day The day of the week (e.g., 'SUNDAY').
+	 * Updates the opening hours for a specific day by deleting old entries and
+	 * inserting new ones (Transaction-based).
+	 * 
+	 * @param day          The day of the week (e.g., 'SUNDAY').
 	 * @param openingTimes The list of new TimeSlot objects.
 	 * @return true if the transaction was successful, false otherwise.
 	 */
 	public boolean updateOpeningTimeQuery(String day, ArrayList<TimeSlot> openingTimes) {
-	    // 1. Get connection from the pool
-	    PooledConnection pConn = this.getConnection();
+		// 1. Get connection from the pool
+		PooledConnection pConn = this.getConnection();
 
-	    // Safety check
-	    if (pConn == null) {
-	        return false;
-	    }
+		// Safety check
+		if (pConn == null) {
+			return false;
+		}
 
-	    Connection conn = pConn.getConnection();
-	    PreparedStatement psDelete = null;
-	    PreparedStatement psInsert = null;
-	    boolean success = false;
+		Connection conn = pConn.getConnection();
+		PreparedStatement psDelete = null;
+		PreparedStatement psInsert = null;
+		boolean success = false;
 
-	    try {
-	        // START TRANSACTION
-	        conn.setAutoCommit(false);
+		try {
+			// START TRANSACTION
+			conn.setAutoCommit(false);
 
-	        // Step 1: Delete all existing hours for this day
-	        String deleteQuery = "DELETE FROM weekly_hours WHERE dayOfWeek = ?";
-	        psDelete = conn.prepareStatement(deleteQuery);
-	        psDelete.setString(1, day);
-	        psDelete.executeUpdate();
+			// Step 1: Delete all existing hours for this day
+			String deleteQuery = "DELETE FROM weekly_hours WHERE dayOfWeek = ?";
+			psDelete = conn.prepareStatement(deleteQuery);
+			psDelete.setString(1, day);
+			psDelete.executeUpdate();
 
-	        // Step 2: Insert the new time slots
-	        String insertQuery = "INSERT INTO weekly_hours (dayOfWeek, openingTime, closingTime) VALUES (?, ?, ?)";
-	        psInsert = conn.prepareStatement(insertQuery);
+			// Step 2: Insert the new time slots
+			String insertQuery = "INSERT INTO weekly_hours (dayOfWeek, openingTime, closingTime) VALUES (?, ?, ?)";
+			psInsert = conn.prepareStatement(insertQuery);
 
-	        for (TimeSlot slot : openingTimes) {
-	            psInsert.setString(1, day);
-	            psInsert.setTime(2, java.sql.Time.valueOf(slot.getOpen()));
-	            psInsert.setTime(3, java.sql.Time.valueOf(slot.getClose()));
-	            
-	            psInsert.executeUpdate();
-	        }
+			for (TimeSlot slot : openingTimes) {
+				psInsert.setString(1, day);
+				psInsert.setTime(2, java.sql.Time.valueOf(slot.getOpen()));
+				psInsert.setTime(3, java.sql.Time.valueOf(slot.getClose()));
 
-	        // COMMIT TRANSACTION
-	        conn.commit();
-	        success = true;
+				psInsert.executeUpdate();
+			}
 
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	        try {
-	            // ROLLBACK if something went wrong
-	            if (conn != null) {
-	                conn.rollback();
-	            }
-	        } catch (SQLException ex) {
-	            ex.printStackTrace();
-	        }
-	    } finally {
-	        // Restore AutoCommit to true
-	        try {
-	            if (conn != null) {
-	                conn.setAutoCommit(true);
-	            }
-	        } catch (SQLException e) {
-	            e.printStackTrace();
-	        }
-	        
-	        closeResources(psDelete, null);
-	        closeResources(psInsert, null);
-	        releaseConnection(pConn); // Release back to pool
-	    }
+			// COMMIT TRANSACTION
+			conn.commit();
+			success = true;
 
-	    return success;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			try {
+				// ROLLBACK if something went wrong
+				if (conn != null) {
+					conn.rollback();
+				}
+			} catch (SQLException ex) {
+				ex.printStackTrace();
+			}
+		} finally {
+			// Restore AutoCommit to true
+			try {
+				if (conn != null) {
+					conn.setAutoCommit(true);
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+
+			closeResources(psDelete, null);
+			closeResources(psInsert, null);
+			releaseConnection(pConn); // Release back to pool
+		}
+
+		return success;
 	}
-	
-	
+
 	/**
-	 * Adds (or updates) special opening hours for a specific date.
-	 * Deletes any existing entries for that date first, then inserts new ones (Transaction-based).
-	 * @param openingHours The OpeningHoursPerDay object containing the date and list of slots.
+	 * Adds (or updates) special opening hours for a specific date. Deletes any
+	 * existing entries for that date first, then inserts new ones
+	 * (Transaction-based).
+	 * 
+	 * @param openingHours The OpeningHoursPerDay object containing the date and
+	 *                     list of slots.
 	 * @return true if the transaction was successful, false otherwise.
 	 */
 	public boolean addNewSpecialOpeningTimeQuery(OpeningHoursPerDay openingHours) {
-	    // 1. Get connection from the pool
-	    PooledConnection pConn = this.getConnection();
+		// 1. Get connection from the pool
+		PooledConnection pConn = this.getConnection();
 
-	    // Safety check
-	    if (pConn == null) {
-	        return false;
-	    }
+		// Safety check
+		if (pConn == null) {
+			return false;
+		}
 
-	    Connection conn = pConn.getConnection();
-	    PreparedStatement psDelete = null;
-	    PreparedStatement psInsert = null;
-	    boolean success = false;
+		Connection conn = pConn.getConnection();
+		PreparedStatement psDelete = null;
+		PreparedStatement psInsert = null;
+		boolean success = false;
 
-	    try {
-	        // START TRANSACTION
-	        conn.setAutoCommit(false);
+		try {
+			// START TRANSACTION
+			conn.setAutoCommit(false);
 
-	        // Step 1: Delete all existing special hours for this specific date
-	        String deleteQuery = "DELETE FROM special_hours WHERE specificDate = ?";
-	        psDelete = conn.prepareStatement(deleteQuery);
-	        // Convert LocalDate to java.sql.Date
-	        psDelete.setDate(1, java.sql.Date.valueOf(openingHours.getDay()));
-	        psDelete.executeUpdate();
+			// Step 1: Delete all existing special hours for this specific date
+			String deleteQuery = "DELETE FROM special_hours WHERE specificDate = ?";
+			psDelete = conn.prepareStatement(deleteQuery);
+			// Convert LocalDate to java.sql.Date
+			psDelete.setDate(1, java.sql.Date.valueOf(openingHours.getDay()));
+			psDelete.executeUpdate();
 
-	        // Step 2: Insert the new time slots
-	        String insertQuery = "INSERT INTO special_hours (specificDate, openingTime, closingTime) VALUES (?, ?, ?)";
-	        psInsert = conn.prepareStatement(insertQuery);
+			// Step 2: Insert the new time slots
+			String insertQuery = "INSERT INTO special_hours (specificDate, openingTime, closingTime) VALUES (?, ?, ?)";
+			psInsert = conn.prepareStatement(insertQuery);
 
-	        for (TimeSlot slot : openingHours.getSlots()) {
-	            psInsert.setDate(1, java.sql.Date.valueOf(openingHours.getDay()));
-	            psInsert.setTime(2, java.sql.Time.valueOf(slot.getOpen()));
-	            psInsert.setTime(3, java.sql.Time.valueOf(slot.getClose()));
-	            
-	            psInsert.executeUpdate();
-	        }
+			for (TimeSlot slot : openingHours.getSlots()) {
+				psInsert.setDate(1, java.sql.Date.valueOf(openingHours.getDay()));
+				psInsert.setTime(2, java.sql.Time.valueOf(slot.getOpen()));
+				psInsert.setTime(3, java.sql.Time.valueOf(slot.getClose()));
 
-	        // COMMIT TRANSACTION
-	        conn.commit();
-	        success = true;
+				psInsert.executeUpdate();
+			}
 
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	        try {
-	            // ROLLBACK if something went wrong
-	            if (conn != null) {
-	                conn.rollback();
-	            }
-	        } catch (SQLException ex) {
-	            ex.printStackTrace();
-	        }
-	    } finally {
-	        // Restore AutoCommit to true
-	        try {
-	            if (conn != null) {
-	                conn.setAutoCommit(true);
-	            }
-	        } catch (SQLException e) {
-	            e.printStackTrace();
-	        }
-	        
-	        closeResources(psDelete, null);
-	        closeResources(psInsert, null);
-	        releaseConnection(pConn); // Release back to pool
-	    }
+			// COMMIT TRANSACTION
+			conn.commit();
+			success = true;
 
-	    return success;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			try {
+				// ROLLBACK if something went wrong
+				if (conn != null) {
+					conn.rollback();
+				}
+			} catch (SQLException ex) {
+				ex.printStackTrace();
+			}
+		} finally {
+			// Restore AutoCommit to true
+			try {
+				if (conn != null) {
+					conn.setAutoCommit(true);
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+
+			closeResources(psDelete, null);
+			closeResources(psInsert, null);
+			releaseConnection(pConn); // Release back to pool
+		}
+
+		return success;
 	}
-	
-	
+
 	/**
 	 * Retrieves all reservations from the database.
-	 * @return An ArrayList of rows, where each row is an ArrayList of objects representing a reservation.
+	 * 
+	 * @return An ArrayList of rows, where each row is an ArrayList of objects
+	 *         representing a reservation.
 	 */
 	public ArrayList<ArrayList<Object>> getAllReservationsQuery() {
-	    ArrayList<ArrayList<Object>> allReservations = new ArrayList<>();
+		ArrayList<ArrayList<Object>> allReservations = new ArrayList<>();
 
-	    // 1. Get connection from the pool
-	    PooledConnection pConn = this.getConnection();
+		// 1. Get connection from the pool
+		PooledConnection pConn = this.getConnection();
 
-	    // Safety check
-	    if (pConn == null) {
-	        return null;
-	    }
+		// Safety check
+		if (pConn == null) {
+			return null;
+		}
 
-	    Connection conn = pConn.getConnection();
-	    PreparedStatement ps = null;
-	    ResultSet rs = null;
+		Connection conn = pConn.getConnection();
+		PreparedStatement ps = null;
+		ResultSet rs = null;
 
-	    try {
-	        String query = "SELECT * FROM table_reservations";
+		try {
+			String query = "SELECT * FROM table_reservations";
 
-	        ps = conn.prepareStatement(query);
-	        rs = ps.executeQuery();
+			ps = conn.prepareStatement(query);
+			rs = ps.executeQuery();
 
-	        while (rs.next()) {
-	            ArrayList<Object> reservation = new ArrayList<>();
-	            // Note: Make sure these column names match your SQL schema exactly
-	            reservation.add(rs.getInt("reservationId")); 
-	            reservation.add(rs.getInt("tableId"));
-	            reservation.add(rs.getInt("numberOfDiners"));
-	            reservation.add(rs.getInt("confirmationCode"));
-	            reservation.add(rs.getInt("customerId"));
-	            reservation.add(rs.getTimestamp("reservationDate"));
-	            reservation.add(rs.getTimestamp("dateOfMakeReservation"));
-	            reservation.add(rs.getTimestamp("arrivalTime"));
-	            reservation.add(rs.getTimestamp("leavingTime"));
-	            reservation.add(rs.getString("status"));
+			while (rs.next()) {
+				ArrayList<Object> reservation = new ArrayList<>();
+				// Note: Make sure these column names match your SQL schema exactly
+				reservation.add(rs.getInt("reservationId"));
+				reservation.add(rs.getInt("tableId"));
+				reservation.add(rs.getInt("numberOfDiners"));
+				reservation.add(rs.getInt("confirmationCode"));
+				reservation.add(rs.getInt("customerId"));
+				reservation.add(rs.getTimestamp("reservationDate"));
+				reservation.add(rs.getTimestamp("dateOfMakeReservation"));
+				reservation.add(rs.getTimestamp("arrivalTime"));
+				reservation.add(rs.getTimestamp("leavingTime"));
+				reservation.add(rs.getString("status"));
 
-	            allReservations.add(reservation);
-	        }
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	    } finally {
-	        closeResources(ps, rs);
-	        releaseConnection(pConn); // Release back to pool
-	    }
-	    
-	    return allReservations;
+				allReservations.add(reservation);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			closeResources(ps, rs);
+			releaseConnection(pConn); // Release back to pool
+		}
+
+		return allReservations;
 	}
-	
-	
+
 	/**
 	 * Updates the leaving time for a specific reservation.
+	 * 
 	 * @param reservationId The ID of the reservation to update.
-	 * @param leavingTime The new timestamp to set as the leaving time.
+	 * @param leavingTime   The new timestamp to set as the leaving time.
 	 * @return true if the update was successful, false otherwise.
 	 */
 	public boolean updateReservationLeavingTime(int reservationId, java.sql.Timestamp leavingTime) {
-	    // 1. Get connection from the pool
-	    PooledConnection pConn = this.getConnection();
+		// 1. Get connection from the pool
+		PooledConnection pConn = this.getConnection();
 
-	    // Safety check
-	    if (pConn == null) {
-	        return false;
-	    }
+		// Safety check
+		if (pConn == null) {
+			return false;
+		}
 
-	    Connection conn = pConn.getConnection();
-	    PreparedStatement ps = null;
+		Connection conn = pConn.getConnection();
+		PreparedStatement ps = null;
 
-	    try {
-	        String query = "UPDATE table_reservations SET leavingTime = ? WHERE reservationId = ?";
+		try {
+			String query = "UPDATE table_reservations SET leavingTime = ? WHERE reservationId = ?";
 
-	        ps = conn.prepareStatement(query);
-	        ps.setTimestamp(1, leavingTime);
-	        ps.setInt(2, reservationId);
+			ps = conn.prepareStatement(query);
+			ps.setTimestamp(1, leavingTime);
+			ps.setInt(2, reservationId);
 
-	        int rowsAffected = ps.executeUpdate();
+			int rowsAffected = ps.executeUpdate();
 
-	        if (rowsAffected > 0) {
-	            return true;
-	        }
+			if (rowsAffected > 0) {
+				return true;
+			}
 
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	    } finally {
-	        closeResources(ps, null);
-	        releaseConnection(pConn); // Release back to pool
-	    }
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			closeResources(ps, null);
+			releaseConnection(pConn); // Release back to pool
+		}
 
-	    return false;
+		return false;
 	}
-	
-	
+
 	/**
 	 * Retrieves all reservations with status 'active' or 'arrived'.
+	 * 
 	 * @return An ArrayList of rows, where each row is an ArrayList of objects.
 	 */
 	public ArrayList<ArrayList<Object>> getAllReservationsActiveQuery() {
-	    ArrayList<ArrayList<Object>> activeReservations = new ArrayList<>();
+		ArrayList<ArrayList<Object>> activeReservations = new ArrayList<>();
 
-	    // 1. Get connection from the pool
-	    PooledConnection pConn = this.getConnection();
+		// 1. Get connection from the pool
+		PooledConnection pConn = this.getConnection();
 
-	    // Safety check
-	    if (pConn == null) {
-	        return null;
-	    }
+		// Safety check
+		if (pConn == null) {
+			return null;
+		}
 
-	    Connection conn = pConn.getConnection();
-	    PreparedStatement ps = null;
-	    ResultSet rs = null;
+		Connection conn = pConn.getConnection();
+		PreparedStatement ps = null;
+		ResultSet rs = null;
 
-	    try {
-	        // Use IN clause to get both status types efficiently
-	        String query = "SELECT * FROM table_reservations WHERE status IN ('active', 'arrived')";
+		try {
+			// Use IN clause to get both status types efficiently
+			String query = "SELECT * FROM table_reservations WHERE status IN ('active', 'arrived')";
 
-	        ps = conn.prepareStatement(query);
-	        rs = ps.executeQuery();
+			ps = conn.prepareStatement(query);
+			rs = ps.executeQuery();
 
-	        while (rs.next()) {
-	            ArrayList<Object> reservation = new ArrayList<>();
-	            
-	            reservation.add(rs.getInt("reservationId")); 
-	            reservation.add(rs.getInt("tableId"));
-	            reservation.add(rs.getInt("numberOfDiners"));
-	            reservation.add(rs.getInt("confirmationCode"));
-	            reservation.add(rs.getInt("customerId"));
-	            reservation.add(rs.getTimestamp("reservationDate"));
-	            reservation.add(rs.getTimestamp("dateOfMakeReservation"));
-	            reservation.add(rs.getTimestamp("arrivalTime"));
-	            reservation.add(rs.getTimestamp("leavingTime"));
-	            reservation.add(rs.getString("status"));
+			while (rs.next()) {
+				ArrayList<Object> reservation = new ArrayList<>();
 
-	            activeReservations.add(reservation);
-	        }
+				reservation.add(rs.getInt("reservationId"));
+				reservation.add(rs.getInt("tableId"));
+				reservation.add(rs.getInt("numberOfDiners"));
+				reservation.add(rs.getInt("confirmationCode"));
+				reservation.add(rs.getInt("customerId"));
+				reservation.add(rs.getTimestamp("reservationDate"));
+				reservation.add(rs.getTimestamp("dateOfMakeReservation"));
+				reservation.add(rs.getTimestamp("arrivalTime"));
+				reservation.add(rs.getTimestamp("leavingTime"));
+				reservation.add(rs.getString("status"));
 
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	    } finally {
-	        closeResources(ps, rs);
-	        releaseConnection(pConn); // Release back to pool
-	    }
-	    
-	    return activeReservations;
+				activeReservations.add(reservation);
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			closeResources(ps, rs);
+			releaseConnection(pConn); // Release back to pool
+		}
+
+		return activeReservations;
 	}
-	
-	
+
 	/**
-	 * Retrieves customer details by ID.
-	 * If the customer is a subscriber, it fetches the full profile.
-	 * If the customer is a regular customer, it fetches only contact info (phone/email).
+	 * Retrieves customer details by ID. If the customer is a subscriber, it fetches
+	 * the full profile. If the customer is a regular customer, it fetches only
+	 * contact info (phone/email).
+	 * 
 	 * @param sub The Subscriber object containing the customerId to look up.
 	 * @return true if the customer was found and object updated, false otherwise.
 	 */
 	public boolean getCustomerByCustomerId(Subscriber sub) {
-	    // 1. Get connection from the pool
-	    PooledConnection pConn = this.getConnection();
+		// 1. Get connection from the pool
+		PooledConnection pConn = this.getConnection();
 
-	    // Safety check
-	    if (pConn == null) {
-	        return false;
-	    }
+		// Safety check
+		if (pConn == null) {
+			return false;
+		}
 
-	    Connection conn = pConn.getConnection();
-	    PreparedStatement ps = null;
-	    ResultSet rs = null;
+		Connection conn = pConn.getConnection();
+		PreparedStatement ps = null;
+		ResultSet rs = null;
 
-	    try {
-	        // LEFT JOIN ensures we get customer info even if they are not in the subscriber table
-	        String query = "SELECT c.phoneNumber, c.email, "
-	                     + "s.subscriberId, s.firstName, s.lastName, s.username, s.type, s.personalInfo "
-	                     + "FROM customer c "
-	                     + "LEFT JOIN subscriber s ON c.customerId = s.customerId "
-	                     + "WHERE c.customerId = ?";
+		try {
+			// LEFT JOIN ensures we get customer info even if they are not in the subscriber
+			// table
+			String query = "SELECT c.phoneNumber, c.email, "
+					+ "s.subscriberId, s.firstName, s.lastName, s.username, s.type, s.personalInfo "
+					+ "FROM customer c " + "LEFT JOIN subscriber s ON c.customerId = s.customerId "
+					+ "WHERE c.customerId = ?";
 
-	        ps = conn.prepareStatement(query);
-	        ps.setInt(1, sub.getCustomerId());
+			ps = conn.prepareStatement(query);
+			ps.setInt(1, sub.getCustomerId());
 
-	        rs = ps.executeQuery();
+			rs = ps.executeQuery();
 
-	        if (rs.next()) {
-	            // 1. Always set basic contact info (from customer table)
-	            sub.setPhoneNumber(rs.getString("phoneNumber"));
-	            sub.setEmail(rs.getString("email"));
+			if (rs.next()) {
+				// 1. Always set basic contact info (from customer table)
+				sub.setPhoneNumber(rs.getString("phoneNumber"));
+				sub.setEmail(rs.getString("email"));
 
-	            // 2. Check if this is a subscriber (if username is not null)
-	            String username = rs.getString("username");
-	            
-	            if (username != null) {
-	                // It is a subscriber, populate the rest
-	                sub.setSubscriberId(rs.getInt("subscriberId"));
-	                sub.setFirstName(rs.getString("firstName"));
-	                sub.setLastName(rs.getString("lastName"));
-	                sub.setUsername(username);
-	                sub.setType(rs.getString("type"));
-	                sub.setPersonalInfo(rs.getString("personalInfo"));
-	            } 
-	            // If username is null, those fields remain null in the object, 
-	            // which allows your controller to identify them as a regular customer.
-	            
-	            return true;
-	        }
+				// 2. Check if this is a subscriber (if username is not null)
+				String username = rs.getString("username");
 
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	    } finally {
-	        closeResources(ps, rs);
-	        releaseConnection(pConn); // Release back to pool
-	    }
+				if (username != null) {
+					// It is a subscriber, populate the rest
+					sub.setSubscriberId(rs.getInt("subscriberId"));
+					sub.setFirstName(rs.getString("firstName"));
+					sub.setLastName(rs.getString("lastName"));
+					sub.setUsername(username);
+					sub.setType(rs.getString("type"));
+					sub.setPersonalInfo(rs.getString("personalInfo"));
+				}
+				// If username is null, those fields remain null in the object,
+				// which allows your controller to identify them as a regular customer.
 
-	    return false;
+				return true;
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			closeResources(ps, rs);
+			releaseConnection(pConn); // Release back to pool
+		}
+
+		return false;
 	}
-	
-	
+
 	/**
 	 * Updates the status of a restaurant table.
-	 * @param tableId The ID of the table to update.
-	 * @param newStatus The new status string (Must match SQL ENUM: 'available', 'reserved', 'occupied').
+	 * 
+	 * @param tableId   The ID of the table to update.
+	 * @param newStatus The new status string (Must match SQL ENUM: 'available',
+	 *                  'reserved', 'occupied').
 	 * @return true if the update was successful, false otherwise.
 	 */
 	public boolean updateTableStatus(int tableId, String newStatus) {
-	    // 1. Get connection from the pool
-	    PooledConnection pConn = this.getConnection();
+		// 1. Get connection from the pool
+		PooledConnection pConn = this.getConnection();
 
-	    // Safety check
-	    if (pConn == null) {
-	        return false;
-	    }
+		// Safety check
+		if (pConn == null) {
+			return false;
+		}
 
-	    Connection conn = pConn.getConnection();
-	    PreparedStatement ps = null;
+		Connection conn = pConn.getConnection();
+		PreparedStatement ps = null;
 
-	    try {
-	        String query = "UPDATE restaurant_tables SET status = ? WHERE tableId = ?";
+		try {
+			String query = "UPDATE restaurant_tables SET status = ? WHERE tableId = ?";
 
-	        ps = conn.prepareStatement(query);
-	        ps.setString(1, newStatus);
-	        ps.setInt(2, tableId);
+			ps = conn.prepareStatement(query);
+			ps.setString(1, newStatus);
+			ps.setInt(2, tableId);
 
-	        int rowsAffected = ps.executeUpdate();
+			int rowsAffected = ps.executeUpdate();
 
-	        if (rowsAffected > 0) {
-	            return true;
-	        }
+			if (rowsAffected > 0) {
+				return true;
+			}
 
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	    } finally {
-	        closeResources(ps, null);
-	        releaseConnection(pConn); // Release back to pool
-	    }
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			closeResources(ps, null);
+			releaseConnection(pConn); // Release back to pool
+		}
 
-	    return false;
+		return false;
 	}
-	
-	
+
 	/**
 	 * Updates the number of seats for a restaurant table.
-	 * @param tableId The ID of the table to update.
+	 * 
+	 * @param tableId  The ID of the table to update.
 	 * @param newSeats The new number of seats.
 	 * @return true if the update was successful, false otherwise.
 	 */
 	public boolean updateTableSeatsNumber(int tableId, int newSeats) {
-	    // 1. Get connection from the pool
-	    PooledConnection pConn = this.getConnection();
+		// 1. Get connection from the pool
+		PooledConnection pConn = this.getConnection();
 
-	    // Safety check
-	    if (pConn == null) {
-	        return false;
-	    }
+		// Safety check
+		if (pConn == null) {
+			return false;
+		}
 
-	    Connection conn = pConn.getConnection();
-	    PreparedStatement ps = null;
+		Connection conn = pConn.getConnection();
+		PreparedStatement ps = null;
 
-	    try {
-	        String query = "UPDATE restaurant_tables SET seatsNumber = ? WHERE tableId = ?";
+		try {
+			String query = "UPDATE restaurant_tables SET seatsNumber = ? WHERE tableId = ?";
 
-	        ps = conn.prepareStatement(query);
-	        ps.setInt(1, newSeats);
-	        ps.setInt(2, tableId);
+			ps = conn.prepareStatement(query);
+			ps.setInt(1, newSeats);
+			ps.setInt(2, tableId);
 
-	        int rowsAffected = ps.executeUpdate();
+			int rowsAffected = ps.executeUpdate();
 
-	        if (rowsAffected > 0) {
-	            return true;
-	        }
+			if (rowsAffected > 0) {
+				return true;
+			}
 
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	    } finally {
-	        closeResources(ps, null);
-	        releaseConnection(pConn); // Release back to pool
-	    }
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			closeResources(ps, null);
+			releaseConnection(pConn); // Release back to pool
+		}
 
-	    return false;
+		return false;
 	}
-	
-	
+
 	/**
-	 * Updates an existing reservation with new details (Table ID, Arrival Time, Status).
+	 * Updates an existing reservation with new details (Table ID, Arrival Time,
+	 * Status).
+	 * 
 	 * @param res The TableReservation object containing the updated data.
 	 * @return true if the update was successful, false otherwise.
 	 */
 	public boolean updateReservation(TableReservation res) {
-	    // 1. Get connection from the pool
-	    PooledConnection pConn = this.getConnection();
+		// 1. Get connection from the pool
+		PooledConnection pConn = this.getConnection();
 
-	    // Safety check
-	    if (pConn == null) {
-	        return false;
-	    }
+		// Safety check
+		if (pConn == null) {
+			return false;
+		}
 
-	    Connection conn = pConn.getConnection();
-	    PreparedStatement ps = null;
+		Connection conn = pConn.getConnection();
+		PreparedStatement ps = null;
 
-	    try {
-	        // We update the fields that change during check-in
-	        String query = "UPDATE table_reservations SET tableId = ?, arrivalTime = ?, status = ? WHERE reservationId = ?";
+		try {
+			// We update the fields that change during check-in
+			String query = "UPDATE table_reservations SET tableId = ?, arrivalTime = ?, status = ? WHERE reservationId = ?";
 
-	        ps = conn.prepareStatement(query);
-	        
-	        // 1. Table ID (might be null if not assigned yet, but in check-in it should be set)
-	        if (res.getTableId() > 0) {
-	            ps.setInt(1, res.getTableId());
-	        } else {
-	            ps.setNull(1, java.sql.Types.INTEGER);
-	        }
+			ps = conn.prepareStatement(query);
 
-	        // 2. Arrival Time
-	        ps.setTimestamp(2, res.getArrivalTime());
+			// 1. Table ID (might be null if not assigned yet, but in check-in it should be
+			// set)
+			if (res.getTableId() > 0) {
+				ps.setInt(1, res.getTableId());
+			} else {
+				ps.setNull(1, java.sql.Types.INTEGER);
+			}
 
-	        // 3. Status
-	        ps.setString(3, res.getStatus());
+			// 2. Arrival Time
+			ps.setTimestamp(2, res.getArrivalTime());
 
-	        // 4. WHERE clause
-	        ps.setInt(4, res.getReservationId());
+			// 3. Status
+			ps.setString(3, res.getStatus());
 
-	        int rowsAffected = ps.executeUpdate();
+			// 4. WHERE clause
+			ps.setInt(4, res.getReservationId());
 
-	        if (rowsAffected > 0) {
-	            return true;
-	        }
+			int rowsAffected = ps.executeUpdate();
 
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	    } finally {
-	        closeResources(ps, null);
-	        releaseConnection(pConn); // Release back to pool
-	    }
+			if (rowsAffected > 0) {
+				return true;
+			}
 
-	    return false;
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			closeResources(ps, null);
+			releaseConnection(pConn); // Release back to pool
+		}
+
+		return false;
 	}
-	
-	
+
 	/**
 	 * Inserts a new table into the database and retrieves the generated ID.
+	 * 
 	 * @param table The Table object containing seatsNumber, location, and status.
-	 * @return The updated Table object with the new tableId, or null if insertion failed.
+	 * @return The updated Table object with the new tableId, or null if insertion
+	 *         failed.
 	 */
 	public Table addTableQuery(Table table) {
-	    // 1. Get connection from the pool
-	    PooledConnection pConn = this.getConnection();
+		// 1. Get connection from the pool
+		PooledConnection pConn = this.getConnection();
 
-	    // Safety check
-	    if (pConn == null) {
-	        return null;
-	    }
+		// Safety check
+		if (pConn == null) {
+			return null;
+		}
 
-	    Connection conn = pConn.getConnection();
-	    PreparedStatement ps = null;
-	    ResultSet rs = null;
+		Connection conn = pConn.getConnection();
+		PreparedStatement ps = null;
+		ResultSet rs = null;
 
-	    try {
-	        String query = "INSERT INTO restaurant_tables (seatsNumber, location, status) VALUES (?, ?, ?)";
+		try {
+			String query = "INSERT INTO restaurant_tables (seatsNumber, location, status) VALUES (?, ?, ?)";
 
-	        // Request the generated keys (auto-increment ID)
-	        ps = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
-	        
-	        ps.setInt(1, table.getSeatsNumber());
-	        ps.setString(2, table.getLocation());
-	        ps.setString(3, table.getStatus());
+			// Request the generated keys (auto-increment ID)
+			ps = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
 
-	        int rowsAffected = ps.executeUpdate();
+			ps.setInt(1, table.getSeatsNumber());
+			ps.setString(2, table.getLocation());
+			ps.setString(3, table.getStatus());
 
-	        if (rowsAffected > 0) {
-	            // Retrieve the generated tableId
-	            rs = ps.getGeneratedKeys();
-	            if (rs.next()) {
-	                table.setTableId(rs.getInt(1));
-	                return table; // Return the object with the new ID
-	            }
-	        }
+			int rowsAffected = ps.executeUpdate();
 
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	    } finally {
-	        closeResources(ps, rs);
-	        releaseConnection(pConn); // Release back to pool
-	    }
+			if (rowsAffected > 0) {
+				// Retrieve the generated tableId
+				rs = ps.getGeneratedKeys();
+				if (rs.next()) {
+					table.setTableId(rs.getInt(1));
+					return table; // Return the object with the new ID
+				}
+			}
 
-	    return null;
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			closeResources(ps, rs);
+			releaseConnection(pConn); // Release back to pool
+		}
+
+		return null;
 	}
-	
+
 	// updated 31/12/25 to only change the status
 	// to cancelled instead of real delete.
 	/**
-	 * "Soft deletes" a table by changing its status to 'cancelled'.
-	 * This prevents Foreign Key errors while removing the table from active use.
+	 * "Soft deletes" a table by changing its status to 'cancelled'. This prevents
+	 * Foreign Key errors while removing the table from active use.
+	 * 
 	 * @param tableId The ID of the table to remove.
 	 * @return true if the table was found and status updated, false otherwise.
 	 */
 	public boolean deleteTableQuery(int tableId) {
-	    // 1. Get connection from the pool
-	    PooledConnection pConn = this.getConnection();
+		// 1. Get connection from the pool
+		PooledConnection pConn = this.getConnection();
 
-	    // Safety check
-	    if (pConn == null) {
-	        return false;
-	    }
+		// Safety check
+		if (pConn == null) {
+			return false;
+		}
 
-	    Connection conn = pConn.getConnection();
-	    PreparedStatement ps = null;
+		Connection conn = pConn.getConnection();
+		PreparedStatement ps = null;
 
-	    try {
-	        // CHANGED: Update status to 'cancelled' (Soft Delete) instead of DELETE
-	        String query = "UPDATE restaurant_tables SET status = 'cancelled' WHERE tableId = ?";
+		try {
+			// CHANGED: Update status to 'cancelled' (Soft Delete) instead of DELETE
+			String query = "UPDATE restaurant_tables SET status = 'cancelled' WHERE tableId = ?";
 
-	        ps = conn.prepareStatement(query);
-	        ps.setInt(1, tableId);
+			ps = conn.prepareStatement(query);
+			ps.setInt(1, tableId);
 
-	        int rowsAffected = ps.executeUpdate();
+			int rowsAffected = ps.executeUpdate();
 
-	        if (rowsAffected > 0) {
-	            return true;
-	        }
+			if (rowsAffected > 0) {
+				return true;
+			}
 
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	    } finally {
-	        closeResources(ps, null);
-	        releaseConnection(pConn); // Release back to pool
-	    }
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			closeResources(ps, null);
+			releaseConnection(pConn); // Release back to pool
+		}
 
-	    return false;
+		return false;
 	}
-	
-	
+
 	/**
-	 * Retrieves the entire waiting list, sorted by entry time (oldest first).
-	 * @return An ArrayList of rows, where each row is an ArrayList of objects.
+	 * Retrieves all waiting list entries. Indices match
+	 * WaitListController.getAllWaitingAsWaitList: 0: waitingId, 1: reservationId,
+	 * 2: numberOfDiners, 3: entryTimeToList, 4: exitTimeFromList, 5: status, 6:
+	 * type
 	 */
 	public ArrayList<ArrayList<Object>> getWaitingListQuery() {
-	    ArrayList<ArrayList<Object>> waitingList = new ArrayList<>();
+		ArrayList<ArrayList<Object>> waitingList = new ArrayList<>();
+		PooledConnection pConn = this.getConnection();
 
-	    // 1. Get connection from the pool
-	    PooledConnection pConn = this.getConnection();
+		if (pConn == null)
+			return null;
 
-	    // Safety check
-	    if (pConn == null) {
-	        return null;
-	    }
+		Connection conn = pConn.getConnection();
+		PreparedStatement ps = null;
+		ResultSet rs = null;
 
-	    Connection conn = pConn.getConnection();
-	    PreparedStatement ps = null;
-	    ResultSet rs = null;
+		try {
+			// Order by entryTime ASC (FIFO queue)
+			String query = "SELECT waitingId, reservationId, numberOfDiners, entryTimeToList, exitTimeFromList, status, type "
+					+ "FROM waiting_list ORDER BY entryTimeToList ASC";
 
-	    try {
-	        // Order by entryTime ASC ensures FIFO (First In, First Out)
-	        String query = "SELECT * FROM waiting_list ORDER BY entryTime ASC";
+			ps = conn.prepareStatement(query);
+			rs = ps.executeQuery();
 
-	        ps = conn.prepareStatement(query);
-	        rs = ps.executeQuery();
+			while (rs.next()) {
+				ArrayList<Object> waiter = new ArrayList<>();
 
-	        while (rs.next()) {
-	            ArrayList<Object> waiter = new ArrayList<>();
-	            
-	            // We use the exact column names from your CREATE TABLE definition
-	            waiter.add(rs.getInt("confirmationCode")); 
-	            waiter.add(rs.getInt("customerId"));       
-	            waiter.add(rs.getInt("numberOfDiners"));   
-	            waiter.add(rs.getString("status"));        
-	            waiter.add(rs.getTimestamp("entryTime"));  
+				waiter.add(rs.getInt("waitingId")); // Index 0
+				waiter.add(rs.getInt("reservationId")); // Index 1
+				waiter.add(rs.getInt("numberOfDiners")); // Index 2
+				waiter.add(rs.getTimestamp("entryTimeToList")); // Index 3
+				waiter.add(rs.getTimestamp("exitTimeFromList")); // Index 4
+				waiter.add(rs.getString("status")); // Index 5
+				waiter.add(rs.getString("type")); // Index 6
 
-	            waitingList.add(waiter);
-	        }
+				waitingList.add(waiter);
+			}
 
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	    } finally {
-	        closeResources(ps, rs);
-	        releaseConnection(pConn); // Release back to pool
-	    }
-	    
-	    return waitingList;
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			closeResources(ps, rs);
+			releaseConnection(pConn);
+		}
+
+		return waitingList;
 	}
-	
-	
+
 	/**
 	 * Retrieves table details by tableId and updates the Table object.
+	 * 
 	 * @param table The Table object containing the tableId.
 	 * @return The updated Table object, or null if the table was not found.
 	 */
 	public Table getTableByTableIdQuery(Table table) {
-	    // 1. Get connection from the pool
-	    PooledConnection pConn = this.getConnection();
+		// 1. Get connection from the pool
+		PooledConnection pConn = this.getConnection();
 
-	    // Safety check
-	    if (pConn == null) {
-	        return null;
-	    }
+		// Safety check
+		if (pConn == null) {
+			return null;
+		}
 
-	    Connection conn = pConn.getConnection();
-	    PreparedStatement ps = null;
-	    ResultSet rs = null;
+		Connection conn = pConn.getConnection();
+		PreparedStatement ps = null;
+		ResultSet rs = null;
 
-	    try {
-	        String query = "SELECT * FROM restaurant_tables WHERE tableId = ?";
+		try {
+			String query = "SELECT * FROM restaurant_tables WHERE tableId = ?";
 
-	        ps = conn.prepareStatement(query);
-	        ps.setInt(1, table.getTableId());
+			ps = conn.prepareStatement(query);
+			ps.setInt(1, table.getTableId());
 
-	        rs = ps.executeQuery();
+			rs = ps.executeQuery();
 
-	        if (rs.next()) {
-	            // Using exact column names from restaurant_tables
-	            table.setSeatsNumber(rs.getInt("seatsNumber"));
-	            table.setLocation(rs.getString("location")); 
-	            table.setStatus(rs.getString("status"));     
-	            
-	            return table; // Return the updated object
-	        }
+			if (rs.next()) {
+				// Using exact column names from restaurant_tables
+				table.setSeatsNumber(rs.getInt("seatsNumber"));
+				table.setLocation(rs.getString("location"));
+				table.setStatus(rs.getString("status"));
 
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	    } finally {
-	        closeResources(ps, rs);
-	        releaseConnection(pConn); // Release back to pool
-	    }
+				return table; // Return the updated object
+			}
 
-	    return null; // Return null if not found
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			closeResources(ps, rs);
+			releaseConnection(pConn); // Release back to pool
+		}
+
+		return null; // Return null if not found
 	}
-	
-	
-	
+
 	/**
-	 * Updates the status of a customer in the waiting list to 'seated'.
-	 * @param waiter The WaitList object containing the confirmation code.
-	 * @return true if successful, false otherwise.
+	 * Updates the status and exit time of a waiter. Corresponds to:
+	 * DBC.updateStatusAndExitTimeInWaitingListQuery(waiter)
 	 */
-	public boolean updateStatusInWaitingListQuery(WaitList waiter) {
-	    // 1. Get connection from the pool
-	    PooledConnection pConn = this.getConnection();
+	public boolean updateStatusAndExitTimeInWaitingListQuery(WaitList waiter) {
+		PooledConnection pConn = this.getConnection();
+		if (pConn == null)
+			return false;
 
-	    // Safety check
-	    if (pConn == null) {
-	        return false;
-	    }
+		Connection conn = pConn.getConnection();
+		PreparedStatement ps = null;
 
-	    Connection conn = pConn.getConnection();
-	    PreparedStatement ps = null;
+		try {
+			String query = "UPDATE waiting_list SET status = ?, exitTimeFromList = ? WHERE waitingId = ?";
 
-	    try {
-	        // Using "status" and "confirmationCode" columns
-	        String query = "UPDATE waiting_list SET status = 'seated' WHERE confirmationCode = ?";
+			ps = conn.prepareStatement(query);
 
-	        ps = conn.prepareStatement(query);
-	        ps.setInt(1, waiter.getConfirmationCode());
+			ps.setString(1, waiter.getStatus()); // 'seated', 'notified', etc.
+			ps.setTimestamp(2, waiter.getExitTimeFromList());
+			ps.setInt(3, waiter.getWaitingId());
 
-	        int rowsAffected = ps.executeUpdate();
+			int rowsAffected = ps.executeUpdate();
+			return rowsAffected > 0;
 
-	        if (rowsAffected > 0) {
-	            return true;
-	        }
-
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	    } finally {
-	        closeResources(ps, null);
-	        releaseConnection(pConn); // Release back to pool
-	    }
-
-	    return false;
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			closeResources(ps, null);
+			releaseConnection(pConn);
+		}
+		return false;
 	}
 
-	
 	/**
-	 * Checks if a specific confirmation code already exists in the waiting_list table.
+	 * Logically deletes a waiter by setting status to 'cancelled'. Corresponds to:
+	 * DBC.deleteFromWaitList(waiter)
+	 */
+	public boolean deleteFromWaitList(WaitList waiter) {
+		PooledConnection pConn = this.getConnection();
+		if (pConn == null)
+			return false;
+
+		Connection conn = pConn.getConnection();
+		PreparedStatement ps = null;
+
+		try {
+			// We use logical deletion (changing status) rather than DELETE FROM
+			String query = "UPDATE waiting_list SET status = 'cancelled' WHERE waitingId = ?";
+
+			ps = conn.prepareStatement(query);
+			ps.setInt(1, waiter.getWaitingId());
+
+			int rowsAffected = ps.executeUpdate();
+			return rowsAffected > 0;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			closeResources(ps, null);
+			releaseConnection(pConn);
+		}
+		return false;
+	}
+
+	/**
+	 * Checks if there is anyone in the waiting list ('waiting') who could fit at a
+	 * table with the specific number of seats.
+	 */
+	public boolean isTableNeededQueue(int tableSeats) {
+		PooledConnection pConn = this.getConnection();
+		if (pConn == null)
+			return false;
+
+		Connection conn = pConn.getConnection();
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+
+		try {
+			// Check if there is a waiter with status 'waiting' whose group size <=
+			// tableSeats
+			String query = "SELECT 1 FROM waiting_list WHERE status = 'waiting' AND numberOfDiners <= ? LIMIT 1";
+
+			ps = conn.prepareStatement(query);
+			ps.setInt(1, tableSeats);
+			rs = ps.executeQuery();
+
+			if (rs.next()) {
+				return true; // Someone is waiting for this size
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			closeResources(ps, rs);
+			releaseConnection(pConn);
+		}
+		return false;
+	}
+
+	/**
+	 * Checks if a specific confirmation code already exists in the waiting_list
+	 * table.
+	 * 
 	 * @param code The confirmation code to check.
 	 * @return true if the code exists, false otherwise.
 	 */
 	public boolean checkIfConfCodeExistsInWaitingList(int code) {
-	    // 1. Get connection from the pool
-	    PooledConnection pConn = this.getConnection();
+		// 1. Get connection from the pool
+		PooledConnection pConn = this.getConnection();
 
-	    // Safety check
-	    if (pConn == null) {
-	        return false;
-	    }
+		// Safety check
+		if (pConn == null) {
+			return false;
+		}
 
-	    Connection conn = pConn.getConnection();
-	    PreparedStatement ps = null;
-	    ResultSet rs = null;
+		Connection conn = pConn.getConnection();
+		PreparedStatement ps = null;
+		ResultSet rs = null;
 
-	    try {
-	        String query = "SELECT confirmationCode FROM waiting_list WHERE confirmationCode = ?";
+		try {
+			String query = "SELECT confirmationCode FROM waiting_list WHERE confirmationCode = ?";
 
-	        ps = conn.prepareStatement(query);
-	        ps.setInt(1, code);
+			ps = conn.prepareStatement(query);
+			ps.setInt(1, code);
 
-	        rs = ps.executeQuery();
+			rs = ps.executeQuery();
 
-	        // If rs.next() is true, the code exists
-	        if (rs.next()) {
-	            return true;
-	        }
+			// If rs.next() is true, the code exists
+			if (rs.next()) {
+				return true;
+			}
 
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	    } finally {
-	        closeResources(ps, rs);
-	        releaseConnection(pConn); // Release back to pool
-	    }
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			closeResources(ps, rs);
+			releaseConnection(pConn); // Release back to pool
+		}
 
-	    return false;
+		return false;
 	}
-	
-	
+
 	/**
-	 * Inserts a new customer into the waiting list.
-	 * @param newWait The WaitList object containing customerId, numberOfDiners, and confirmationCode.
-	 * @return true if the insertion was successful, false otherwise.
+	 * Inserts a new entry into the waiting_list. Corresponds to:
+	 * DBC.addToWaitList(newWait) in WaitListController.
 	 */
-	public boolean createNewWaitQuery(WaitList newWait) {
-	    // 1. Get connection from the pool
-	    PooledConnection pConn = this.getConnection();
+	public boolean addToWaitList(WaitList newWait) {
+		PooledConnection pConn = this.getConnection();
+		if (pConn == null)
+			return false;
 
-	    // Safety check
-	    if (pConn == null) {
-	        return false;
-	    }
+		Connection conn = pConn.getConnection();
+		PreparedStatement ps = null;
 
-	    Connection conn = pConn.getConnection();
-	    PreparedStatement ps = null;
+		try {
+			// SQL Table waiting_list: (waitingId, reservationId, numberOfDiners,
+			// entryTimeToList, exitTimeFromList, status, type)
+			// Note: customerId is NOT in this table (it is linked via reservationId)
+			String query = "INSERT INTO waiting_list (reservationId, numberOfDiners, type) VALUES (?, ?, ?)";
 
-	    try {
-	        String query = "INSERT INTO waiting_list (customerId, numberOfDiners, confirmationCode) VALUES (?, ?, ?)";
+			ps = conn.prepareStatement(query);
 
-	        ps = conn.prepareStatement(query);
-	        
-	        ps.setInt(1, newWait.getCustomerId());
-	        ps.setInt(2, newWait.getNumberOfDiners());
-	        ps.setInt(3, newWait.getConfirmationCode());
+			// 1. reservationId (Must be created before this call)
+			ps.setInt(1, newWait.getReservationId());
 
-	        int rowsAffected = ps.executeUpdate();
+			// 2. numberOfDiners
+			ps.setInt(2, newWait.getNumberOfDiners());
 
-	        if (rowsAffected > 0) {
-	            return true;
-	        }
+			// 3. type (walk_in / check_in) - Cannot be null
+			ps.setString(3, newWait.getType());
 
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	    } finally {
-	        closeResources(ps, null);
-	        releaseConnection(pConn); // Release back to pool
-	    }
+			int rowsAffected = ps.executeUpdate();
+			return rowsAffected > 0;
 
-	    return false;
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			closeResources(ps, null);
+			releaseConnection(pConn);
+		}
+		return false;
 	}
-	
-	
-	
-//	public static void main() {
-//		// Create a timestamp for 20th Dec 2025 (Time doesn't matter, can be 00:00:00)
-//		String strDate = "2025-12-20 00:00:00";
-//		Timestamp dateToCheck = Timestamp.valueOf(strDate);
-//
-//		// Call your function
-//		ArrayList<ArrayList<Object>> result = DataBaseController.getInstance().getAllReservationsQueryByDate(dateToCheck);
-//
-//		// Print size - Should be 5
-//		System.out.println("Found: " + result.size());
-//	}
+
 }
