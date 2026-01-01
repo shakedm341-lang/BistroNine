@@ -82,6 +82,7 @@ public class DataBaseController {
 	// 47. getDailyAvgArrivalQuery(LocalDate) : int
 	// 48. getDailyAvgLeavingQuery(LocalDate) : int
 	// 49. addTimeReportQuery(TimeReport) : boolean
+	// 50. deleteFromWaitListByReservationIdQuery(int) : boolean
 	// .
 	// END OF API.
 
@@ -227,6 +228,50 @@ public class DataBaseController {
 	 * /////////////////////////////////////////////////////////////////////////////
 	 * ///////////////////////////////////
 	 */
+	
+	
+	/**
+	 * Cancels a waiting list entry by setting status to 'cancelled' based on the reservation ID.
+	 * This is used when a reservation is auto-cancelled due to lateness.
+	 *
+	 * @param reservationId The reservation ID linked to the waiting list entry.
+	 * @return true if an entry was found and updated, false otherwise.
+	 */
+	public boolean deleteFromWaitListByReservationIdQuery(int reservationId) {
+		// 1. Get connection from the pool
+		PooledConnection pConn = this.getConnection();
+
+		// Safety check
+		if (pConn == null) {
+			return false;
+		}
+
+		Connection conn = pConn.getConnection();
+		PreparedStatement ps = null;
+
+		try {
+			// Update status to 'cancelled' where reservationId matches
+			String query = "UPDATE waiting_list SET status = 'cancelled' WHERE reservationId = ?";
+
+			ps = conn.prepareStatement(query);
+			ps.setInt(1, reservationId);
+
+			int rowsAffected = ps.executeUpdate();
+
+			// If rowsAffected > 0, it means the entry existed and was updated
+			if (rowsAffected > 0) {
+				return true;
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			closeResources(ps, null);
+			releaseConnection(pConn); // Release back to pool
+		}
+
+		return false;
+	}
 
 	/**
 	 * Calculates the average arrival delay (Actual Arrival - Scheduled Time) in
