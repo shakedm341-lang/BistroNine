@@ -352,10 +352,17 @@ public class DataBaseController {
 	            java.sql.Time sqlClose = rs.getTime("closingTime");
 	            
 	            if (sqlOpen != null && sqlClose != null) {
-	                // Only add if start time is DIFFERENT from end time
-	                if (!sqlOpen.equals(sqlClose)) {
-	                    foundSlots.add(new TimeSlot(sqlOpen.toLocalTime(), sqlClose.toLocalTime()));
+	                // --- NEW LOGIC START ---
+	                // If Special Hours has start == end, it implies the restaurant is explicitly CLOSED for this date.
+	                // We return null immediately and DO NOT check weekly hours.
+	                if (sqlOpen.equals(sqlClose)) {
+	                    openingHours.setSlots(null);
+	                    return openingHours; // Exit immediately
 	                }
+	                // --- NEW LOGIC END ---
+
+	                // Otherwise, it's a valid special opening time, add it.
+	                foundSlots.add(new TimeSlot(sqlOpen.toLocalTime(), sqlClose.toLocalTime()));
 	            }
 	        }
 
@@ -366,6 +373,8 @@ public class DataBaseController {
 	        // ---------------------------------------------------------
 	        // STEP 2: If no special hours found, check Weekly Hours
 	        // ---------------------------------------------------------
+	        // If we reached here, it means we didn't hit an explicit "Closed" special hour.
+	        // If foundSlots is empty, it means there were NO special hours records at all.
 	        if (foundSlots.isEmpty()) {
 	            String queryWeekly = "SELECT openingTime, closingTime FROM weekly_hours WHERE dayOfWeek = ?";
 	            ps = conn.prepareStatement(queryWeekly);
@@ -380,9 +389,8 @@ public class DataBaseController {
 	                java.sql.Time sqlClose = rs.getTime("closingTime");
 
 	                if (sqlOpen != null && sqlClose != null) {
-	                    // Logic Update: Check if times are different.
-	                    // If they are equal (e.g. 00:00 to 00:00), we simply SKIP adding it to the list.
-	                    // We continue the loop to see if there are other valid rows (e.g., split shifts).
+	                    // Weekly Logic: If times are equal (00:00-00:00), we just skip adding it.
+	                    // We check other rows in case of split shifts.
 	                    if (!sqlOpen.equals(sqlClose)) {
 	                        foundSlots.add(new TimeSlot(sqlOpen.toLocalTime(), sqlClose.toLocalTime()));
 	                    }
@@ -393,9 +401,8 @@ public class DataBaseController {
 	        // ---------------------------------------------------------
 	        // STEP 3: Final Decision
 	        // ---------------------------------------------------------
-	        // If the list is empty, it means either:
-	        // A) No rows were found in DB.
-	        // B) Rows were found, but they were all "Closed" markers (start == end).
+	        // If the list is empty at this point, it means the restaurant is closed 
+	        // (either no weekly hours defined, or weekly hours were 00:00-00:00).
 	        if (foundSlots.isEmpty()) {
 	            openingHours.setSlots(null);
 	        } else {
