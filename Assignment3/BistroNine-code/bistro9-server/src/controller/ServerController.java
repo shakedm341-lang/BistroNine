@@ -21,6 +21,7 @@ public class ServerController extends AbstractServer {
 	private BillController billController;
 	private TableController tableController;
 	private WaitListController waitListController;
+	private OpeningTimeController openingTimeController;
 
 
 	// Scheduler for outonomous tasks
@@ -37,6 +38,8 @@ public class ServerController extends AbstractServer {
 		this.customerController = new CustomerController();
 		this.billController = new BillController();
 		this.tableController=new TableController();
+		this.waitListController=new WaitListController();
+		this.openingTimeController=new OpeningTimeController();
 		startAutoTasks();
 	}
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -66,7 +69,11 @@ public class ServerController extends AbstractServer {
 				
 			case WAITLIST:
 				handleWaitListRequest(message, client);
+				break;
 				
+			case OPENING_TIME:
+				handleOpeningTimeRequest(message, client);
+				break;
 			default:
 				System.out.println("Unknown command received: " + message.type);
 				break;
@@ -134,6 +141,16 @@ public class ServerController extends AbstractServer {
 		}
 	}
 
+	private void handleOpeningTimeRequest(Message message, ConnectionToClient client) {
+		Object response = openingTimeController.handleMessageFromServer(message);
+		message.content = response;
+		try {
+			byte[] data = KryoUtil.serialize(message);
+			client.sendToClient(data);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////initialization Automated tasks//////////////////////////////////////////////////////////////////////
@@ -151,6 +168,19 @@ public class ServerController extends AbstractServer {
 				System.err.println("Error during auto-cleanup: " + e.getMessage());
 			}
 		}, 0, 1, TimeUnit.MINUTES); // initial delay 0, run every 1 minute
+	
+		
+			scheduler.scheduleAtFixedRate(() -> {
+		        try {
+		            
+		            TimeReportController.timeReportGenerate();//generate monthly time report
+		            
+		            
+		        } catch (Exception e) {
+		            System.err.println("Error in daily tasks: " + e.getMessage());
+		        }
+		    }, 0, 24, TimeUnit.HOURS);
+
 	}
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////

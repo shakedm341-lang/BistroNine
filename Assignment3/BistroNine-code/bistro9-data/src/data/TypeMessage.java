@@ -8,4 +8,5 @@ public enum TypeMessage {
 	TABLE,
 	BILL,
 	WAITLIST,
+	OPENING_TIME,
 }

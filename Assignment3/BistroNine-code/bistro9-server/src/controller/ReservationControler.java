@@ -74,7 +74,17 @@ public class ReservationControler
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////Helper methods//////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 	
+	/**
+	 * Creates a new table reservation with waitlist in the database when the
+	 * customer needs to wait for a table.
+	 *
+	 * @param numberOfDiners The number of diners for the reservation.
+	 * @param customerId     The ID of the customer making the reservation.
+	 * @return The TableReservation object if the reservation was created
+	 *         successfully, null otherwise.
+	 */
 	public static 	TableReservation createReservationWithWait( int numberOfDiners, int customerId )
 	{
 		Random rand = new Random();//Random object to generate a random confirmation code

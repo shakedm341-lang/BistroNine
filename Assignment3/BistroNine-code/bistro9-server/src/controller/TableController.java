@@ -593,8 +593,10 @@ public class TableController
 				{
 					if (waiter.getReservationId() == checkInRes.getReservationId()) 
 					{
+						waiter.setStatus("seated");
+						waiter.setExitTimeFromList(new Timestamp(System.currentTimeMillis()));
 						// update the waitlist status to seated in the DB 
-						if (!DBC.updateStatusInWaitingListQuery(waiter)) 
+						if (!DBC.updateStatusAndExitTimeInWaitingListQuery(waiter)) 
 						{
 							System.out.println("Failed to remove from waitlist.");
 							return null; // failed to remove from waitlist

@@ -14,7 +14,7 @@ public class TableReservation
 	private Timestamp DateOfMakeReservation;//giveing by DB auto CURRENT_TIMESTAMP
 	private Timestamp arrivalTime;
 	private Timestamp leavingTime;
-	private String status;//reset as active in DB  //active,arrived ,cancelled, completed
+	private String status;//reset as active in DB  //'active','arrived' ,'cancelled', 'completed','waiting'
 	
        
 	

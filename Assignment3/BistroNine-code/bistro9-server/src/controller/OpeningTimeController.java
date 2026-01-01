@@ -5,8 +5,10 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 
 import data.Message;
+import data.OpeningHours;
 import data.OpeningHoursPerDay;
 import data.Table;
+import data.TableReservation;
 import data.TimeSlot;
 
 public class OpeningTimeController 
@@ -33,6 +35,11 @@ public class OpeningTimeController
 			
 		case ADD_NEW_SPECIAL_OPENING_TIME:
 			return addNewSpecialOpeningTime(msg);
+		case GET_WEEKLY_OPENING_TIME:
+			return getWeeklyOpeningTime(msg);
+			
+		case GET_SPECIAL_OPENING_TIME:
+			return getSpecialOpeningTime(msg);
 		default:
 			System.out.println("Unknown task received.");
 			return null;
@@ -44,7 +51,7 @@ public class OpeningTimeController
 	
 	
 	/**
-	 * Retrieves the opening time slots for a specific date from the database.
+	 * Retrieves the opening time slots for a specific date from the database.Special Hours or Weekly Hours
 	 *
 	 * @param date The date for which to retrieve opening time slots.
 	 * @return An ArrayList of TimeSlot objects representing the opening time slots
@@ -62,7 +69,101 @@ public class OpeningTimeController
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////Logic methods//////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	/**
+	 * Retrieves the special opening time for all special days from the database.
+	 *
+	 * @param msg The message containing the request details.not used in this method
+	 * @return An ArrayList of OpeningHoursPerDay objects representing the special
+	 *         opening time for each special day, or null if no special opening
+	 *         hours are found in the database.
+	 */
+	private ArrayList<OpeningHoursPerDay> getSpecialOpeningTime(Message msg)
+	{
+		ArrayList<LocalDate> datesList = new  ArrayList<>();
+		
+		ArrayList<OpeningHoursPerDay> specialOpeningHoursAsList = new ArrayList<>();
+		
+		if (!DBC.getAllSpecialDaysQuery(datesList))// update datesList with all the special opening days without hours from the DB, return false not successful
+		{
+            return null;//
+        }
+		if (datesList.isEmpty()) 
+		{
+			return null;// return null to server that there are no special opening days in the DB
+		}
+		// For each date in datesList, get the opening hours and add to specialOpeningHoursAsList
+		for (LocalDate day : datesList) 
+		{
+			OpeningHoursPerDay openingHoursForSpecificDate = new OpeningHoursPerDay(day);
+
+			openingHoursForSpecificDate.setSlots(getOpeningTime(day));
+
+			specialOpeningHoursAsList.add(openingHoursForSpecificDate);
+			
+		}
+		return specialOpeningHoursAsList;
+	}
 	
+	/**
+	 * Retrieves the weekly opening time for all days of the week from the database.
+	 *
+	 * @param msg The message containing the request details.not used in this method
+	 * @return An ArrayList of OpeningHours objects representing the weekly opening
+	 *         time for each day of the week, or null if no opening hours are found
+	 *         in the database.if a day is closed all day the slots list will be empty in the OpeningHours object
+	 */
+	private ArrayList<OpeningHours> getWeeklyOpeningTime(Message msg) 
+	{
+		ArrayList<OpeningHours> allHoursOfTheWeekAsList= new ArrayList<>();
+		
+		OpeningHours openingHoursForSunday = new OpeningHours("SUNDAY");
+		
+		if (!DBC.getWeeklyOpeningTimeForSpecificDayQuery(openingHoursForSunday))//update opening hours for Sunday from the DB in the OpeningHours object(if day closes all day put empty slots list) return true if successful, false otherwise
+		{
+            return null;//return to server that there are no opening hours in the DB
+        }
+		allHoursOfTheWeekAsList.add(openingHoursForSunday);
+		
+		OpeningHours openingHoursForMonday = new OpeningHours("MONDAY");
+		if (!DBC.getWeeklyOpeningTimeForSpecificDayQuery(openingHoursForMonday))
+		{
+			return null;// return to server that there are no opening hours in the DB
+		}
+		allHoursOfTheWeekAsList.add(openingHoursForMonday);
+		
+		OpeningHours openingHoursForTuesday = new OpeningHours("TUESDAY");
+		if (!DBC.getWeeklyOpeningTimeForSpecificDayQuery(openingHoursForTuesday)) {
+			return null;// return to server that there are no opening hours in the DB
+		}
+		allHoursOfTheWeekAsList.add(openingHoursForTuesday);
+		
+		OpeningHours openingHoursForWednesday = new OpeningHours("WEDNESDAY");
+		if (!DBC.getWeeklyOpeningTimeForSpecificDayQuery(openingHoursForWednesday)) {
+			return null;// return to server that there are no opening hours in the DB
+		}
+		allHoursOfTheWeekAsList.add(openingHoursForWednesday);
+		
+		OpeningHours openingHoursForThursday = new OpeningHours("THURSDAY");
+		if (!DBC.getWeeklyOpeningTimeForSpecificDayQuery(openingHoursForThursday)) {
+			return null;// return to server that there are no opening hours in the DB
+		}
+		allHoursOfTheWeekAsList.add(openingHoursForThursday);
+		
+		OpeningHours openingHoursForFriday = new OpeningHours("FRIDAY");
+		if (!DBC.getWeeklyOpeningTimeForSpecificDayQuery(openingHoursForFriday)) {
+			return null;// return to server that there are no opening hours in the DB
+		}
+		allHoursOfTheWeekAsList.add(openingHoursForFriday);
+		
+		OpeningHours openingHoursForSaturday = new OpeningHours("SATURDAY");
+		if (!DBC.getWeeklyOpeningTimeForSpecificDayQuery(openingHoursForSaturday)) {
+			return null;// return to server that there are no opening hours in the DB
+		}
+		allHoursOfTheWeekAsList.add(openingHoursForSaturday);
+			
+		return allHoursOfTheWeekAsList;	
+
+	}
 	/**
      * Updates the opening time for a specific day of the week.deletes old opening time and insert the new one.
      *
