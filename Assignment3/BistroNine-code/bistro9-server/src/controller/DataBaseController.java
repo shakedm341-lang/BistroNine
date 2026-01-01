@@ -323,78 +323,93 @@ public class DataBaseController {
 
 	public OpeningHoursPerDay getOpeningHoursByDate(OpeningHoursPerDay openingHours) {
 
-		// 1. Get connection from the pool
-		PooledConnection pConn = this.getConnection();
+	    // 1. Get connection from the pool
+	    PooledConnection pConn = this.getConnection();
 
-		// Safety check
-		if (pConn == null) {
-			return null;
-		}
+	    // Safety check
+	    if (pConn == null) {
+	        return null;
+	    }
 
-		Connection conn = pConn.getConnection();
-		PreparedStatement ps = null;
-		ResultSet rs = null;
+	    Connection conn = pConn.getConnection();
+	    PreparedStatement ps = null;
+	    ResultSet rs = null;
 
-		// Create a list to hold the found slots
-		ArrayList<TimeSlot> foundSlots = new ArrayList<>();
+	    // Create a list to hold the found slots
+	    ArrayList<TimeSlot> foundSlots = new ArrayList<>();
 
-		try {
-			// ---------------------------------------------------------
-			// STEP 1: Check for Special Hours (Priority)
-			// ---------------------------------------------------------
-			String querySpecial = "SELECT openingTime, closingTime FROM special_hours WHERE specificDate = ?";
-			ps = conn.prepareStatement(querySpecial);
-			ps.setDate(1, java.sql.Date.valueOf(openingHours.getDay()));
-			rs = ps.executeQuery();
+	    try {
+	        // ---------------------------------------------------------
+	        // STEP 1: Check for Special Hours (Priority)
+	        // ---------------------------------------------------------
+	        String querySpecial = "SELECT openingTime, closingTime FROM special_hours WHERE specificDate = ?";
+	        ps = conn.prepareStatement(querySpecial);
+	        ps.setDate(1, java.sql.Date.valueOf(openingHours.getDay()));
+	        rs = ps.executeQuery();
 
-			while (rs.next()) {
-				java.sql.Time sqlOpen = rs.getTime("openingTime");
-				java.sql.Time sqlClose = rs.getTime("closingTime");
-				System.out.println("Found slot for TUESDAY: " + sqlOpen + " - " + sqlClose);
-				if (sqlOpen != null && sqlClose != null) {
-					foundSlots.add(new TimeSlot(sqlOpen.toLocalTime(), sqlClose.toLocalTime()));
-				}
-			}
+	        while (rs.next()) {
+	            java.sql.Time sqlOpen = rs.getTime("openingTime");
+	            java.sql.Time sqlClose = rs.getTime("closingTime");
+	            
+	            if (sqlOpen != null && sqlClose != null) {
+	                // Only add if start time is DIFFERENT from end time
+	                if (!sqlOpen.equals(sqlClose)) {
+	                    foundSlots.add(new TimeSlot(sqlOpen.toLocalTime(), sqlClose.toLocalTime()));
+	                }
+	            }
+	        }
 
-			// Close resources from the first query to prepare for the second (if needed)
-			rs.close();
-			ps.close();
+	        // Close resources from the first query to prepare for the second
+	        rs.close();
+	        ps.close();
 
-			// ---------------------------------------------------------
-			// STEP 2: If no special hours found, check Weekly Hours
-			// ---------------------------------------------------------
-			if (foundSlots.isEmpty()) {
-				String queryWeekly = "SELECT openingTime, closingTime FROM weekly_hours WHERE dayOfWeek = ?";
-				ps = conn.prepareStatement(queryWeekly);
+	        // ---------------------------------------------------------
+	        // STEP 2: If no special hours found, check Weekly Hours
+	        // ---------------------------------------------------------
+	        if (foundSlots.isEmpty()) {
+	            String queryWeekly = "SELECT openingTime, closingTime FROM weekly_hours WHERE dayOfWeek = ?";
+	            ps = conn.prepareStatement(queryWeekly);
 
-				// Since DB is now uppercase ENUM ('SUNDAY'), we can just use Java's default
-				// toString()
-				// Example: LocalDate.of(2025, 12, 21) -> getDayOfWeek() -> SUNDAY
-				ps.setString(1, openingHours.getDay().getDayOfWeek().toString());
+	            // Since DB is now uppercase ENUM ('SUNDAY'), we use Java's default toString()
+	            ps.setString(1, openingHours.getDay().getDayOfWeek().toString());
 
-				rs = ps.executeQuery();
+	            rs = ps.executeQuery();
 
-				while (rs.next()) {
-					java.sql.Time sqlOpen = rs.getTime("openingTime");
-					java.sql.Time sqlClose = rs.getTime("closingTime");
+	            while (rs.next()) {
+	                java.sql.Time sqlOpen = rs.getTime("openingTime");
+	                java.sql.Time sqlClose = rs.getTime("closingTime");
 
-					if (sqlOpen != null && sqlClose != null) {
-						foundSlots.add(new TimeSlot(sqlOpen.toLocalTime(), sqlClose.toLocalTime()));
-					}
-				}
-			}
+	                if (sqlOpen != null && sqlClose != null) {
+	                    // Logic Update: Check if times are different.
+	                    // If they are equal (e.g. 00:00 to 00:00), we simply SKIP adding it to the list.
+	                    // We continue the loop to see if there are other valid rows (e.g., split shifts).
+	                    if (!sqlOpen.equals(sqlClose)) {
+	                        foundSlots.add(new TimeSlot(sqlOpen.toLocalTime(), sqlClose.toLocalTime()));
+	                    }
+	                }
+	            }
+	        }
 
-			// Update the original object with the list of slots we found
-			openingHours.setSlots(foundSlots);
+	        // ---------------------------------------------------------
+	        // STEP 3: Final Decision
+	        // ---------------------------------------------------------
+	        // If the list is empty, it means either:
+	        // A) No rows were found in DB.
+	        // B) Rows were found, but they were all "Closed" markers (start == end).
+	        if (foundSlots.isEmpty()) {
+	            openingHours.setSlots(null);
+	        } else {
+	            openingHours.setSlots(foundSlots);
+	        }
 
-		} catch (SQLException e) {
-			e.printStackTrace();
-		} finally {
-			closeResources(ps, rs);
-			releaseConnection(pConn); // Release back to pool
-		}
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    } finally {
+	        closeResources(ps, rs);
+	        releaseConnection(pConn); // Release back to pool
+	    }
 
-		return openingHours;
+	    return openingHours;
 	}
 
 	// c3
