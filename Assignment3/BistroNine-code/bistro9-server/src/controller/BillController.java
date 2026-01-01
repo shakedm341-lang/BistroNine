@@ -83,6 +83,10 @@ public class BillController
 
 		int discountAsInt = (int) bill.getDiscountSize();
 		
+		
+		if (sub.getType()!=null) 
+		{
+
 		EmailSendController.sendEmail(sub.getEmail(), "Your BistroNine bill is ready🧾", "Hi "+sub.getFirstName()+" "+sub.getLastName()+", Thank you for dining with us at Bistro9! It was a pleasure to host you.\r\n"
 				+ "\r\n"
 				+ "Attached is your bill summary:\r\n"
@@ -98,7 +102,25 @@ public class BillController
 		        + "Discount: " + discountAsInt + " %\r\n"
 		        + "Total to pay: " + formattedTotal + " ₪\r\n"
 		        + "We look forward to seeing you again soon, Bistro9 Team 🍷");// Send sms reminder to the customer
-
+		}
+		else
+		{
+			EmailSendController.sendEmail(sub.getEmail(), "Your BistroNine bill is ready🧾", "Hi customer, Thank you for dining with us at Bistro9! It was a pleasure to host you.\r\n"
+					+ "\r\n"
+					+ "Attached is your bill summary:\r\n"
+					+ "Amount before discount: "+formattedAmount+" ₪\r\n"
+					+ "Discount: "+discountAsInt+" %\r\n"
+					+ "Total to pay: "+formattedTotal+" ₪\r\n"
+					+ "We look forward to seeing you again soon, Bistro9 Team 🍷");// Send email reminder to the customer
+			SmsSendController.sendSms(sub.getPhoneNumber(), "Your BistroNine bill is ready🧾",
+			        "Hi customer, Thank you for dining with us at Bistro9! It was a pleasure to host you.\r\n"
+			        + "\r\n"
+			        + "Attached is your bill summary:\r\n"
+			        + "Amount before discount: " + formattedAmount + " ₪\r\n"
+			        + "Discount: " + discountAsInt + " %\r\n"
+			        + "Total to pay: " + formattedTotal + " ₪\r\n"
+			        + "We look forward to seeing you again soon, Bistro9 Team 🍷");// Send sms reminder to the customer
+		}
 	}
 
 	/**
@@ -339,7 +361,7 @@ public class BillController
 				long minutesSeated = java.time.Duration.between(arrivalTime, nowTime).toMinutes();
 
 				//check if the duration is 2 hours for sending the bill
-				if (minutesSeated >= 120 && minutesSeated < 125) 
+				if (minutesSeated == 119 ) 
 				{
 
 					sendBillMessage(res);//send the bill message to the customer

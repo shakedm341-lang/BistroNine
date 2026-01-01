@@ -201,7 +201,7 @@ public class CustomerController
 		sub.setCustomerId(DBC.getCustomerId(sub));//return get customer id if exists in customer table else set new customer id
 		//Adding the new subscriber to the DB and getting the subscriberId assigned by the DB
 		sub.setSubscriberId(DBC.addNewSubscriber(sub));
-		
+		System.out.println("added sucss new subscriber with subscriber id: "+sub.getCustomerId());
 		return sub;
 	}
 	
@@ -506,7 +506,7 @@ public class CustomerController
 
         }
 		else {
-			EmailSendController.sendEmail(sub.getEmail(), "Oops, we couldn't find any confirmation codes for today","We searched the system, but we didn't find any active confirmation codes for today.\n"+" Could it be that the reservation is for a different date?");// send email to the customer with all his confirmation codes for today
+			EmailSendController.sendEmail(sub.getEmail(), "Oops, we couldn't find any confirmation codes for today","We searched the system, but we didn't find any active confirmation codes for today.\n"+" Could it be that the reservation is for a different date?");// send email to the customer that no confirmation codes found for today
 
 			SmsSendController.sendSms(sub.getPhoneNumber(), "Oops, we couldn't find any confirmation codes for today","We searched the system, but we didn't find any active confirmation codes for today.\n"+" Could it be that the reservation is for a different date?");
 			

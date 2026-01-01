@@ -22,7 +22,7 @@ public class SmsSendController {
 
 		
 		System.out.println("\n+===================================================+");
-		System.out.println("|               📱 SEND SMS SIMULATION               |");
+		System.out.println("|               📱 SEND SMS SIMULATION 📱             |");
 		System.out.println("+===================================================+");
 		System.out.println("| Time:   " + timestamp);
 		System.out.println("| To:     " + phoneNumber);
