@@ -12,27 +12,35 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 public class ServerController extends AbstractServer {
 
+	/**
+	 * Default port number for the server.
+	 */
 	final public static int DEFAULT_PORT = 5555;
 
-	// references for the controllers:
-	// initialized in the constructor.
+	// Controllers for handling specific functionalities
 	private ReservationControler reservationsController;
 	private CustomerController customerController;
 	private BillController billController;
 	private TableController tableController;
 	private WaitListController waitListController;
 	private OpeningTimeController openingTimeController;
+	private TimeReportController timeReportController;
+	private SubscriberReportController subscriberReportController;
+	private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);// Scheduler for outonomous tasks
+	private ServerDashboardController serverUI;// Reference to the server UI controller
 
-
-	// Scheduler for outonomous tasks
-	private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-
-	private ServerDashboardController serverUI;
-
+	/**
+	 * Constructor for ServerController class.
+	 * 
+	 * @param port       The port number on which the server will listen for client
+	 *                   connections.
+	 * @param dbPassword The password for the database connection.
+	 * @param serverUI   The ServerDashboardController instance for updating the UI.
+	 */
 	public ServerController(int port, String dbPassword, ServerDashboardController serverUI) {
 		super(port);
 		this.serverUI = serverUI;
-
+		// Initialize the DB controller and other controllers for handling specific functionalities
 		DataBaseController.initiateDBC(dbPassword);
 		this.reservationsController = new ReservationControler();
 		this.customerController = new CustomerController();
@@ -40,11 +48,20 @@ public class ServerController extends AbstractServer {
 		this.tableController=new TableController();
 		this.waitListController=new WaitListController();
 		this.openingTimeController=new OpeningTimeController();
-		startAutoTasks();
+		this.timeReportController=new TimeReportController();
+		this.subscriberReportController=new SubscriberReportController();
+		startAutoTasks();// Start automated tasks
 	}
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//////////////////////////managing messages //////////////////////////////////////////////////////////////////
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	/**
+	 * Handles messages received from clients and routes them to the appropriate
+	 * controller based on the message type.
+	 *
+	 * @param msg    The message received from the client.
+	 * @param client The connection to the client that sent the message.
+	 */
 	@Override
 	public void handleMessageFromClient(Object msg, ConnectionToClient client) {
 		if (msg instanceof byte[]) {
@@ -74,6 +91,12 @@ public class ServerController extends AbstractServer {
 			case OPENING_TIME:
 				handleOpeningTimeRequest(message, client);
 				break;
+			case TIME_REPORT:
+				handleTimeReportRequest(message, client);
+				break;
+			case SUBSCRIBER_REPORT:
+				handleSubscriberReportRequest(message, client);
+				break;
 			default:
 				System.out.println("Unknown command received: " + message.type);
 				break;
@@ -83,6 +106,12 @@ public class ServerController extends AbstractServer {
 		}
 	}
 
+	/**
+	 *  Handles reservation-related requests from clients.
+	 *
+	 * @param message The message containing the reservation request.
+	 * @param client  The connection to the client that sent the request.
+	 */
 	private void handleReservationRequest(Message message, ConnectionToClient client) {
 		Object response = reservationsController.handleMessageFromServer(message);
 		message.content = response;
@@ -94,6 +123,12 @@ public class ServerController extends AbstractServer {
 		}
 	}
 
+	/**
+	 *  Handles customer-related requests from clients.
+	 *
+	 * @param message The message containing the customer request.
+	 * @param client  The connection to the client that sent the request.
+	 */
 	private void handleCustomerRequest(Message message, ConnectionToClient client) {
 		Object response = customerController.handleMessageFromServer(message);
 		message.content = response;
@@ -105,6 +140,12 @@ public class ServerController extends AbstractServer {
 		}
 	}
 
+	/**
+	 *  Handles table-related requests from clients.
+	 *
+	 * @param message The message containing the table request.
+	 * @param client  The connection to the client that sent the request.
+	 */
 	private void handleTableRequest(Message message, ConnectionToClient client) 
 	{
 		Object response = tableController.handleMessageFromServer(message);
@@ -117,6 +158,12 @@ public class ServerController extends AbstractServer {
 		}
 	}
 
+	/**
+	 * Handles bill-related requests from clients.
+	 *
+	 * @param message The message containing the bill request.
+	 * @param client  The connection to the client that sent the request.
+	 */
 	private void handleBillRequest(Message message, ConnectionToClient client) 
 	{
 		Object response = billController.handleMessageFromServer(message);
@@ -129,6 +176,12 @@ public class ServerController extends AbstractServer {
 		}
 	}
 
+	/**
+	 *  Handles waitlist-related requests from clients.
+	 *
+	 * @param message The message containing the waitlist request.
+	 * @param client  The connection to the client that sent the request.
+	 */
 	private void handleWaitListRequest(Message message, ConnectionToClient client) 
 	{
 		Object response = waitListController.handleMessageFromServer(message);
@@ -141,6 +194,12 @@ public class ServerController extends AbstractServer {
 		}
 	}
 
+	/**
+	 *  Handles opening time-related requests from clients.
+	 *
+	 * @param message The message containing the opening time request.
+	 * @param client  The connection to the client that sent the request.
+	 */
 	private void handleOpeningTimeRequest(Message message, ConnectionToClient client) {
 		Object response = openingTimeController.handleMessageFromServer(message);
 		message.content = response;
@@ -152,10 +211,47 @@ public class ServerController extends AbstractServer {
 		}
 	}
 
+	/**
+	 *  Handles time report-related requests from clients.
+	 *
+	 * @param message The message containing the time report request.
+	 * @param client  The connection to the client that sent the request.
+	 */
+	private void handleTimeReportRequest(Message message, ConnectionToClient client) {
+		Object response = timeReportController.handleMessageFromServer(message);
+		message.content = response;
+		try {
+			byte[] data = KryoUtil.serialize(message);
+			client.sendToClient(data);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * handles subscriber report-related requests from clients.
+	 *
+	 * @param message The message containing the subscriber report request.
+	 * @param client  The connection to the client that sent the request.
+	 */
+	private void handleSubscriberReportRequest(Message message, ConnectionToClient client) {
+		Object response = subscriberReportController.handleMessageFromServer(message);
+		message.content = response;
+		try {
+			byte[] data = KryoUtil.serialize(message);
+			client.sendToClient(data);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////initialization Automated tasks//////////////////////////////////////////////////////////////////////
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+	/**
+	 * Starts automated tasks that run at scheduled intervals. Tasks include
+	 * cleaning up late reservations, sending reminders, sending bills, and
+	 * generating monthly time reports.
+	 */
 	private void startAutoTasks() 
 	{
 		scheduler.scheduleAtFixedRate(() -> {
@@ -186,18 +282,31 @@ public class ServerController extends AbstractServer {
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//////////////////////////Client server architecture management methods//////////////////////////////////////////////////////////////////
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	/**
+	 * Called when the server has started successfully.
+	 */
 	@Override
 	protected void serverStarted() {
 		System.out.println("Server listening for connections on port " + getPort());
 	}
 
+	/**
+	 * * Called when the server has stopped.
+	 */
 	@Override
 	protected void serverStopped() {
-		scheduler.shutdown(); // סגירה מסודרת של התהליכון
+		scheduler.shutdown(); 
 		System.out.println("Server and scheduler stopped.");
 		System.out.println("Server has stopped listening for connections.");
 	}
 
+	/**
+	 * * Called when a client connects to the server. Retrieves the client's IP
+	 * address, host name, and port number using Reflection, saves this information,
+	 * and updates the server UI.
+	 * 
+	 * @param client The connection to the client that has connected.
+	 */
 	@Override
 	protected void clientConnected(ConnectionToClient client) {
 		super.clientConnected(client);
@@ -227,6 +336,13 @@ public class ServerController extends AbstractServer {
 		}
 	}
 
+	/**
+	 * * Called when a client disconnects from the server. Retrieves the client's IP
+	 * address and port number, and updates the server UI to reflect the
+	 * disconnection.
+	 * 
+	 * @param client The connection to the client that has disconnected.
+	 */
 	@Override
 	synchronized protected void clientDisconnected(ConnectionToClient client) {
 		String clientIp = (String) client.getInfo("IP");
@@ -241,6 +357,14 @@ public class ServerController extends AbstractServer {
 		}
 	}
 
+	/**
+	 * * * Called when a client connection encounters an exception. Retrieves the
+	 * client's IP address and port number, and updates the server UI to reflect the
+	 * aborted connection.
+	 * 
+	 * @param client    The connection to the client that encountered the exception.
+	 * @param exception The exception that occurred.
+	 */
 	@Override
 	synchronized protected void clientException(ConnectionToClient client, Throwable exception) {
 		String clientIp = (String) client.getInfo("IP");

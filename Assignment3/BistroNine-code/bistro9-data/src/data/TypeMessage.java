@@ -9,4 +9,6 @@ public enum TypeMessage {
 	BILL,
 	WAITLIST,
 	OPENING_TIME,
+	SUBSCRIBER_REPORT,
+	TIME_REPORT
 }
