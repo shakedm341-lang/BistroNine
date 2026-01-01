@@ -70,7 +70,7 @@
 
 				<Tab fx:id="settingsTab" text="Settings">
 					<content>
-						<AnchorPane />
+						<fx:include fx:id="settingsView" source="Settings.fxml" />
 					</content>
 				</Tab>
 

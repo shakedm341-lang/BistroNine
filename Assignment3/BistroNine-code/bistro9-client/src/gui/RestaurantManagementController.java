@@ -50,6 +50,9 @@ public class RestaurantManagementController {
     @FXML
     private SubscribersViewController subscribersViewController;
 
+    @FXML
+    private SettingsController settingsViewController;
+
     // =================================================================================
     // Data Fields
     // =================================================================================
@@ -93,6 +96,9 @@ public class RestaurantManagementController {
         if (subscribersViewController != null) {
 			subscribersViewController.setClientController(client);
 		}
+        if (settingsViewController != null) {
+            settingsViewController.setDependencies(client, currentUser);
+        }
     }
 
     /**
