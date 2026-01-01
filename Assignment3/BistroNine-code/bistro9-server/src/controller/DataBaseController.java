@@ -17,10 +17,13 @@ import java.util.concurrent.TimeUnit;
 
 import data.Bill;
 import data.Customer;
+import data.OpeningHours;
 import data.OpeningHoursPerDay;
 import data.Subscriber;
+import data.SubscriberReport;
 import data.Table;
 import data.TableReservation;
+import data.TimeReport;
 import data.TimeSlot;
 import data.WaitList;
 
@@ -70,6 +73,15 @@ public class DataBaseController {
 	// 37. deleteFromWaitList(WaitList) : boolean
 	// 38. isTableNeededQueue(int) : boolean
 	// 39. addToWaitList(WaitList) : boolean
+	// 40. getAllSpecialDaysQuery(ArrayList<LocalDate>) : boolean
+	// 41. getWeeklyOpeningTimeForSpecificDayQuery(OpeningHours) : boolean
+	// 42. getSubscriberReportByRangeDateQuery(SubscriberReport) : boolean
+	// 43. getDailyTotalReservationsQuery(LocalDate) : int
+	// 44. getDailyTotalWaitingQuery(LocalDate) : int
+	// 45. addSubscriberReportQuery(SubscriberReport) : boolean
+	// 47. getDailyAvgArrivalQuery(LocalDate) : int
+	// 48. getDailyAvgLeavingQuery(LocalDate) : int
+	// 49. addTimeReportQuery(TimeReport) : boolean
 	// .
 	// END OF API.
 
@@ -216,6 +228,592 @@ public class DataBaseController {
 	 * ///////////////////////////////////
 	 */
 
+	/**
+	 * Calculates the average arrival delay (Actual Arrival - Scheduled Time) in
+	 * minutes for a specific date. Only considers 'completed' reservations.
+	 * 
+	 * @param date The date to analyze.
+	 * @return The average delay in minutes (rounded), 0 if no data, or -1 on error.
+	 */
+	public int getDailyAvgArrivalQuery(LocalDate date) {
+		// 1. Get connection from the pool
+		PooledConnection pConn = this.getConnection();
+
+		// Safety check
+		if (pConn == null) {
+			return -1;
+		}
+
+		Connection conn = pConn.getConnection();
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+
+		try {
+			// Formula: AVG(Actual Arrival - Scheduled Reservation Time)
+			// We use TIMESTAMPDIFF(MINUTE, start, end)
+			String query = "SELECT ROUND(AVG(TIMESTAMPDIFF(MINUTE, reservationDate, arrivalTime))) "
+					+ "FROM table_reservations " + "WHERE DATE(reservationDate) = ? AND status = 'completed'";
+
+			ps = conn.prepareStatement(query);
+			ps.setDate(1, java.sql.Date.valueOf(date));
+
+			rs = ps.executeQuery();
+
+			if (rs.next()) {
+				// getInt returns 0 if the value is SQL NULL (which happens if count is 0),
+				// which matches your requirement "if bistro close return 0"
+				return rs.getInt(1);
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			closeResources(ps, rs);
+			releaseConnection(pConn); // Release back to pool
+		}
+
+		return -1; // Return -1 on error
+	}
+
+	/**
+	 * Calculates the average overstay duration (Leaving Time - (Arrival Time + 2
+	 * Hours)) in minutes. Only considers 'completed' reservations.
+	 * 
+	 * @param date The date to analyze.
+	 * @return The average overstay in minutes (rounded), 0 if no data, or -1 on
+	 *         error.
+	 */
+	public int getDailyAvgLeavingQuery(LocalDate date) {
+		// 1. Get connection from the pool
+		PooledConnection pConn = this.getConnection();
+
+		// Safety check
+		if (pConn == null) {
+			return -1;
+		}
+
+		Connection conn = pConn.getConnection();
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+
+		try {
+			// Formula: AVG(Leaving Time - (Arrival Time + 2 hours))
+			String query = "SELECT ROUND(AVG(TIMESTAMPDIFF(MINUTE, DATE_ADD(arrivalTime, INTERVAL 2 HOUR), leavingTime))) "
+					+ "FROM table_reservations " + "WHERE DATE(reservationDate) = ? AND status = 'completed'";
+
+			ps = conn.prepareStatement(query);
+			ps.setDate(1, java.sql.Date.valueOf(date));
+
+			rs = ps.executeQuery();
+
+			if (rs.next()) {
+				return rs.getInt(1);
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			closeResources(ps, rs);
+			releaseConnection(pConn); // Release back to pool
+		}
+
+		return -1; // Return -1 on error
+	}
+
+	/**
+	 * Inserts a new time report into the database. Uses a Transaction to ensure
+	 * both report_manager and time_report tables are updated correctly.
+	 * 
+	 * @param report The TimeReport object containing metadata and rows.
+	 * @return true if the transaction was successful, false otherwise.
+	 */
+	public boolean addTimeReportQuery(TimeReport report) {
+		// 1. Get connection from the pool
+		PooledConnection pConn = this.getConnection();
+
+		// Safety check
+		if (pConn == null) {
+			return false;
+		}
+
+		Connection conn = pConn.getConnection();
+		PreparedStatement psManager = null;
+		PreparedStatement psDetails = null;
+		ResultSet rs = null;
+
+		try {
+			// START TRANSACTION
+			conn.setAutoCommit(false);
+
+			// STEP A: Insert into report_manager
+			String queryManager = "INSERT INTO report_manager (startDay, endDay, reportRange, reportType) VALUES (?, ?, ?, ?)";
+
+			psManager = conn.prepareStatement(queryManager, Statement.RETURN_GENERATED_KEYS);
+			psManager.setDate(1, java.sql.Date.valueOf(report.getStartDay()));
+			psManager.setDate(2, java.sql.Date.valueOf(report.getEndDay()));
+			psManager.setString(3, report.getReportRange()); // 'monthly'
+			psManager.setString(4, report.getReportType()); // 'time'
+
+			int affected = psManager.executeUpdate();
+
+			if (affected == 0) {
+				conn.rollback();
+				return false;
+			}
+
+			// Retrieve generated reportId
+			rs = psManager.getGeneratedKeys();
+			int reportId = -1;
+			if (rs.next()) {
+				reportId = rs.getInt(1);
+			} else {
+				conn.rollback();
+				return false;
+			}
+
+			// STEP B: Insert all rows into time_report
+			String queryDetails = "INSERT INTO time_report (reportId, reportDate, avgArrival, avgLeaving) VALUES (?, ?, ?, ?)";
+			psDetails = conn.prepareStatement(queryDetails);
+
+			for (TimeReport.Row row : report.getRows()) {
+				psDetails.setInt(1, reportId);
+				psDetails.setDate(2, java.sql.Date.valueOf(row.getReportDate()));
+				psDetails.setInt(3, row.getAvgArrival());
+				psDetails.setInt(4, row.getAvgLeaving());
+
+				psDetails.addBatch(); // Add to batch for efficiency
+			}
+
+			// Execute Batch
+			psDetails.executeBatch();
+
+			// COMMIT TRANSACTION
+			conn.commit();
+			return true;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			try {
+				if (conn != null)
+					conn.rollback(); // Rollback on error
+			} catch (SQLException ex) {
+				ex.printStackTrace();
+			}
+		} finally {
+			try {
+				if (conn != null)
+					conn.setAutoCommit(true); // Restore default
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+			closeResources(psManager, rs);
+			closeResources(psDetails, null);
+			releaseConnection(pConn); // Release back to pool
+		}
+
+		return false;
+	}
+
+	/**
+	 * Retrieves the time report data for a specific date range. Joins
+	 * report_manager and time_report tables.
+	 * 
+	 * @param report The TimeReport object containing startDay and endDay.
+	 * @return true if the query executed successfully, false otherwise.
+	 */
+	public boolean getTimeReportByRangeDateQuery(TimeReport report) {
+		// 1. Get connection from the pool
+		PooledConnection pConn = this.getConnection();
+
+		// Safety check
+		if (pConn == null) {
+			return false;
+		}
+
+		Connection conn = pConn.getConnection();
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+
+		try {
+			// JOIN query to find the correct report ID based on dates, then get the data
+			// Filtering by reportType = 'time'
+			String query = "SELECT t.reportDate, t.avgArrival, t.avgLeaving " + "FROM time_report t "
+					+ "JOIN report_manager m ON t.reportId = m.reportId "
+					+ "WHERE m.startDay = ? AND m.endDay = ? AND m.reportType = 'time' " + "ORDER BY t.reportDate ASC";
+
+			ps = conn.prepareStatement(query);
+			ps.setDate(1, java.sql.Date.valueOf(report.getStartDay()));
+			ps.setDate(2, java.sql.Date.valueOf(report.getEndDay()));
+
+			rs = ps.executeQuery();
+
+			while (rs.next()) {
+				LocalDate date = rs.getDate("reportDate").toLocalDate();
+				int avgArrival = rs.getInt("avgArrival");
+				int avgLeaving = rs.getInt("avgLeaving");
+
+				// Populates the TimeReport object using the method from your class
+				report.addRow(date, avgArrival, avgLeaving);
+			}
+
+			return true;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			closeResources(ps, rs);
+			releaseConnection(pConn); // Release back to pool
+		}
+
+		return false;
+	}
+
+	/**
+	 * Counts total 'completed' reservations for a specific date.
+	 * 
+	 * @param date The date to check.
+	 * @return The count of reservations (0 or more), or -1 if an error occurred.
+	 */
+	public int getDailyTotalReservationsQuery(LocalDate date) {
+		// 1. Get connection from the pool
+		PooledConnection pConn = this.getConnection();
+
+		// Safety check
+		if (pConn == null) {
+			return -1;
+		}
+
+		Connection conn = pConn.getConnection();
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+
+		try {
+			// Count reservations where the date part matches and status is 'completed'
+			String query = "SELECT COUNT(*) FROM table_reservations WHERE DATE(reservationDate) = ? AND status = 'completed'";
+
+			ps = conn.prepareStatement(query);
+			ps.setDate(1, java.sql.Date.valueOf(date));
+
+			rs = ps.executeQuery();
+
+			if (rs.next()) {
+				return rs.getInt(1);
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			closeResources(ps, rs);
+			releaseConnection(pConn); // Release back to pool
+		}
+
+		return -1; // Return -1 on error
+	}
+
+	/**
+	 * Counts total 'seated' customers from the waiting list for a specific date.
+	 * 
+	 * @param date The date to check.
+	 * @return The count of seated customers (0 or more), or -1 if an error
+	 *         occurred.
+	 */
+	public int getDailyTotalWaitingQuery(LocalDate date) {
+		// 1. Get connection from the pool
+		PooledConnection pConn = this.getConnection();
+
+		// Safety check
+		if (pConn == null) {
+			return -1;
+		}
+
+		Connection conn = pConn.getConnection();
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+
+		try {
+			// Count waiting list entries where entry date matches and status is 'seated'
+			// Note: Using 'entryTimeToList' as defined in your latest schema
+			String query = "SELECT COUNT(*) FROM waiting_list WHERE DATE(entryTimeToList) = ? AND status = 'seated'";
+
+			ps = conn.prepareStatement(query);
+			ps.setDate(1, java.sql.Date.valueOf(date));
+
+			rs = ps.executeQuery();
+
+			if (rs.next()) {
+				return rs.getInt(1);
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			closeResources(ps, rs);
+			releaseConnection(pConn); // Release back to pool
+		}
+
+		return -1; // Return -1 on error
+	}
+
+	/**
+	 * Inserts a new subscriber report into the database. Uses a Transaction to
+	 * ensure both report_manager and subscriber_report tables are updated
+	 * correctly.
+	 * 
+	 * @param report The SubscriberReport object containing metadata and rows.
+	 * @return true if the transaction was successful, false otherwise.
+	 */
+	public boolean addSubscriberReportQuery(SubscriberReport report) {
+		// 1. Get connection from the pool
+		PooledConnection pConn = this.getConnection();
+
+		// Safety check
+		if (pConn == null) {
+			return false;
+		}
+
+		Connection conn = pConn.getConnection();
+		PreparedStatement psManager = null;
+		PreparedStatement psDetails = null;
+		ResultSet rs = null;
+
+		try {
+			// START TRANSACTION
+			conn.setAutoCommit(false);
+
+			// STEP A: Insert into report_manager
+			String queryManager = "INSERT INTO report_manager (startDay, endDay, reportRange, reportType) VALUES (?, ?, ?, ?)";
+
+			psManager = conn.prepareStatement(queryManager, Statement.RETURN_GENERATED_KEYS);
+			psManager.setDate(1, java.sql.Date.valueOf(report.getStartDay()));
+			psManager.setDate(2, java.sql.Date.valueOf(report.getEndDay()));
+			psManager.setString(3, report.getReportRange()); // 'monthly'
+			psManager.setString(4, report.getReportType()); // 'subscriber'
+
+			int affected = psManager.executeUpdate();
+
+			if (affected == 0) {
+				conn.rollback();
+				return false;
+			}
+
+			// Retrieve generated reportId
+			rs = psManager.getGeneratedKeys();
+			int reportId = -1;
+			if (rs.next()) {
+				reportId = rs.getInt(1);
+			} else {
+				conn.rollback();
+				return false;
+			}
+
+			// STEP B: Insert all rows into subscriber_report
+			String queryDetails = "INSERT INTO subscriber_report (reportId, reportDate, totalReservations, totalWaiting) VALUES (?, ?, ?, ?)";
+			psDetails = conn.prepareStatement(queryDetails);
+
+			for (SubscriberReport.Row row : report.getRows()) {
+				psDetails.setInt(1, reportId);
+				psDetails.setDate(2, java.sql.Date.valueOf(row.getReportDate()));
+				psDetails.setInt(3, row.getTotalReservations());
+				psDetails.setInt(4, row.getTotalWaiting());
+
+				psDetails.addBatch(); // Add to batch for efficiency
+			}
+
+			// Execute Batch
+			psDetails.executeBatch();
+
+			// COMMIT TRANSACTION
+			conn.commit();
+			return true;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			try {
+				if (conn != null)
+					conn.rollback(); // Rollback on error
+			} catch (SQLException ex) {
+				ex.printStackTrace();
+			}
+		} finally {
+			try {
+				if (conn != null)
+					conn.setAutoCommit(true); // Restore default
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+			closeResources(psManager, rs);
+			closeResources(psDetails, null);
+			releaseConnection(pConn); // Release back to pool
+		}
+
+		return false;
+	}
+
+	/**
+	 * Retrieves the subscriber report data for a specific date range. Joins
+	 * report_manager and subscriber_report tables.
+	 * 
+	 * @param report The SubscriberReport object containing startDay and endDay.
+	 * @return true if the query executed successfully, false otherwise.
+	 */
+	public boolean getSubscriberReportByRangeDateQuery(SubscriberReport report) {
+		// 1. Get connection from the pool
+		PooledConnection pConn = this.getConnection();
+
+		// Safety check
+		if (pConn == null) {
+			return false;
+		}
+
+		Connection conn = pConn.getConnection();
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+
+		try {
+			// JOIN query to find the correct report ID based on dates, then get the data
+			String query = "SELECT s.reportDate, s.totalReservations, s.totalWaiting " + "FROM subscriber_report s "
+					+ "JOIN report_manager m ON s.reportId = m.reportId "
+					+ "WHERE m.startDay = ? AND m.endDay = ? AND m.reportType = 'subscriber' "
+					+ "ORDER BY s.reportDate ASC";
+
+			ps = conn.prepareStatement(query);
+			ps.setDate(1, java.sql.Date.valueOf(report.getStartDay()));
+			ps.setDate(2, java.sql.Date.valueOf(report.getEndDay()));
+
+			rs = ps.executeQuery();
+
+			while (rs.next()) {
+				LocalDate date = rs.getDate("reportDate").toLocalDate();
+				int totalRes = rs.getInt("totalReservations");
+				int totalWait = rs.getInt("totalWaiting");
+
+				// Matches your class method exactly:
+				report.addRow(date, totalRes, totalWait);
+			}
+
+			return true;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			closeResources(ps, rs);
+			releaseConnection(pConn); // Release back to pool
+		}
+
+		return false;
+	}
+
+	/**
+	 * Retrieves the standard weekly opening hours for a specific day of the week.
+	 * Populates the slots in the passed OpeningHours object.
+	 * 
+	 * @param openingHours The OpeningHours object containing the day name (e.g.,
+	 *                     "SUNDAY").
+	 * @return true if the query was successful (even if the day is closed), false
+	 *         on DB error.
+	 */
+	public boolean getWeeklyOpeningTimeForSpecificDayQuery(OpeningHours openingHours) {
+		// 1. Get connection from the pool
+		PooledConnection pConn = this.getConnection();
+
+		// Safety check
+		if (pConn == null) {
+			return false;
+		}
+
+		Connection conn = pConn.getConnection();
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+
+		// Create a list to hold the found slots
+		ArrayList<TimeSlot> foundSlots = new ArrayList<>();
+
+		try {
+			String query = "SELECT openingTime, closingTime FROM weekly_hours WHERE dayOfWeek = ?";
+
+			ps = conn.prepareStatement(query);
+			// Assuming openingHours.getDay() returns the String name like "SUNDAY"
+			ps.setString(1, openingHours.getDay());
+
+			rs = ps.executeQuery();
+
+			while (rs.next()) {
+				java.sql.Time sqlOpen = rs.getTime("openingTime");
+				java.sql.Time sqlClose = rs.getTime("closingTime");
+
+				if (sqlOpen != null && sqlClose != null) {
+					// Only add if start time is DIFFERENT from end time.
+					// If 00:00 to 00:00, it effectively means closed for that slot.
+					if (!sqlOpen.equals(sqlClose)) {
+						foundSlots.add(new TimeSlot(sqlOpen.toLocalTime(), sqlClose.toLocalTime()));
+					}
+				}
+			}
+
+			// Update the object with the list of slots we found.
+			// If the list is empty, it correctly represents a closed day.
+			openingHours.setSlots(foundSlots);
+
+			return true;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			closeResources(ps, rs);
+			releaseConnection(pConn); // Release back to pool
+		}
+
+		return false;
+	}
+
+	/**
+	 * Retrieves all dates that have special hours defined in the database.
+	 * 
+	 * @param datesList An empty ArrayList to be populated with LocalDate objects.
+	 * @return true if the query was successful, false otherwise.
+	 */
+	public boolean getAllSpecialDaysQuery(ArrayList<LocalDate> datesList) {
+		// 1. Get connection from the pool
+		PooledConnection pConn = this.getConnection();
+
+		// Safety check
+		if (pConn == null) {
+			return false;
+		}
+
+		Connection conn = pConn.getConnection();
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+
+		try {
+			// We use DISTINCT to ensure we get each date only once, even if it has multiple
+			// shifts
+			String query = "SELECT DISTINCT specificDate FROM special_hours ORDER BY specificDate ASC";
+
+			ps = conn.prepareStatement(query);
+			rs = ps.executeQuery();
+
+			while (rs.next()) {
+				java.sql.Date sqlDate = rs.getDate("specificDate");
+
+				if (sqlDate != null) {
+					// Convert java.sql.Date to java.time.LocalDate and add to list
+					datesList.add(sqlDate.toLocalDate());
+				}
+			}
+
+			return true;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			closeResources(ps, rs);
+			releaseConnection(pConn); // Release back to pool
+		}
+
+		return false;
+	}
+
 	// הושלם
 	public ArrayList<ArrayList<Object>> getAllReservationsQueryByCustomerId(int customerId) {
 
@@ -323,100 +921,101 @@ public class DataBaseController {
 
 	public OpeningHoursPerDay getOpeningHoursByDate(OpeningHoursPerDay openingHours) {
 
-	    // 1. Get connection from the pool
-	    PooledConnection pConn = this.getConnection();
+		// 1. Get connection from the pool
+		PooledConnection pConn = this.getConnection();
 
-	    // Safety check
-	    if (pConn == null) {
-	        return null;
-	    }
+		// Safety check
+		if (pConn == null) {
+			return null;
+		}
 
-	    Connection conn = pConn.getConnection();
-	    PreparedStatement ps = null;
-	    ResultSet rs = null;
+		Connection conn = pConn.getConnection();
+		PreparedStatement ps = null;
+		ResultSet rs = null;
 
-	    // Create a list to hold the found slots
-	    ArrayList<TimeSlot> foundSlots = new ArrayList<>();
+		// Create a list to hold the found slots
+		ArrayList<TimeSlot> foundSlots = new ArrayList<>();
 
-	    try {
-	        // ---------------------------------------------------------
-	        // STEP 1: Check for Special Hours (Priority)
-	        // ---------------------------------------------------------
-	        String querySpecial = "SELECT openingTime, closingTime FROM special_hours WHERE specificDate = ?";
-	        ps = conn.prepareStatement(querySpecial);
-	        ps.setDate(1, java.sql.Date.valueOf(openingHours.getDay()));
-	        rs = ps.executeQuery();
+		try {
+			// ---------------------------------------------------------
+			// STEP 1: Check for Special Hours (Priority)
+			// ---------------------------------------------------------
+			String querySpecial = "SELECT openingTime, closingTime FROM special_hours WHERE specificDate = ?";
+			ps = conn.prepareStatement(querySpecial);
+			ps.setDate(1, java.sql.Date.valueOf(openingHours.getDay()));
+			rs = ps.executeQuery();
 
-	        while (rs.next()) {
-	            java.sql.Time sqlOpen = rs.getTime("openingTime");
-	            java.sql.Time sqlClose = rs.getTime("closingTime");
-	            
-	            if (sqlOpen != null && sqlClose != null) {
-	                // --- NEW LOGIC START ---
-	                // If Special Hours has start == end, it implies the restaurant is explicitly CLOSED for this date.
-	                // We return null immediately and DO NOT check weekly hours.
-	                if (sqlOpen.equals(sqlClose)) {
-	                    openingHours.setSlots(null);
-	                    return openingHours; // Exit immediately
-	                }
-	                // --- NEW LOGIC END ---
+			while (rs.next()) {
+				java.sql.Time sqlOpen = rs.getTime("openingTime");
+				java.sql.Time sqlClose = rs.getTime("closingTime");
 
-	                // Otherwise, it's a valid special opening time, add it.
-	                foundSlots.add(new TimeSlot(sqlOpen.toLocalTime(), sqlClose.toLocalTime()));
-	            }
-	        }
+				if (sqlOpen != null && sqlClose != null) {
+					// --- NEW LOGIC START ---
+					// If Special Hours has start == end, it implies the restaurant is explicitly
+					// CLOSED for this date.
+					// We return null immediately and DO NOT check weekly hours.
+					if (sqlOpen.equals(sqlClose)) {
+						openingHours.setSlots(null);
+						return openingHours; // Exit immediately
+					}
+					// --- NEW LOGIC END ---
 
-	        // Close resources from the first query to prepare for the second
-	        rs.close();
-	        ps.close();
+					// Otherwise, it's a valid special opening time, add it.
+					foundSlots.add(new TimeSlot(sqlOpen.toLocalTime(), sqlClose.toLocalTime()));
+				}
+			}
 
-	        // ---------------------------------------------------------
-	        // STEP 2: If no special hours found, check Weekly Hours
-	        // ---------------------------------------------------------
-	        // If we reached here, it means we didn't hit an explicit "Closed" special hour.
-	        // If foundSlots is empty, it means there were NO special hours records at all.
-	        if (foundSlots.isEmpty()) {
-	            String queryWeekly = "SELECT openingTime, closingTime FROM weekly_hours WHERE dayOfWeek = ?";
-	            ps = conn.prepareStatement(queryWeekly);
+			// Close resources from the first query to prepare for the second
+			rs.close();
+			ps.close();
 
-	            // Since DB is now uppercase ENUM ('SUNDAY'), we use Java's default toString()
-	            ps.setString(1, openingHours.getDay().getDayOfWeek().toString());
+			// ---------------------------------------------------------
+			// STEP 2: If no special hours found, check Weekly Hours
+			// ---------------------------------------------------------
+			// If we reached here, it means we didn't hit an explicit "Closed" special hour.
+			// If foundSlots is empty, it means there were NO special hours records at all.
+			if (foundSlots.isEmpty()) {
+				String queryWeekly = "SELECT openingTime, closingTime FROM weekly_hours WHERE dayOfWeek = ?";
+				ps = conn.prepareStatement(queryWeekly);
 
-	            rs = ps.executeQuery();
+				// Since DB is now uppercase ENUM ('SUNDAY'), we use Java's default toString()
+				ps.setString(1, openingHours.getDay().getDayOfWeek().toString());
 
-	            while (rs.next()) {
-	                java.sql.Time sqlOpen = rs.getTime("openingTime");
-	                java.sql.Time sqlClose = rs.getTime("closingTime");
+				rs = ps.executeQuery();
 
-	                if (sqlOpen != null && sqlClose != null) {
-	                    // Weekly Logic: If times are equal (00:00-00:00), we just skip adding it.
-	                    // We check other rows in case of split shifts.
-	                    if (!sqlOpen.equals(sqlClose)) {
-	                        foundSlots.add(new TimeSlot(sqlOpen.toLocalTime(), sqlClose.toLocalTime()));
-	                    }
-	                }
-	            }
-	        }
+				while (rs.next()) {
+					java.sql.Time sqlOpen = rs.getTime("openingTime");
+					java.sql.Time sqlClose = rs.getTime("closingTime");
 
-	        // ---------------------------------------------------------
-	        // STEP 3: Final Decision
-	        // ---------------------------------------------------------
-	        // If the list is empty at this point, it means the restaurant is closed 
-	        // (either no weekly hours defined, or weekly hours were 00:00-00:00).
-	        if (foundSlots.isEmpty()) {
-	            openingHours.setSlots(null);
-	        } else {
-	            openingHours.setSlots(foundSlots);
-	        }
+					if (sqlOpen != null && sqlClose != null) {
+						// Weekly Logic: If times are equal (00:00-00:00), we just skip adding it.
+						// We check other rows in case of split shifts.
+						if (!sqlOpen.equals(sqlClose)) {
+							foundSlots.add(new TimeSlot(sqlOpen.toLocalTime(), sqlClose.toLocalTime()));
+						}
+					}
+				}
+			}
 
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	    } finally {
-	        closeResources(ps, rs);
-	        releaseConnection(pConn); // Release back to pool
-	    }
+			// ---------------------------------------------------------
+			// STEP 3: Final Decision
+			// ---------------------------------------------------------
+			// If the list is empty at this point, it means the restaurant is closed
+			// (either no weekly hours defined, or weekly hours were 00:00-00:00).
+			if (foundSlots.isEmpty()) {
+				openingHours.setSlots(null);
+			} else {
+				openingHours.setSlots(foundSlots);
+			}
 
-	    return openingHours;
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			closeResources(ps, rs);
+			releaseConnection(pConn); // Release back to pool
+		}
+
+		return openingHours;
 	}
 
 	// c3
@@ -2287,9 +2886,10 @@ public class DataBaseController {
 	/**
 	 * Checks if a specific confirmation code already exists in the waiting_list
 	 * table.
-	 * 
+	 * joins waiting_list with table_reservations to find the code.
+	 * 
 	 * @param code The confirmation code to check.
-	 * @return true if the code exists, false otherwise.
+	 * @return true if the code exists in the waiting list, false otherwise.
 	 */
 	public boolean checkIfConfCodeExistsInWaitingList(int code) {
 		// 1. Get connection from the pool
@@ -2305,7 +2905,10 @@ public class DataBaseController {
 		ResultSet rs = null;
 
 		try {
-			String query = "SELECT confirmationCode FROM waiting_list WHERE confirmationCode = ?";
+			// FIXED QUERY: Join waiting_list and table_reservations
+			String query = "SELECT 1 FROM waiting_list w " +
+						   "JOIN table_reservations r ON w.reservationId = r.reservationId " +
+						   "WHERE r.confirmationCode = ?";
 
 			ps = conn.prepareStatement(query);
 			ps.setInt(1, code);
