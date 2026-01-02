@@ -20,6 +20,8 @@ import data.Command;
 import data.Message;
 import data.TableReservation;
 
+import testsRunners.TestConfig;
+
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class ReservationControllerTests {
 
@@ -30,18 +32,25 @@ class ReservationControllerTests {
 
     @BeforeAll
     static void setUpBeforeClass() throws Exception {
-        System.out.println("--- Setting up DB Connection for Tests ---");
+        System.out.println("--- Setting up DB Connection for Reservation Tests ---");
         try {
-            // 1. Initialize the DB Controller with your password
-            // CRITICAL: Replace "YOUR_DB_PASSWORD" with your actual MySQL root password
-            DataBaseController.initiateDBC("braude2025");
+            // 1. Initialize the DB Controller using the config password
+            DataBaseController.initiateDBC(TestConfig.DB_PASSWORD);
             
-            // 2. Force the singleton to initialize immediately to check for errors
+            // 2. Ensure connection is alive by getting the instance
             DataBaseController db = DataBaseController.getInstance();
             if (db == null) {
                 fail("DataBaseController.getInstance() returned null. Check DB connection/password.");
             }
-            System.out.println("Database Connected Successfully.");
+            
+            // 3. VERIFY CONNECTION
+            // Attempt a read-only query to force a connection check immediately.
+            System.out.print("Verifying DB connection... ");
+            if (db.getAllReservationsQuery() == null) {
+                System.out.println("FAILED.");
+                fail("DB Connection Verification Failed! Query returned null. Check your password in TestConfig.java");
+            }
+            System.out.println("SUCCESS.");
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -65,11 +74,9 @@ class ReservationControllerTests {
         content.add(4); // 4 diners
         content.add(LocalDate.now().plusDays(1)); // Check for tomorrow
         
-        // --- UPDATED MESSAGE CREATION ---
         Message msg = new Message();
         msg.command = Command.CHECK_TABLE_AVAILABILITY;
         msg.content = content;
-        // msg.type = TypeMessage.RESERVATION; // Optional: The controller only checks 'command'
         
         // Act
         Object result = reservationController.handleMessageFromServer(msg);
@@ -88,13 +95,7 @@ class ReservationControllerTests {
     void testCreateNewReservation() {
         System.out.println("Test 2: Create New Reservation");
 
-        // Prepare Message Content based on ReservationControler logic:
-        // Index 0: typeCustomer (String)
-        // Index 1: phone (String)
-        // Index 2: email (String)
-        // Index 3: numberOfDiners (Integer)
-        // Index 4: reservationDate (Timestamp)
-        
+        // Prepare Message Content
         ArrayList<Object> content = new ArrayList<>();
         content.add("customer"); 
         content.add("0509999999"); // Dummy Phone
@@ -105,7 +106,6 @@ class ReservationControllerTests {
         LocalDateTime tomorrow = LocalDate.now().plusDays(1).atTime(19, 0);
         content.add(Timestamp.valueOf(tomorrow)); 
 
-        // --- UPDATED MESSAGE CREATION ---
         Message msg = new Message();
         msg.command = Command.CREATE_NEW_RESERVATION;
         msg.content = content;
@@ -133,7 +133,6 @@ class ReservationControllerTests {
         content.add("0509999999");
         content.add("testuser@junit.com");
         
-        // --- UPDATED MESSAGE CREATION ---
         Message msg = new Message();
         msg.command = Command.GET_ALL_RESERVATIONS_BY_CUSTOMER;
         msg.content = content;
@@ -171,7 +170,6 @@ class ReservationControllerTests {
         ArrayList<Object> content = new ArrayList<>();
         content.add(createdReservationCode);
         
-        // --- UPDATED MESSAGE CREATION ---
         Message msg = new Message();
         msg.command = Command.DELETE_RESERVATION;
         msg.content = content;
