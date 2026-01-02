@@ -143,7 +143,8 @@ public class SettingsController {
     public void setDependencies(ClientController client, Subscriber currentUser) {
         this.client = client;
         this.currentUser = currentUser;
-        
+        ClientController.settingsController = this;
+        requestOpeningHoursFromServer();
         // Data will now be requested lazily when the tab is selected
     }
 

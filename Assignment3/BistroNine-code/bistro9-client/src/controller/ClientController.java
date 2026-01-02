@@ -30,8 +30,11 @@ public class ClientController extends AbstractClient {
     public static SubscribersViewController subscribersViewController;
     public static TabCurrentDinersController tabCurrentDinersController;
     public static TabActiveReservationController tabActiveReservationController;
+    public static gui.SettingsController settingsController;
+    public static gui.TableManagementController tableManagementController;
     private gui.IReservationViewer currentReservationViewer;
     private gui.IReservationDeleter currentReservationDeleter;
+    
     
     
 
@@ -69,6 +72,10 @@ public class ClientController extends AbstractClient {
                 case TABLE:
                     handleTableResponse(message);
                     break;
+                    
+                case OPENING_TIME: 
+                    handleOpeningTimeResponse(message);
+                    break;    
 
                 default:
                     System.out.println("Unknown TypeMessage received: " + message.type);
@@ -151,9 +158,41 @@ public class ClientController extends AbstractClient {
             case CHECK_TABLE_AVAILABILITY:
                 handleTableAvailabilityResponse(message);
                 break;
+            
+            case GET_ALL_AVAILABLE_TABLES:
+                handleGetAllTablesResponse(message);
+                break;
+                
+            case DELETE_TABLE:
+            case ADD_TABLE:
+            case UPDATE_TABLE_SEATS:
+            	handleTableOperationResponse(message); 
+                break;
 
             default:
                 System.out.println("Unknown Table command: " + message.command);
+                break;
+        }
+    }
+    
+    // 2. Second Switch: Handle Opening Time related commands
+    private void handleOpeningTimeResponse(Message message) {
+        switch(message.command) {
+            case GET_WEEKLY_OPENING_TIME:
+                handleGetWeeklyHoursResponse(message);
+                break;
+                
+            case GET_SPECIAL_OPENING_TIME:
+                handleGetSpecialHoursResponse(message);
+                break;
+                
+            case UPDATE_OPENING_TIME:
+            case ADD_NEW_SPECIAL_OPENING_TIME:
+                handleSaveOpeningHoursResponse(message);
+                break;
+                
+            default:
+                System.out.println("Unknown Opening Time command: " + message.command);
                 break;
         }
     }
@@ -248,6 +287,47 @@ public class ClientController extends AbstractClient {
             @SuppressWarnings("unchecked")
             ArrayList<TableReservation> list = (ArrayList<TableReservation>) message.content;
             tabActiveReservationController.updateTableData(list); // Update the active reservations table in the boundary
+        }
+    }
+    
+    // Helper method for handling the list of weekly opening hours response
+    private void handleGetWeeklyHoursResponse(Message message) {
+        if (settingsController != null) {
+            @SuppressWarnings("unchecked")
+            ArrayList<OpeningHours> list = (ArrayList<OpeningHours>) message.content;
+            settingsController.updateWeeklyOpeningHours(list); // Update the weekly opening hours in the boundary
+        }
+    }
+    
+    // Helper method for handling the list of special opening hours response
+    private void handleGetSpecialHoursResponse(Message message) {
+        if (settingsController != null) {
+            @SuppressWarnings("unchecked")
+            ArrayList<OpeningHoursPerDay> list = (ArrayList<OpeningHoursPerDay>) message.content;
+            settingsController.updateSpecialOpeningHours(list); // Update the special opening hours in the boundary
+        }
+    }
+    
+    // Helper method for handling the save response (update/add) for opening hours
+    private void handleSaveOpeningHoursResponse(Message message) {
+        if (settingsController != null) {
+            Boolean success = (Boolean) message.content;
+            settingsController.onSaveResponse(success);// Notify the boundary about the save operation status
+        }
+    }
+    
+    // Helper method for handling the list of tables
+    private void handleGetAllTablesResponse(Message message) {
+        if (tableManagementController != null) {
+            @SuppressWarnings("unchecked")
+            ArrayList<Table> list = (ArrayList<Table>) message.content;
+            tableManagementController.updateTableList(list); // Update the table list in the boundary
+        }
+    }
+    
+    private void handleTableOperationResponse(Message message) {
+        if (tableManagementController != null) {
+            tableManagementController.handleOperationResponse(message.content);
         }
     }
 

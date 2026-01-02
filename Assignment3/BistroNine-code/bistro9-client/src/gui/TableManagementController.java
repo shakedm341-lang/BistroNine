@@ -198,6 +198,8 @@ public class TableManagementController implements Initializable {
 
     public void setClient(ClientController client) {
         this.client = client;
+        ClientController.tableManagementController = this;
+        fetchTables();
         // Assume other developer will add this field to ClientController
         // ClientController.tableManagementController = this;
     }
