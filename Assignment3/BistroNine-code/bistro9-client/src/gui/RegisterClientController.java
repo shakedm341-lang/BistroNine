@@ -33,8 +33,9 @@ public class RegisterClientController {
         
         if(txtFirstName.getText().isEmpty() || txtLastName.getText().isEmpty() || 
            txtUsername.getText().isEmpty() || txtPassword.getText().isEmpty() || 
-           cmbType.getValue() == null) {
-            lblMessage.setText("Please fill all mandatory fields.");
+           cmbType.getValue() == null || txtPhone.getText().isEmpty() || txtEmail.getText().isEmpty()) {
+            lblMessage.setText("Please fill all mandatory fields including Phone and Email.");
+            lblMessage.setStyle("-fx-text-fill: red;");
             return;
         }
 
@@ -69,7 +70,7 @@ public class RegisterClientController {
     
     public void setClientController(ClientController client) {
 		this.client = client;
-		client.registerClientController = this;
+		ClientController.registerClientController = this;
 	}
     
    

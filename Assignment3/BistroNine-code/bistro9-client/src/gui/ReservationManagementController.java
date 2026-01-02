@@ -119,7 +119,7 @@ public class ReservationManagementController implements Initializable, IReservat
 
 	public void setClient(ClientController client) {
 		this.client = client;
-		client.reservationManagementController = this;
+		ClientController.reservationManagementController = this;
 	}
 
 	/* ================= UI Actions ================= */
@@ -148,18 +148,6 @@ public class ReservationManagementController implements Initializable, IReservat
 
 	    client.setReservationViewer(this);
 	    client.handleMessageFromBoundary(TypeMessage.RESERVATION, params, Command.GET_ALL_RESERVATIONS_BY_CUSTOMER);
-	}
-
-	@FXML
-	private void handleLoadActiveReservations() {
-
-		System.out.println("DEBUG:loading activate reservations");
-
-//        client.handleMessageFromBoundary(
-//                TypeMessage.RESERVATION,
-//                null,
-//                Command.GET_ACTIVE_RESERVATIONS
-//        );
 	}
 
 	/* ================= Server Responses ================= */

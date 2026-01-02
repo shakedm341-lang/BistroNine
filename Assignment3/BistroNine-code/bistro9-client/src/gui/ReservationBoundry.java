@@ -270,7 +270,7 @@ public class ReservationBoundry {
         if (currentUser != null && !isRepMod) {
             // Case A: Subscriber/ Representative for self
             params.add("subscriber");                  // Index 0: Type
-            params.add(currentUser.getSubscriberId()); // Index 1: Subscriber ID
+            params.add(currentUser.getCustomerId()); // Index 1: Customer ID
             params.add(null);                          // Index 2: Placeholder (Server skips this for subscribers)
         } else {
             // Case B: Guest or Representative creating for a customer

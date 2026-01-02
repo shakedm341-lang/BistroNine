@@ -68,8 +68,7 @@ public class SubscribersViewController implements Initializable {
         // 2. Link the list to the table
         subscribersTable.setItems(subscriberList);
         
-        // 3. Load initial data when the screen opens
-        sendRequestToServer(); 
+        // 3. Load data will now be handled lazily by the parent controller or refresh button
     }
 
     /**

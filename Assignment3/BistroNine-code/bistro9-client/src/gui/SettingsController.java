@@ -7,9 +7,12 @@ import java.util.ArrayList;
 
 import controller.ClientController;
 import data.Command;
+import data.OpeningHours;
+import data.OpeningHoursPerDay;
 import data.Subscriber;
 import data.TimeSlot;
 import data.TypeMessage;
+import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -57,9 +60,16 @@ public class SettingsController {
     private ObservableList<TimeSlot> standardSlots = FXCollections.observableArrayList();
     private ObservableList<TimeSlot> specialSlots = FXCollections.observableArrayList();
     private ArrayList<LocalDate> datesWithSpecialHours = new ArrayList<>();
+    
+    // Server data storage
+    private ArrayList<OpeningHours> allWeeklyHours = new ArrayList<>();
+    private ArrayList<OpeningHoursPerDay> allSpecialHours = new ArrayList<>();
 
     @FXML
     public void initialize() {
+        // Register this controller with ClientController
+        //ClientController.settingsController = this;
+
         // Initialize Day ComboBox
         dayComboBox.setItems(FXCollections.observableArrayList(
             "SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"
@@ -73,9 +83,6 @@ public class SettingsController {
 
         // Setup Special Dates Highlighting
         setupDatePickerHighlighting();
-
-        // MOCK: Pre-fill some dates that have special hours for demonstration
-        loadMockDatesWithSpecialHours();
     }
 
     private void setupDatePickerHighlighting() {
@@ -98,16 +105,6 @@ public class SettingsController {
                 }
             }
         });
-    }
-
-    private void loadMockDatesWithSpecialHours() {
-        // Mock data: Highlight tomorrow and a few other dates
-        datesWithSpecialHours.add(LocalDate.now().plusDays(1));
-        datesWithSpecialHours.add(LocalDate.now().plusDays(3));
-        datesWithSpecialHours.add(LocalDate.now().plusDays(7));
-        datesWithSpecialHours.add(LocalDate.now().plusMonths(1)); // Some date next month
-        
-        System.out.println("MOCK: Highlighted " + datesWithSpecialHours.size() + " dates in the calendar.");
     }
 
     private void setupTableColumns(TableView<TimeSlot> table, 
@@ -146,14 +143,27 @@ public class SettingsController {
     public void setDependencies(ClientController client, Subscriber currentUser) {
         this.client = client;
         this.currentUser = currentUser;
+        
+        // Data will now be requested lazily when the tab is selected
+    }
+
+    void requestOpeningHoursFromServer() {
+        if (client != null) {
+            System.out.println("DEBUG: Requesting all opening hours from server...");
+            
+            // Request Weekly Hours
+            client.handleMessageFromBoundary(TypeMessage.OPENING_TIME, null, Command.GET_WEEKLY_OPENING_TIME);
+            
+            // Request Special Hours
+            client.handleMessageFromBoundary(TypeMessage.OPENING_TIME, null, Command.GET_SPECIAL_OPENING_TIME);
+        }
     }
 
     @FXML
     void onDaySelected(ActionEvent event) {
         String selectedDay = dayComboBox.getValue();
         if (selectedDay != null) {
-            // MOCK: In a real scenario, we would request this from the server
-            loadMockStandardHours(selectedDay);
+            loadStandardHours(selectedDay);
         }
     }
 
@@ -161,8 +171,7 @@ public class SettingsController {
     void onDateSelected(ActionEvent event) {
         LocalDate selectedDate = specialDatePicker.getValue();
         if (selectedDate != null) {
-            // MOCK: In a real scenario, we would request this from the server
-            loadMockSpecialHours(selectedDate);
+            loadSpecialHours(selectedDate);
         }
     }
 
@@ -186,16 +195,80 @@ public class SettingsController {
         btnSpecialMode.setStyle("-fx-background-color: #2196f3; -fx-text-fill: white; -fx-background-radius: 17;");
     }
 
-    private void loadMockStandardHours(String day) {
+    private void loadStandardHours(String day) {
         standardSlots.clear();
-        standardSlots.add(new TimeSlot(LocalTime.of(8, 0), LocalTime.of(14, 0)));
-        standardSlots.add(new TimeSlot(LocalTime.of(17, 0), LocalTime.of(23, 0)));
+        for (OpeningHours oh : allWeeklyHours) {
+            if (oh.getDay().equals(day)) {
+                if (oh.getSlots() != null) {
+                    standardSlots.addAll(oh.getSlots());
+                }
+                break;
+            }
+        }
     }
 
-    private void loadMockSpecialHours(LocalDate date) {
+    private void loadSpecialHours(LocalDate date) {
         specialSlots.clear();
-        // Just mock some data for now
-        specialSlots.add(new TimeSlot(LocalTime.of(10, 0), LocalTime.of(20, 0)));
+        for (OpeningHoursPerDay ohpd : allSpecialHours) {
+            if (ohpd.getDay().equals(date)) {
+                if (ohpd.getSlots() != null) {
+                    specialSlots.addAll(ohpd.getSlots());
+                }
+                break;
+            }
+        }
+    }
+
+    // --- Server Callbacks ---
+
+    public void updateWeeklyOpeningHours(ArrayList<OpeningHours> list) {
+        Platform.runLater(() -> {
+            if (list != null) {
+                this.allWeeklyHours = list;
+                String currentDay = dayComboBox.getValue();
+                if (currentDay != null) {
+                    loadStandardHours(currentDay);
+                }
+            }
+        });
+    }
+
+    public void updateSpecialOpeningHours(ArrayList<OpeningHoursPerDay> list) {
+        Platform.runLater(() -> {
+            if (list != null) {
+                this.allSpecialHours = list;
+                
+                // Update dates with special hours for the date picker
+                datesWithSpecialHours.clear();
+                for (OpeningHoursPerDay ohpd : allSpecialHours) {
+                    datesWithSpecialHours.add(ohpd.getDay());
+                }
+                
+                // Refresh date picker cells
+                specialDatePicker.setDayCellFactory(specialDatePicker.getDayCellFactory());
+                
+                LocalDate currentDate = specialDatePicker.getValue();
+                if (currentDate != null) {
+                    loadSpecialHours(currentDate);
+                }
+            } else {
+                datesWithSpecialHours.clear();
+                specialSlots.clear();
+                specialDatePicker.setDayCellFactory(specialDatePicker.getDayCellFactory());
+            }
+        });
+    }
+
+    public void onSaveResponse(boolean success) {
+        Platform.runLater(() -> {
+            if (success) {
+                showAlert(AlertType.INFORMATION, "Save Successful", "Changes have been saved successfully.");
+                // Refresh data
+                requestOpeningHoursFromServer();
+            } else {
+                showAlert(AlertType.ERROR, "Save Failed", "Could not save changes to the server.");
+            }
+        });
     }
 
     @FXML
@@ -253,9 +326,6 @@ public class SettingsController {
                                                 content, 
                                                 Command.UPDATE_OPENING_TIME);
         }
-        
-        
-        showAlert(AlertType.INFORMATION, "Save Successful", "Weekly hours for " + day + " have been saved locally (Mock).");
     }
 
     @FXML
@@ -284,9 +354,6 @@ public class SettingsController {
                                                 content, 
                                                 Command.ADD_NEW_SPECIAL_OPENING_TIME);
         }
-        
-
-        showAlert(AlertType.INFORMATION, "Save Successful", "Special hours for " + date + " have been saved locally (Mock).");
     }
     
 

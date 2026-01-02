@@ -20,8 +20,6 @@
 				<Button text="Search by Customer"
 					onAction="#handleSearchByCustomer"
 					style="-fx-background-color: #2196f3; -fx-text-fill: white; -fx-cursor: hand;" />
-				<Button text="Load Active Reservations"
-					onAction="#handleLoadActiveReservations" style="-fx-cursor: hand;" />
 			</HBox>
 
 			<TableView fx:id="reservationsTable" VBox.vgrow="ALWAYS">

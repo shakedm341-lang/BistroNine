@@ -58,13 +58,7 @@
 
 				<Tab fx:id="manageTablesTab" text="Manage Tables">
 					<content>
-						<AnchorPane />
-					</content>
-				</Tab>
-
-				<Tab fx:id="waitingListTab" text="Waiting List">
-					<content>
-						<AnchorPane />
+						<fx:include fx:id="tableManagementView" source="TableManagement.fxml" />
 					</content>
 				</Tab>
 
