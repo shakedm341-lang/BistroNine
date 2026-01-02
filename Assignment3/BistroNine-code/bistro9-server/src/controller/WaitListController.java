@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Random;
 
 import data.Customer;
+import data.ManWaiting;
 import data.Message;
 import data.Subscriber;
 import data.Table;

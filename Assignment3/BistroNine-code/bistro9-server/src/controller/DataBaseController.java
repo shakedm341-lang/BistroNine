@@ -83,6 +83,7 @@ public class DataBaseController {
 	// 48. getDailyAvgLeavingQuery(LocalDate) : int
 	// 49. addTimeReportQuery(TimeReport) : boolean
 	// 50. deleteFromWaitListByReservationIdQuery(int) : boolean
+	// 51. checkReportExistsQuery(LocalDate, LocalDate, String) : boolean
 	// .
 	// END OF API.
 
@@ -228,6 +229,55 @@ public class DataBaseController {
 	 * /////////////////////////////////////////////////////////////////////////////
 	 * ///////////////////////////////////
 	 */
+	
+	
+	/**
+	 * Checks if a report already exists in the report_manager table for the given
+	 * date range and type.
+	 *
+	 * @param startDay   The start date of the report.
+	 * @param endDay     The end date of the report.
+	 * @param reportType The type of report ('subscriber' or 'time').
+	 * @return true if the report exists, false otherwise.
+	 */
+	public boolean checkReportExistsQuery(LocalDate startDay, LocalDate endDay, String reportType) {
+		// 1. Get connection from the pool
+		PooledConnection pConn = this.getConnection();
+
+		// Safety check
+		if (pConn == null) {
+			return false;
+		}
+
+		Connection conn = pConn.getConnection();
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+
+		try {
+			// Query checks based on the Unique Key: (startDay, endDay, reportType)
+			String query = "SELECT 1 FROM report_manager WHERE startDay = ? AND endDay = ? AND reportType = ?";
+
+			ps = conn.prepareStatement(query);
+			ps.setDate(1, java.sql.Date.valueOf(startDay));
+			ps.setDate(2, java.sql.Date.valueOf(endDay));
+			ps.setString(3, reportType);
+
+			rs = ps.executeQuery();
+
+			// If a row is returned, the report exists
+			if (rs.next()) {
+				return true;
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			closeResources(ps, rs);
+			releaseConnection(pConn); // Release back to pool
+		}
+
+		return false;
+	}
 	
 	
 	/**
