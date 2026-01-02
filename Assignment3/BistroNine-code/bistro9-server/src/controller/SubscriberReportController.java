@@ -108,14 +108,6 @@ public class SubscriberReportController
 	public static void  subscriberReportGenerate()
 	{LocalDate today = LocalDate.now();
 
-	//if the day is not the 1 in Month
-	if (today.getDayOfMonth() != 1) {
-		return; 
-	}
-
-
-	System.out.println("1st of the month detected. Starting report production...");
-
 	SubscriberReport report = new SubscriberReport();
 
 	//calculate first and last day of last month
@@ -125,6 +117,13 @@ public class SubscriberReportController
 	LocalDate startOfMonth = lastMonth.withDayOfMonth(1);//first day in the month (1)
 	LocalDate endOfMonth = lastMonth.withDayOfMonth(daysInMonth); // last day in the month (28/29/30/31)
 
+	// Check if a report for this specific range and type already exists in the database.
+	// return true if yes else false
+	if (DBC.checkReportExistsQuery(startOfMonth, endOfMonth, "subscriber")) 
+	{
+        return;
+    }
+	
 
 	report.setStartDay(startOfMonth);
 	report.setEndDay(endOfMonth);
