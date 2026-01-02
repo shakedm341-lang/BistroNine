@@ -440,7 +440,7 @@ public class WaitListController
 				TableReservation res = new TableReservation();
 				res.setReservationId(waiter.getReservationId());
 
-				if (!DBC.getReservationsByConferenceCodeQuery(res))
+				if (!DBC.getReservationByReservationId(res))
 				{
 					System.out.println("Error retrieving reservation for wait list.");
 					return null; // Error retrieving reservation

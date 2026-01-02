@@ -270,7 +270,7 @@ public class ServerController extends AbstractServer {
 		        try {
 		            
 		            TimeReportController.timeReportGenerate();//generate monthly time report
-		            
+		            SubscriberReportController.subscriberReportGenerate();//generate monthly Subscriber report
 		            
 		        } catch (Exception e) {
 		            System.err.println("Error in daily tasks: " + e.getMessage());

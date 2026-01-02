@@ -303,6 +303,8 @@ public class TableController
 			tempTables.add(table);
 		}
 
+		sortTablesBySeatsAscending(tempTables);
+		
 		//sort reservations by number of diners from largest to smallest
 		ArrayList<TableReservation> sortedRes = new ArrayList<>(reservations);
 		ReservationControler.sortReservationsByDinersDescending(sortedRes);
@@ -349,113 +351,115 @@ public class TableController
 	 */
 	private LocalDate calculateEarliestSafeDate(int tableId, int newSeats) 
 	{
-		//get all active reservations and all tables in the restaurant
-		ArrayList<TableReservation> allReservations = ReservationControler.getAllReservationsActive();
-		ArrayList<Table> allTables = TableController.getTableInRestaurant(); 
+	    //get all active reservations and all tables in the restaurant
+	    ArrayList<TableReservation> allReservations = ReservationControler.getAllReservationsActive();
+	    ArrayList<Table> allTables = TableController.getTableInRestaurant(); 
 
-		if (allReservations == null || allTables == null) 
-		{
-			return null; // Fail safe handling
-		}
-		//a parameter to hold the last conflict date found
-		LocalDate lastConflictDate = null;
-		LocalDate today = LocalDate.now();
+	    if (allReservations == null || allTables == null) 
+	    {
+	        return null; // Fail safe handling
+	    }
+	    
+	    //a parameter to hold the last conflict date found
+	    LocalDate lastConflictDate = null;
+	    LocalDate today = LocalDate.now();
 
-		//check if there is an arrived reservation for this table today
-		for (TableReservation res : allReservations) 
-		{
-			if (res.getStatus().equalsIgnoreCase("arrived") && res.getTableId() == tableId) 
-			{
-				lastConflictDate = today;
-			}
-		}
+	    //check if there is an arrived reservation for this table today
+	    for (TableReservation res : allReservations) 
+	    {
+	        	        if (res.getStatus().equalsIgnoreCase("arrived") && res.getTableId() == tableId) 
+	        {
+	            lastConflictDate = today;
+	        }
+	    }
 
-		//create a simulated list of tables without the table we want to delete or with the table updated seats number
-		ArrayList<Table> simulatedTables = new ArrayList<>();
-		for (Table t : allTables) 
-		{
-			if (t.getTableId() == tableId)//the table we want to update or delete 
-			{
-				//if updating seats number
-				if (newSeats > 0) 
-				{
-					//add the updated table to the simulated list
-					Table updatedTable = new Table();
-					updatedTable.setTableId(t.getTableId());
-					updatedTable.setSeatsNumber(newSeats);
-					simulatedTables.add(updatedTable);
-				}
-				//if deleting the table do not add it to the simulated list
-			} 
-			else //other tables
-			{
+	    //create a simulated list of tables without the table we want to delete or with the table updated seats number
+	    ArrayList<Table> simulatedTables = new ArrayList<>();
+	    
+	    for (Table t : allTables) 
+	    {
+		    	if ( t.getStatus().equalsIgnoreCase("cancelled")) 
+		    	{
+		    	    continue; 
+		    	}
+	    	
+	        if (t.getTableId() == tableId)//the table we want to update or delete 
+	        {
+	            //if updating seats number
+	            if (newSeats > 0) 
+	            {
+	                //add the updated table to the simulated list
+	                Table updatedTable = new Table();
+	                updatedTable.setTableId(t.getTableId());
+	                updatedTable.setSeatsNumber(newSeats);
+	                simulatedTables.add(updatedTable);
+	            }
+	            //if deleting (newSeats == -1), we simply DO NOT add it to the list
+	        } 
+	        else //other tables
+	        {
+	            Table copy = new Table();
+	            copy.setTableId(t.getTableId());
+	            copy.setSeatsNumber(t.getSeatsNumber());
+	            simulatedTables.add(copy); 
+	        }
+	    }
 
-				Table copy = new Table();
-				copy.setTableId(t.getTableId());
-				copy.setSeatsNumber(t.getSeatsNumber());
-				simulatedTables.add(copy); 
-			}
-		}
+	    //sorting the simulated tables by seats number from smallest to largest
+	    sortTablesBySeatsAscending(simulatedTables);
 
-		//sorting the simulated tables by seats number from smallest to largest
-		sortTablesBySeatsAscending(simulatedTables);
+	    // creating a list of future reservations (active only)
+	    ArrayList<TableReservation> futureRes = new ArrayList<>();
+	    
+	    for (TableReservation res : allReservations) 
+	    {
+	        if (res.getStatus().equalsIgnoreCase("active")) 
+	        {
+	            futureRes.add(res);
+	        }
+	    }
 
-		// creating a list of future reservations (active only)
-		ArrayList<TableReservation> futureRes = new ArrayList<>();
-		
-		for (TableReservation res : allReservations) 
-		{
-			if (res.getStatus().equalsIgnoreCase("active")) 
-			{
-				futureRes.add(res);
-			}
-		}
+	    
 
-	
-		ArrayList<Integer> checkedRes = new ArrayList<>(); 
+	    for (TableReservation currentRes : futureRes) 
+	    {
+	        // creating a group of conflicting reservations relative to the current reservation
+	        ArrayList<TableReservation> conflictingGroup = new ArrayList<>();
+	        conflictingGroup.add(currentRes); 
 
-		for (TableReservation currentRes : futureRes) 
-		{
-			if (checkedRes.contains(currentRes.getReservationId())) continue;//if already checked, skip
-			
-			//creating a group of conflicting reservations (same time overlap)
-			ArrayList<TableReservation> conflictingGroup = new ArrayList<>();
-			conflictingGroup.add(currentRes);//add the current reservation to the conflicting group
-			checkedRes.add(currentRes.getReservationId());//mark current reservation as checked
+	        for (TableReservation otherRes : futureRes) 
+	        {
+	            // check against all other reservations (don't skip any!)
+	            if (currentRes.getReservationId() != otherRes.getReservationId()) 
+	            {
+	                // if there is an overlap, add to the conflicting group
+	                if (checkOverlap(currentRes, otherRes)) 
+	                {
+	                    conflictingGroup.add(otherRes);
+	                }
+	            }
+	        }
+	        
+	        // check if the conflicting group for the current reservation can fit optimally in the simulated tables
+	        if (!canFitOptimally(conflictingGroup, simulatedTables)) 
+	        {
+	            LocalDate conflictDate = currentRes.getReservationDate().toLocalDateTime().toLocalDate();
+	            
+	            // update the latest conflict date found so far
+	            if (lastConflictDate == null || conflictDate.isAfter(lastConflictDate)) 
+	            {
+	                lastConflictDate = conflictDate;
+	            }
+	        }
+	    }
 
-			for (TableReservation otherRes : futureRes)//check other reservations if overlap with current reservation 
-			{
-				//skip itself and already checked reservations
-				if (currentRes.getReservationId() != otherRes.getReservationId() && !checkedRes.contains(otherRes.getReservationId())) 
-				{
-					//if there is an overlap, add to the conflicting group and mark as checked
-					if (checkOverlap(currentRes, otherRes)) 
-					{
-						conflictingGroup.add(otherRes);
-						checkedRes.add(otherRes.getReservationId());
-					}
-				}
-			}
-			//end of creating the conflicting group for the current reservation
-			
-			//check if the conflicting group for the current reservation can fit optimally in the simulated tables
-			if (!canFitOptimally(conflictingGroup, simulatedTables)) 
-			{
-				LocalDate conflictDate = currentRes.getReservationDate().toLocalDateTime().toLocalDate();
-				if (lastConflictDate == null || conflictDate.isAfter(lastConflictDate)) 
-				{
-					lastConflictDate = conflictDate;
-				}
-			}
-		}
-
-		//after checking all reservations, see if there was any conflict
-		if (lastConflictDate != null) 
-		{
-			return lastConflictDate.plusDays(1); //return the next available date after the last conflict date
-		}
-		
-		return today; //no conflicts found, safe to update/delete immediately
+	    //after checking all reservations, see if there was any conflict
+	    if (lastConflictDate != null) 
+	    {
+	        return lastConflictDate.plusDays(1); //return the next available date after the last conflict date
+	    }
+	    
+	    return today; //no conflicts found, safe to update/delete immediately
 	}
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////Logic methods//////////////////////////////////////////////////////////////////////
@@ -469,14 +473,22 @@ public class TableController
 	private ArrayList<Table> getAllAvailableTables()
 	{
 		ArrayList<Table> tables = getTableInRestaurant();//get all tables in the restaurant today available/occupied/deleted
-		for (Table table : tables) 
-		{
-			if (table.getStatus().equals("deleted")) 
-			{
-				tables.remove(table);//remove deleted tables from the list
-			}
-		}
-		return tables;//return the list of available/occupied tables to server
+		if (tables == null) {
+	        return new ArrayList<Table>(); 
+	    }
+		
+		ArrayList<Table> activeTables = new ArrayList<>();
+
+	    for (Table table : tables) 
+	    {
+	        
+	        if (!table.getStatus().equalsIgnoreCase("cancelled")) 
+	        {
+	            activeTables.add(table);
+	        }
+	    }
+	    
+	    return activeTables; //return the list of available/occupied tables to server
 	}
 	/**
 	 * Receives a table ID based on the provided conference code in the message."check in" process and create a bill for the reservation.
@@ -818,12 +830,6 @@ public class TableController
 		return null;
 	}
 }
-
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////Automated tasks//////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 
 
 

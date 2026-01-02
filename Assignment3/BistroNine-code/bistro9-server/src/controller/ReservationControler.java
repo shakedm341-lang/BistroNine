@@ -853,11 +853,31 @@ public class ReservationControler
 			return null;
 		}
 		ArrayList<Table> tables = TableController.getTableInRestaurant();
+		
 		if (tables==null) 
 		{
 			System.out.println("No tables found for " + numberOfDiners + " diners.");
 			return null;
 		}
+		
+		ArrayList<Table> activeTables = new ArrayList<>();
+		//remove cancelled tables
+		if (tables != null) 
+		{
+		    
+		    for (Table t : tables) 
+		    {
+		        
+		        if (!t.getStatus().equalsIgnoreCase("cancelled")) 
+		        {
+		            activeTables.add(t);
+		        }
+		    }
+		    
+		    
+		    tables = activeTables;
+		}
+		
 		ArrayList<TimeSlot> OpeningTime = OpeningTimeController .getOpeningTime(reservationDay);
 		if (OpeningTime==null) 
 		{
