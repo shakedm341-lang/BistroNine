@@ -173,7 +173,13 @@ public class WaitListController
 			if (WaitAsList.get(4) instanceof Timestamp) 
 			{
 				waitAsWaitList.setExitTimeFromList((Timestamp) WaitAsList.get(4));
-			} else {
+			} 
+			else if (WaitAsList.get(4) == null)
+			{
+				waitAsWaitList.setExitTimeFromList(null);
+			}
+			else 
+			{
 				System.out.println("Error: Index 4 is not a Timestamp!");
 				return null; 
 			}
