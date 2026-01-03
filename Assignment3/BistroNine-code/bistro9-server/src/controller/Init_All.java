@@ -17,7 +17,7 @@ public class Init_All {
     // --- הגדרות חיבור ---
     private static final String DB_URL = "jdbc:mysql://localhost:3306/restaurant_db?allowLoadLocalInfile=true&allowPublicKeyRetrieval=true&serverTimezone=Asia/Jerusalem&useSSL=false";
     private static final String USER = "root";
-    // *** שים לב: שנה את הסיסמה כאן לסיסמה שלך ***
+    // add password
     private static final String PASSWORD = "Aa123456"; 
 
     private static final Random random = new Random();
@@ -169,7 +169,7 @@ public class Init_All {
 
     // --- 4. יצירת משתמשים מגוונים ---
     private static void initUsersAndSubscribers(Connection con) {
-        String[] firstNames = { "Oshri", "Dor", "Daniel", "Ziv", "John", "Jennifer", "Michael", "Linda", "David", "Sarah" };
+        String[] firstNames = { "Or", "Adi", "Shaked", "Bob", "John", "Jennifer", "Michael", "Linda", "David", "Sarah" };
         String[] lastNames = { "Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis", "Wilson", "Moore" };
         
         String insertCust = "INSERT INTO customer (phoneNumber, email) VALUES (?, ?)";
