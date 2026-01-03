@@ -1,25 +1,45 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
 <?import javafx.geometry.Insets?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<VBox alignment="CENTER" prefHeight="600.0" prefWidth="800.0" spacing="20.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gui.TabWaitingListController">
-   <children>
-      <Label text="Waiting List Module" textFill="#9e9e9e">
-         <font>
-            <Font size="24.0" />
-         </font>
-      </Label>
-      <Label text="Feature Coming Soon..." textFill="#2196f3">
-         <font>
-            <Font name="System Bold" size="18.0" />
-         </font>
-      </Label>
-      <Label text="(Server side implementation pending)" textFill="#777777" />
-   </children>
-   <padding>
-      <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
-   </padding>
-</VBox>
+<AnchorPane xmlns="http://javafx.com/javafx/8.0.171"
+	xmlns:fx="http://javafx.com/fxml/1"
+	fx:controller="gui.TabWaitingListController">
+
+	<children>
+		<VBox spacing="10" AnchorPane.topAnchor="10"
+			AnchorPane.leftAnchor="10" AnchorPane.rightAnchor="10"
+			AnchorPane.bottomAnchor="10">
+
+			<Label text="Waitlist Management" textFill="#2196f3">
+				<font>
+					<Font name="System Bold" size="24.0" />
+				</font>
+			</Label>
+
+			<TableView fx:id="waitingTable" VBox.vgrow="ALWAYS">
+				<columns>
+					<TableColumn fx:id="colFirstName" text="First Name" prefWidth="120" />
+					<TableColumn fx:id="colLastName" text="Last Name" prefWidth="120" />
+					<TableColumn fx:id="colPhone" text="Phone Number" prefWidth="150" />
+					<TableColumn fx:id="colEmail" text="Email" prefWidth="200" />
+					<TableColumn fx:id="colEntryTime" text="Waiting Since" prefWidth="120" />
+				</columns>
+				<columnResizePolicy>
+					<TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+				</columnResizePolicy>
+			</TableView>
+
+			<HBox spacing="10" alignment="CENTER_RIGHT">
+				<Button fx:id="btnRefresh" text="Refresh" onAction="#handleRefresh"
+					style="-fx-background-color: #2196f3; -fx-text-fill: white; -fx-cursor: hand;" />
+				<Button fx:id="btnRemove" text="Remove Selected" onAction="#handleRemove"
+					style="-fx-background-color: #f44336; -fx-text-fill: white; -fx-cursor: hand;" />
+			</HBox>
+
+		</VBox>
+	</children>
+</AnchorPane>

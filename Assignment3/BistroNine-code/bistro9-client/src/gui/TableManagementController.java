@@ -22,6 +22,7 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
+import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.HBox;
 import javafx.util.Callback;
@@ -148,15 +149,28 @@ public class TableManagementController implements Initializable {
     }
 
     private void handleUpdateSeats(Table table) {
-        // Simple update: use the current spinner value for simplicity in this demo
-        // In a real app, you might show a dialog to ask for new seat count
-        int newSeats = seatsSpinner.getValue();
-        if (client != null) {
-            ArrayList<Object> content = new ArrayList<>();
-            content.add(table.getTableId());
-            content.add(newSeats);
-            client.handleMessageFromBoundary(TypeMessage.TABLE, content, Command.UPDATE_TABLE_SEATS);
-        }
+        TextInputDialog dialog = new TextInputDialog(String.valueOf(table.getSeatsNumber()));
+        dialog.setTitle("Update Seats");
+        dialog.setHeaderText("Updating Table #" + table.getTableId());
+        dialog.setContentText("Enter new number of seats:");
+
+        dialog.showAndWait().ifPresent(result -> {
+            try {
+                int newSeats = Integer.parseInt(result);
+                if (newSeats <= 0) {
+                    throw new NumberFormatException();
+                }
+
+                if (client != null) {
+                    ArrayList<Object> content = new ArrayList<>();
+                    content.add(table.getTableId());
+                    content.add(newSeats);
+                    client.handleMessageFromBoundary(TypeMessage.TABLE, content, Command.UPDATE_TABLE_SEATS);
+                }
+            } catch (NumberFormatException e) {
+                showAlert(Alert.AlertType.ERROR, "Invalid Input", "Please enter a valid positive number for seats.");
+            }
+        });
     }
 
     public void updateTableList(ArrayList<Table> tables) {

@@ -32,6 +32,7 @@ public class ClientController extends AbstractClient {
     public static TabActiveReservationController tabActiveReservationController;
     public static gui.SettingsController settingsController;
     public static gui.TableManagementController tableManagementController;
+    public static gui.TabWaitingListController tabWaitingListController;
     private gui.IReservationViewer currentReservationViewer;
     private gui.IReservationDeleter currentReservationDeleter;
     
