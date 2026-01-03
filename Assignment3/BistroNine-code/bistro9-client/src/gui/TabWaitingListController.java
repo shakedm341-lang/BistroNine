@@ -81,7 +81,7 @@ public class TabWaitingListController implements Initializable {
 
     public void initData(ClientController client) {
         this.client = client;
-        //ClientController.tabWaitingListController = this;
+        ClientController.tabWaitingListController = this;
     }
 
     @FXML

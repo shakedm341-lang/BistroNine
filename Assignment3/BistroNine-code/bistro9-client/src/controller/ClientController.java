@@ -77,6 +77,10 @@ public class ClientController extends AbstractClient {
                 case OPENING_TIME: 
                     handleOpeningTimeResponse(message);
                     break;    
+                    
+                case WAITLIST:
+                    handleWaitListMessage(message);
+                    break;
 
                 default:
                     System.out.println("Unknown TypeMessage received: " + message.type);
@@ -119,7 +123,7 @@ public class ClientController extends AbstractClient {
             case GET_ALL_RESERVATIONS_ACTIVE:
                 handleGetActiveReservationsResponse(message);
                 break;   
-
+                
             default:
                 System.out.println("CLIENT:Unknown Reservation command: " + message.command);
                 break;
@@ -194,6 +198,20 @@ public class ClientController extends AbstractClient {
                 
             default:
                 System.out.println("Unknown Opening Time command: " + message.command);
+                break;
+        }
+    }
+    
+    // 2. Second Switch: Handle methods for Waiting List
+    private void handleWaitListMessage(Message message) {
+        switch (message.command) {
+            case GET_WAIT_LIST:
+            case DELETE_FROM_WAIT_LIST:
+                passToWaitListController(message);
+                break;
+
+            default:
+                System.out.println("Unknown WaitList command: " + message.command);
                 break;
         }
     }
@@ -329,6 +347,13 @@ public class ClientController extends AbstractClient {
     private void handleTableOperationResponse(Message message) {
         if (tableManagementController != null) {
             tableManagementController.handleOperationResponse(message.content);
+        }
+    }
+    
+    // Helper method for handling the waiting list (Get or Delete response)   
+    private void passToWaitListController(Message message) {
+        if (tabWaitingListController != null) {
+            tabWaitingListController.updateTableData(message.content);
         }
     }
 
