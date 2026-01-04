@@ -4,20 +4,24 @@ import java.sql.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
 /**
  * Database Initialization class.
- * Full version with all logic: Closed days check, Future/Past logic, Realistic variance.
+ * Final Version:
+ * 1. Historical & Future data.
+ * 2. Waiting list for NOW.
+ * 3. Live Dining for NOW (Arrived, Table Occupied, Bill Created but Unpaid).
  */
 public class Init_All {
 
     // --- הגדרות חיבור ---
     private static final String DB_URL = "jdbc:mysql://localhost:3306/restaurant_db?allowLoadLocalInfile=true&allowPublicKeyRetrieval=true&serverTimezone=Asia/Jerusalem&useSSL=false";
     private static final String USER = "root";
-    // add password
+    // Change password if needed
     private static final String PASSWORD = "Aa123456"; 
 
     private static final Random random = new Random();
@@ -31,21 +35,23 @@ public class Init_All {
 
                 System.out.println("Starting database initialization...");
 
-                // Step 0: Clear existing data
                 dropExistingTables(con, stmt);
-
-                // Step 1: Create Schema
                 createTables(con, stmt);
 
-                // Step 2: Populate Data
                 initDiscounts(con, stmt);
                 initOpeningHours(con, stmt);
-                initSpecialHours(con, stmt); // מכיל את ימי חג ומועדים
+                initSpecialHours(con, stmt);
                 initTables(con, stmt);
                 initUsersAndSubscribers(con);
                 
-                // יצירת הזמנות - כולל הבדיקה של ימים סגורים ועתיד/עבר
+                // 1. היסטוריה ועתיד
                 initReservationsAndBills(con);
+                
+                // 2. רשימת המתנה (אנשים שמחכים עכשיו)
+                initWaitingListForToday(con);
+
+                // 3. סועדים בפועל (אנשים שאוכלים עכשיו -> שולחן תפוס -> חשבון לא שולם)
+                initLiveDiningForNow(con);
                 
                 initReports(con, stmt);
 
@@ -60,32 +66,28 @@ public class Init_All {
         }
     }
 
-    // --- 1. מחיקת טבלאות ---
+    // --- 1. Drop Tables ---
     private static void dropExistingTables(Connection con, Statement stmt) {
         try {
             System.out.println("Dropping existing tables...");
             stmt.executeUpdate("SET FOREIGN_KEY_CHECKS = 0");
-
             String[] tables = {
                 "subscriber_report", "time_report", "report_manager", "waiting_list",
                 "bills", "restaurant_discount", "special_hours", "weekly_hours",
                 "table_reservations", "restaurant_tables", "subscriber", "customer"
             };
-
             for (String table : tables) {
                 stmt.executeUpdate("DROP TABLE IF EXISTS " + table);
             }
-
             stmt.executeUpdate("SET FOREIGN_KEY_CHECKS = 1");
             System.out.println("All existing tables dropped.");
         } catch (SQLException e) { e.printStackTrace(); }
     }
 
-    // --- 2. יצירת טבלאות ---
+    // --- 2. Create Tables ---
     private static void createTables(Connection con, Statement stmt) {
         try {
             System.out.println("Creating tables...");
-
             stmt.executeUpdate("CREATE TABLE customer (customerId INT AUTO_INCREMENT, phoneNumber VARCHAR(100) UNIQUE, email VARCHAR(100) UNIQUE, CONSTRAINT check_contact_info CHECK (phoneNumber IS NOT NULL OR email IS NOT NULL), PRIMARY KEY (customerId));");
             stmt.executeUpdate("CREATE TABLE subscriber (subscriberId INT AUTO_INCREMENT, customerId INT NOT NULL UNIQUE, firstName VARCHAR(100) NOT NULL, lastName VARCHAR(100) NOT NULL, type ENUM('subscriber', 'restaurant representative', 'restaurant manager') NOT NULL, personalInfo VARCHAR(1000), username VARCHAR(100) NOT NULL UNIQUE, password VARCHAR(100) NOT NULL, PRIMARY KEY (subscriberId), FOREIGN KEY (customerId) REFERENCES customer(customerId) ON UPDATE CASCADE);");
             stmt.executeUpdate("CREATE TABLE restaurant_tables (tableId INT AUTO_INCREMENT, seatsNumber INT NOT NULL, location ENUM('inside', 'bar', 'outside') NOT NULL, status ENUM('available', 'occupied', 'cancelled') NOT NULL, PRIMARY KEY (tableId));");
@@ -98,12 +100,11 @@ public class Init_All {
             stmt.executeUpdate("CREATE TABLE report_manager (reportId INT AUTO_INCREMENT, startDay DATE NOT NULL, endDay DATE NOT NULL, generatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP, reportRange ENUM('monthly', 'weekly','daily') NOT NULL, reportType ENUM('time', 'subscriber') NOT NULL, PRIMARY KEY (reportId), UNIQUE KEY unique_report_range (startDay, endDay, reportType));");
             stmt.executeUpdate("CREATE TABLE time_report (reportId INT NOT NULL, reportDate DATE NOT NULL, avgArrival INT NOT NULL, avgLeaving INT NOT NULL, PRIMARY KEY (reportId, reportDate), FOREIGN KEY (reportId) REFERENCES report_manager(reportId) ON DELETE CASCADE);");
             stmt.executeUpdate("CREATE TABLE subscriber_report (reportId INT NOT NULL, reportDate DATE NOT NULL, totalReservations INT NOT NULL, totalWaiting INT NOT NULL, PRIMARY KEY (reportId, reportDate), FOREIGN KEY (reportId) REFERENCES report_manager(reportId) ON DELETE CASCADE);");
-
             System.out.println("Tables created successfully.");
         } catch (SQLException e) { e.printStackTrace(); }
     }
 
-    // --- 3. נתונים בסיסיים (הנחות, שעות) ---
+    // --- 3. Init Data ---
     private static void initDiscounts(Connection con, Statement stmt) {
         try {
             stmt.executeUpdate("INSERT INTO restaurant_discount (type_customer, discount) VALUES ('subscriber', 10.00)");
@@ -117,13 +118,10 @@ public class Init_All {
             for (String day : weekDays) {
                 stmt.executeUpdate("INSERT INTO weekly_hours (dayOfWeek, openingTime, closingTime) VALUES ('" + day + "', '08:00:00', '23:00:00')");
             }
-            // יום ראשון (לילה + יום)
             stmt.executeUpdate("INSERT INTO weekly_hours (dayOfWeek, openingTime, closingTime) VALUES ('SUNDAY', '00:00:00', '03:00:00')");
             stmt.executeUpdate("INSERT INTO weekly_hours (dayOfWeek, openingTime, closingTime) VALUES ('SUNDAY', '08:00:00', '23:00:00')");
-            // יום שלישי מפוצל
             stmt.executeUpdate("INSERT INTO weekly_hours (dayOfWeek, openingTime, closingTime) VALUES ('TUESDAY', '08:00:00', '12:00:00')");
             stmt.executeUpdate("INSERT INTO weekly_hours (dayOfWeek, openingTime, closingTime) VALUES ('TUESDAY', '16:00:00', '23:00:00')");
-            // סופ"ש
             stmt.executeUpdate("INSERT INTO weekly_hours (dayOfWeek, openingTime, closingTime) VALUES ('FRIDAY', '08:00:00', '14:00:00')");
             stmt.executeUpdate("INSERT INTO weekly_hours (dayOfWeek, openingTime, closingTime) VALUES ('SATURDAY', '20:00:00', '23:59:59')");
             System.out.println("Inserted weekly hours.");
@@ -132,25 +130,22 @@ public class Init_All {
 
     private static void initSpecialHours(Connection con, Statement stmt) {
         try {
-            // דצמבר
+            // Dec
             stmt.executeUpdate("INSERT INTO special_hours (specificDate, openingTime, closingTime) VALUES ('2025-12-24', '10:00:00', '14:00:00')");
-            stmt.executeUpdate("INSERT INTO special_hours (specificDate, openingTime, closingTime) VALUES ('2025-12-25', '00:00:00', '00:00:00')"); // סגור
+            stmt.executeUpdate("INSERT INTO special_hours (specificDate, openingTime, closingTime) VALUES ('2025-12-25', '00:00:00', '00:00:00')");
             stmt.executeUpdate("INSERT INTO special_hours (specificDate, openingTime, closingTime) VALUES ('2025-12-31', '18:00:00', '23:59:59')");
-            
-            // ינואר
+            // Jan
             stmt.executeUpdate("INSERT INTO special_hours (specificDate, openingTime, closingTime) VALUES ('2026-01-01', '00:00:00', '04:00:00')");
             stmt.executeUpdate("INSERT INTO special_hours (specificDate, openingTime, closingTime) VALUES ('2026-01-01', '13:00:00', '22:00:00')");
             stmt.executeUpdate("INSERT INTO special_hours (specificDate, openingTime, closingTime) VALUES ('2026-01-02', '16:00:00', '23:00:00')");
-            stmt.executeUpdate("INSERT INTO special_hours (specificDate, openingTime, closingTime) VALUES ('2026-01-10', '00:00:00', '00:00:00')"); // סגור
+            stmt.executeUpdate("INSERT INTO special_hours (specificDate, openingTime, closingTime) VALUES ('2026-01-10', '00:00:00', '00:00:00')");
             stmt.executeUpdate("INSERT INTO special_hours (specificDate, openingTime, closingTime) VALUES ('2026-01-15', '10:00:00', '23:00:00')");
             stmt.executeUpdate("INSERT INTO special_hours (specificDate, openingTime, closingTime) VALUES ('2026-01-20', '11:00:00', '15:00:00')");
             stmt.executeUpdate("INSERT INTO special_hours (specificDate, openingTime, closingTime) VALUES ('2026-01-20', '19:30:00', '23:30:00')");
             stmt.executeUpdate("INSERT INTO special_hours (specificDate, openingTime, closingTime) VALUES ('2026-01-25', '09:00:00', '14:00:00')");
-            
-            // אחרים
+            // Other
             stmt.executeUpdate("INSERT INTO special_hours (specificDate, openingTime, closingTime) VALUES ('2026-02-14', '09:00:00', '23:59:59')");
             stmt.executeUpdate("INSERT INTO special_hours (specificDate, openingTime, closingTime) VALUES ('2025-11-01', '12:00:00', '20:00:00')");
-            
             System.out.println("Inserted special hours.");
         } catch (SQLException e) { e.printStackTrace(); }
     }
@@ -158,16 +153,15 @@ public class Init_All {
     private static void initTables(Connection con, Statement stmt) {
         try {
             for (int i = 1; i <= 10; i++) {
-                // גדלים 2, 4, 6
                 int seats = (i % 3 == 0) ? 6 : ((i % 3 == 2) ? 4 : 2);
                 String loc = (i <= 4) ? "inside" : ((i <= 8) ? "outside" : "bar");
                 stmt.executeUpdate("INSERT INTO restaurant_tables (seatsNumber, location, status) VALUES (" + seats + ", '" + loc + "', 'available')");
             }
-            System.out.println("Inserted tables (Sizes 2, 4, 6).");
+            System.out.println("Inserted tables.");
         } catch (SQLException e) { e.printStackTrace(); }
     }
 
-    // --- 4. יצירת משתמשים מגוונים ---
+    // --- 4. Users ---
     private static void initUsersAndSubscribers(Connection con) {
         String[] firstNames = { "Or", "Adi", "Shaked", "Bob", "John", "Jennifer", "Michael", "Linda", "David", "Sarah" };
         String[] lastNames = { "Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis", "Wilson", "Moore" };
@@ -228,7 +222,7 @@ public class Init_All {
                 }
             }
 
-            // Regular Customers (No user account)
+            // Regular Customers
             for (int k = 1; k <= 3; k++) {
                 psCust.setString(1, "054111111" + k);
                 psCust.setString(2, "full_guest_" + k + "@gmail.com");
@@ -244,12 +238,11 @@ public class Init_All {
                 psCust.setString(2, "email_only_guest_" + k + "@gmail.com");
                 psCust.executeUpdate();
             }
-
             System.out.println("Inserted all user types.");
         } catch (SQLException e) { e.printStackTrace(); }
     }
 
-    // --- 5. יצירת הזמנות וחשבוניות (הלוגיקה הראשית) ---
+    // --- 5. Reservations and Bills (History/Future) ---
     private static void initReservationsAndBills(Connection con) {
         String selectCust = "SELECT customerId FROM customer";
         String insertRes = "INSERT INTO table_reservations (tableId, numberOfDiners, confirmationCode, customerId, reservationDate, arrivalTime, leavingTime, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
@@ -263,15 +256,15 @@ public class Init_All {
             ResultSet rs = stmt.executeQuery(selectCust);
             while (rs.next()) custIds.add(rs.getInt(1));
 
-            System.out.println("Generating reservations (Skipping closed days)...");
+            System.out.println("Generating reservations...");
             int confCode = 5000;
             
-            // דצמבר 2025 (כולל 31)
+            // Dec
             for (int day = 1; day <= 31; day++) {
                 createDailyReservations(con, psRes, psBill, custIds, LocalDate.of(2025, 12, day), confCode);
                 confCode += 20; 
             }
-            // ינואר 2026 (כולל 31)
+            // Jan
             for (int day = 1; day <= 31; day++) {
                 createDailyReservations(con, psRes, psBill, custIds, LocalDate.of(2026, 1, day), confCode);
                 confCode += 20;
@@ -280,43 +273,214 @@ public class Init_All {
         } catch (SQLException e) { e.printStackTrace(); }
     }
 
-    // פונקציית עזר לבדיקת יום סגור
-    private static boolean isDayClosed(Connection con, LocalDate date) {
-        String query = "SELECT openingTime, closingTime FROM special_hours WHERE specificDate = ?";
-        try (PreparedStatement ps = con.prepareStatement(query)) {
-            ps.setDate(1, java.sql.Date.valueOf(date));
+    // --- 6. Waiting List (Close to NOW) ---
+    private static void initWaitingListForToday(Connection con) {
+        String selectCust = "SELECT customerId FROM customer";
+        String insertRes = "INSERT INTO table_reservations (customerId, numberOfDiners, reservationDate, confirmationCode, status, tableId) VALUES (?, ?, ?, ?, 'waiting', NULL)";
+        String insertWait = "INSERT INTO waiting_list (reservationId, numberOfDiners, type, status, entryTimeToList) VALUES (?, ?, ?, 'waiting', ?)";
+
+        try (Statement stmt = con.createStatement();
+             PreparedStatement psRes = con.prepareStatement(insertRes, Statement.RETURN_GENERATED_KEYS);
+             PreparedStatement psWait = con.prepareStatement(insertWait)) {
+
+            List<Integer> custIds = new ArrayList<>();
+            ResultSet rs = stmt.executeQuery(selectCust);
+            while (rs.next()) custIds.add(rs.getInt(1));
+
+            LocalDateTime now = LocalDateTime.now();
+            System.out.println("Generating Waiting List for TODAY...");
+            
+            if (isDayClosed(con, now.toLocalDate())) {
+                 System.out.println("Restaurant closed today, skipping waiting list.");
+                 return;
+            }
+
+            int confCode = 9000; 
+
+            for (int i = 0; i < 5; i++) {
+                int custId = custIds.get(random.nextInt(custIds.size()));
+                int diners = 2 + random.nextInt(4);
+                
+                int minutesAgo = random.nextInt(60); 
+                LocalDateTime entryTime = now.minusMinutes(minutesAgo);
+
+                psRes.setInt(1, custId);
+                psRes.setInt(2, diners);
+                psRes.setTimestamp(3, Timestamp.valueOf(entryTime));
+                psRes.setInt(4, confCode++);
+                psRes.executeUpdate();
+
+                ResultSet rsRes = psRes.getGeneratedKeys();
+                if (rsRes.next()) {
+                    int resId = rsRes.getInt(1);
+                    psWait.setInt(1, resId);
+                    psWait.setInt(2, diners);
+                    String type = random.nextBoolean() ? "walk_in" : "check_in";
+                    psWait.setString(3, type);
+                    psWait.setTimestamp(4, Timestamp.valueOf(entryTime));
+                    psWait.executeUpdate();
+                }
+            }
+            System.out.println("Waiting List populated.");
+        } catch (SQLException e) { e.printStackTrace(); }
+    }
+
+    // --- 7. Live Dining (Status: Arrived + Occupied Table + Unpaid Bill) ---
+    private static void initLiveDiningForNow(Connection con) {
+        String selectCust = "SELECT customerId FROM customer";
+        
+        // 1. הוספת הזמנה: arrived, יש שולחן, יש זמן הגעה, אין זמן עזיבה
+        String insertRes = "INSERT INTO table_reservations (tableId, numberOfDiners, confirmationCode, customerId, reservationDate, arrivalTime, leavingTime, status) VALUES (?, ?, ?, ?, ?, ?, NULL, 'arrived')";
+        
+        // 2. עדכון שולחן ל-occupied
+        String updateTableStatus = "UPDATE restaurant_tables SET status = 'occupied' WHERE tableId = ?";
+        
+        // 3. הוספת חשבונית: לא שולמה (FALSE), שיטת תשלום NULL
+        String insertBill = "INSERT INTO bills (reservationId, totalAmount, totalAmountAfterDiscount, discountPercentage, isPaid, discountType, paymentMethod) VALUES (?, ?, ?, ?, false, ?, NULL)";
+
+        try (Statement stmt = con.createStatement();
+             PreparedStatement psRes = con.prepareStatement(insertRes, Statement.RETURN_GENERATED_KEYS);
+             PreparedStatement psTable = con.prepareStatement(updateTableStatus);
+             PreparedStatement psBill = con.prepareStatement(insertBill)) {
+
+            List<Integer> custIds = new ArrayList<>();
+            ResultSet rs = stmt.executeQuery(selectCust);
+            while (rs.next()) custIds.add(rs.getInt(1));
+
+            LocalDateTime now = LocalDateTime.now();
+            System.out.println("Generating LIVE DINING (Arrived, Occupied Tables, Unpaid Bills)...");
+
+            if (isDayClosed(con, now.toLocalDate())) {
+                 System.out.println("Restaurant closed today, skipping live dining.");
+                 return;
+            }
+
+            int confCode = 9500; 
+            List<Integer> usedTables = new ArrayList<>();
+
+            // יצירת 3-5 שולחנות תפוסים
+            int liveTables = 3 + random.nextInt(3);
+
+            for (int i = 0; i < liveTables; i++) {
+                int custId = custIds.get(random.nextInt(custIds.size()));
+                int diners = 2 + random.nextInt(4);
+                
+                // מציאת שולחן פנוי רנדומלי (פשטני)
+                int tableId;
+                do {
+                    tableId = 1 + random.nextInt(10);
+                } while (usedTables.contains(tableId));
+                usedTables.add(tableId);
+
+                // הגיעו לפני 30-90 דקות
+                int minutesAgo = 30 + random.nextInt(60); 
+                LocalDateTime arrivalTime = now.minusMinutes(minutesAgo);
+
+                // --- שלב 1: הזמנה ---
+                psRes.setInt(1, tableId);
+                psRes.setInt(2, diners);
+                psRes.setInt(3, confCode++);
+                psRes.setInt(4, custId);
+                psRes.setTimestamp(5, Timestamp.valueOf(arrivalTime)); // Scheduled
+                psRes.setTimestamp(6, Timestamp.valueOf(arrivalTime)); // Actual Arrival
+                psRes.executeUpdate();
+
+                // --- שלב 2: עדכון שולחן ---
+                psTable.setInt(1, tableId);
+                psTable.executeUpdate();
+
+                // --- שלב 3: יצירת חשבון פתוח ---
+                ResultSet rsRes = psRes.getGeneratedKeys();
+                if (rsRes.next()) {
+                    int resId = rsRes.getInt(1);
+                    double amount = 150.0 + random.nextInt(200);
+                    
+                    boolean isSubscriberBill = random.nextBoolean();
+                    double discountPercent = isSubscriberBill ? 10.0 : 0.0;
+                    double finalAmount = isSubscriberBill ? (amount * 0.9) : amount;
+                    String type = isSubscriberBill ? "subscriber" : "customer";
+
+                    psBill.setInt(1, resId);
+                    psBill.setDouble(2, amount);
+                    psBill.setDouble(3, finalAmount);
+                    psBill.setDouble(4, discountPercent);
+                    psBill.setString(5, type); // Discount Type
+                    
+                    psBill.executeUpdate();
+                }
+            }
+            System.out.println("Live Dining populated (" + liveTables + " tables occupied).");
+
+        } catch (SQLException e) { e.printStackTrace(); }
+    }
+
+    // --- Helper Methods ---
+
+    private static LocalTime getRandomOpenTime(Connection con, LocalDate date) {
+        List<LocalTime[]> shifts = new ArrayList<>();
+        String dayOfWeek = date.getDayOfWeek().toString();
+
+        String specialQuery = "SELECT openingTime, closingTime FROM special_hours WHERE specificDate = ?";
+        try (PreparedStatement ps = con.prepareStatement(specialQuery)) {
+            ps.setDate(1, Date.valueOf(date));
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
+                while (rs.next()) {
                     Time open = rs.getTime("openingTime");
                     Time close = rs.getTime("closingTime");
-                    // 00:00 to 00:00 indicates CLOSED
-                    if (open != null && close != null && open.equals(close)) {
-                        return true; 
-                    }
+                    if (open.equals(close)) return null; 
+                    shifts.add(new LocalTime[]{open.toLocalTime(), close.toLocalTime()});
                 }
             }
         } catch (SQLException e) { e.printStackTrace(); }
-        return false;
+
+        if (shifts.isEmpty()) {
+            String weeklyQuery = "SELECT openingTime, closingTime FROM weekly_hours WHERE dayOfWeek = ?";
+            try (PreparedStatement ps = con.prepareStatement(weeklyQuery)) {
+                ps.setString(1, dayOfWeek);
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        Time open = rs.getTime("openingTime");
+                        Time close = rs.getTime("closingTime");
+                        shifts.add(new LocalTime[]{open.toLocalTime(), close.toLocalTime()});
+                    }
+                }
+            } catch (SQLException e) { e.printStackTrace(); }
+        }
+
+        if (shifts.isEmpty()) return null;
+
+        LocalTime[] chosenShift = shifts.get(random.nextInt(shifts.size()));
+        LocalTime open = chosenShift[0];
+        LocalTime close = chosenShift[1];
+
+        long minutesOpen = ChronoUnit.MINUTES.between(open, close);
+        if (minutesOpen <= 60) return open; 
+
+        long randomMinute = random.nextInt((int) minutesOpen - 60); 
+        return open.plusMinutes(randomMinute);
     }
 
-    // פונקציית עזר ליצירת יום של הזמנות
+    private static boolean isDayClosed(Connection con, LocalDate date) {
+        return getRandomOpenTime(con, date) == null;
+    }
+
     private static void createDailyReservations(Connection con, PreparedStatement psRes, PreparedStatement psBill, List<Integer> custIds, LocalDate date, int startConfCode) throws SQLException {
-        // אם היום סגור - דלג
         if (isDayClosed(con, date)) {
-            System.out.println("Skipping reservations for " + date + " (Closed).");
             return; 
         }
 
         int dailyRes = 8 + random.nextInt(5); 
         int currentCode = startConfCode;
-        
         boolean isFutureDate = date.isAfter(LocalDate.now());
 
         for (int i = 0; i < dailyRes; i++) {
             int custId = custIds.get(random.nextInt(custIds.size()));
             int diners = 2 + random.nextInt(4);
             
-            LocalDateTime scheduledTime = LocalDateTime.of(date, LocalTime.of(12 + (i % 8), 0));
+            LocalTime randomTime = getRandomOpenTime(con, date);
+            if (randomTime == null) continue;
+            
+            LocalDateTime scheduledTime = LocalDateTime.of(date, randomTime);
             
             psRes.setInt(2, diners);
             psRes.setInt(3, currentCode++);
@@ -324,33 +488,24 @@ public class Init_All {
             psRes.setTimestamp(5, Timestamp.valueOf(scheduledTime));
 
             if (isFutureDate) {
-                // Future: Active, No Table, No Times, No Bill
                 psRes.setNull(1, java.sql.Types.INTEGER); 
                 psRes.setNull(6, java.sql.Types.TIMESTAMP); 
                 psRes.setNull(7, java.sql.Types.TIMESTAMP); 
                 psRes.setString(8, "active");
                 psRes.executeUpdate();
-                
             } else {
-                // Past: Completed/Cancelled, Real Variance
                 int tableId = 1 + random.nextInt(10); 
                 psRes.setInt(1, tableId); 
-
-                // Variance: +/- 15 mins arrival, +/- 30 mins duration
                 int arrivalOffset = random.nextInt(31) - 15;
                 LocalDateTime actualArrival = scheduledTime.plusMinutes(arrivalOffset);
                 int durationVariance = random.nextInt(61) - 30;
                 LocalDateTime actualLeaving = actualArrival.plusHours(2).plusMinutes(durationVariance);
-
                 boolean isCancelled = random.nextDouble() < 0.20; 
                 String status = isCancelled ? "cancelled" : "completed";
-
                 psRes.setTimestamp(6, Timestamp.valueOf(actualArrival));
                 psRes.setTimestamp(7, Timestamp.valueOf(actualLeaving));
                 psRes.setString(8, status);
                 psRes.executeUpdate();
-
-                // Bill only if not cancelled
                 if (!isCancelled) {
                     ResultSet rsRes = psRes.getGeneratedKeys();
                     if (rsRes.next()) {
@@ -360,7 +515,6 @@ public class Init_All {
                         double discountPercent = isSubscriberBill ? 10.0 : 0.0;
                         double finalAmount = isSubscriberBill ? (amount * 0.9) : amount;
                         String type = isSubscriberBill ? "subscriber" : "customer";
-
                         psBill.setInt(1, resId);
                         psBill.setDouble(2, amount);
                         psBill.setDouble(3, finalAmount);
@@ -373,10 +527,9 @@ public class Init_All {
         }
     }
 
-    // --- 6. דוחות נובמבר (סטטיים) ---
+    // --- 8. Reports ---
     private static void initReports(Connection con, Statement stmt) {
         try {
-            // Time Report (Nov)
             stmt.executeUpdate("INSERT INTO report_manager (startDay, endDay, reportRange, reportType) VALUES ('2025-11-01', '2025-11-30', 'monthly', 'time')", Statement.RETURN_GENERATED_KEYS);
             ResultSet rs = stmt.getGeneratedKeys();
             if (rs.next()) {
@@ -387,8 +540,6 @@ public class Init_All {
                     stmt.executeUpdate(String.format("INSERT INTO time_report (reportId, reportDate, avgArrival, avgLeaving) VALUES (%d, '2025-11-%02d', %d, %d)", reportId, day, avgArr, avgLev));
                 }
             }
-
-            // Subscriber Report (Nov)
             stmt.executeUpdate("INSERT INTO report_manager (startDay, endDay, reportRange, reportType) VALUES ('2025-11-01', '2025-11-30', 'monthly', 'subscriber')", Statement.RETURN_GENERATED_KEYS);
             rs = stmt.getGeneratedKeys();
             if (rs.next()) {

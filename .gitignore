@@ -27,3 +27,6 @@ Thumbs.db
 # Maven/Gradle generated files
 pom.xml.tag
 pom.xml.bak
+Assignment3/BistroNine-code/bistro9-client/.classpath
+Assignment3/BistroNine-code/bistro9-data/.classpath
+Assignment3/BistroNine-code/bistro9-server/.classpath
