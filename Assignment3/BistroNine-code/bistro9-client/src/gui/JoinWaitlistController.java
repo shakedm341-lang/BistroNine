@@ -3,6 +3,8 @@ package gui;
 import data.Command;
 import data.TypeMessage;
 import java.util.ArrayList;
+
+import controller.ClientController;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -32,8 +34,8 @@ public class JoinWaitlistController extends BaseTerminalController {
     @FXML
     public void initialize() {
         //TODO: Uncomment this when  developer moves the class to the data package
-        //ClientController.joinWaitlistController = this;
-        
+    	ClientController.joinWaitlistController = this;    
+    	
         // Hide radio buttons as type is already determined in Terminal Mode
         rbGuest.setVisible(false);
         rbGuest.setManaged(false);

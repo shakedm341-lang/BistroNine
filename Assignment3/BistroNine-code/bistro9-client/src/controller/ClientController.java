@@ -33,6 +33,11 @@ public class ClientController extends AbstractClient {
     public static gui.SettingsController settingsController;
     public static gui.TableManagementController tableManagementController;
     public static gui.TabWaitingListController tabWaitingListController;
+    public static gui.GetTableController getTableController;
+    public static gui.JoinWaitlistController joinWaitlistController;
+    public static gui.LeaveWaitlistController leaveWaitlistController;
+    public static gui.PayBillController payBillController;
+    public static gui.UserDashboardController userDashboardController;
     private gui.IReservationViewer currentReservationViewer;
     private gui.IReservationDeleter currentReservationDeleter;
     
@@ -81,6 +86,10 @@ public class ClientController extends AbstractClient {
                 case WAITLIST:
                     handleWaitListMessage(message);
                     break;
+                    
+                case BILL:
+                    handleBillMessage(message);
+                    break;  
 
                 default:
                     System.out.println("Unknown TypeMessage received: " + message.type);
@@ -148,6 +157,18 @@ public class ClientController extends AbstractClient {
             case UPDATE_SUBSCRIBER_DETAILS:
                 handleUpdateProfileResponse(message);
                 break;
+                
+            case CHECK_LOGIN_DETAILSֹֹ_BY_TAG_READER:
+                handleTagIdentificationResponse(message);
+                break;
+             
+            case GET_ALL_CONF_CODE_BY_CUSTOMER_ID:
+                handleGetCodesResponse(message);
+                break;
+                
+            case LOST_CONF_CODE:
+                handleLostCodeResponse(message);
+                break;    
 
             default:
                 System.out.println("Unknown Customer command: " + message.command);
@@ -172,6 +193,10 @@ public class ClientController extends AbstractClient {
             case ADD_TABLE:
             case UPDATE_TABLE_SEATS:
             	handleTableOperationResponse(message); 
+                break;
+                
+            case RECEIVE_TABLE_ID:
+                handleCheckInResponse(message);
                 break;
 
             default:
@@ -206,12 +231,36 @@ public class ClientController extends AbstractClient {
     private void handleWaitListMessage(Message message) {
         switch (message.command) {
             case GET_WAIT_LIST:
-            case DELETE_FROM_WAIT_LIST:
                 passToWaitListController(message);
                 break;
+                
+            case DELETE_FROM_WAIT_LIST: 
+            	handleWaitlistDeleteResponse(message);
+            	break;
+            	
+            case GET_IN_TO_WAIT_LIST:
+                handleJoinWaitlistResponse(message);
+                break;    
 
             default:
                 System.out.println("Unknown WaitList command: " + message.command);
+                break;
+        }
+    }
+    
+    // 2. Second Switch: Handle methods for Bill & Payment
+    private void handleBillMessage(Message message) {
+        switch (message.command) {
+            case SHOW_BILL:
+                handleShowBillResponse(message);
+                break;
+                
+            case PAY_BILL:
+                handlePayBillResponse(message);
+                break;
+
+            default:
+                System.out.println("Unknown Bill command: " + message.command);
                 break;
         }
     }
@@ -356,7 +405,72 @@ public class ClientController extends AbstractClient {
             tabWaitingListController.updateTableData(message.content);
         }
     }
+    
+    // Helper method for handling tag identification response 
+    private void handleTagIdentificationResponse(Message message) {
+        if (getTableController != null) {
+            getTableController.onIdentificationResponse(message.content); // Pass identification result to the Kiosk controller
+        }
+        if (joinWaitlistController != null) {
+            joinWaitlistController.onIdentificationResponse(message.content); // Pass identification result to the Join Waitlist Kiosk
+        }
+        if (leaveWaitlistController != null) {
+            leaveWaitlistController.onIdentificationResponse(message.content); // Pass identification result to the Leave Waitlist Kiosk
+        } 
+    }
+    
+    // Helper method for handling the retrieval of confirmation codes
+    private void handleGetCodesResponse(Message message) {
+        if (getTableController != null) {
+            getTableController.onCodesResponse(message.content); // Update the list of codes
+        }
+    }
+    
+    // Helper method for handling the lost code recovery response
+    private void handleLostCodeResponse(Message message) {
+        if (getTableController != null) {
+            getTableController.onRecoverCodesResponse(message.content); // Notify the Kiosk boundary about recovery status
+        }
+    }
 
+    // Helper method for handling the check-in (get table) response
+    private void handleCheckInResponse(Message message) {
+        if (getTableController != null) {
+            getTableController.onCheckInResponse(message.content); // Pass the check-in result Table/Reservation
+        }
+    }
+    
+    // Helper method for handling the join waitlist response
+    private void handleJoinWaitlistResponse(Message message) {
+        if (joinWaitlistController != null) {
+            joinWaitlistController.onJoinResponse(message.content); // Pass the join result Confirmation Code or Table ID to the controller
+        }
+    }
+    
+    //Handles delete response for BOTH Employee view and Kiosk view
+    private void handleWaitlistDeleteResponse(Message message) {
+        if (tabWaitingListController != null) {
+            tabWaitingListController.updateTableData(message.content); //If the Employee View is active, pass data to refresh the table
+        }
+        if (leaveWaitlistController != null) {
+            leaveWaitlistController.onDeleteResponse(message.content); //If the Kiosk View is active, pass result to show success/fail message
+        }
+    }
+    
+    // Helper method for handling "Show Bill" response
+    private void handleShowBillResponse(Message message) {
+        if (payBillController != null) {
+            payBillController.handleShowBillResponse((Bill) message.content); // Pass the Bill object to display details in the GUI
+        }
+    }
+    
+    // Helper method for handling "Pay Bill" response
+    private void handlePayBillResponse(Message message) {
+        if (payBillController != null) {
+            payBillController.handlePayBillResponse((Boolean) message.content); // Pass payment success status to the controller
+        }
+    }
+    
     // Handle message from boundary
     public void handleMessageFromBoundary(TypeMessage type, Object content, Command command) {
         Message msg = new Message();

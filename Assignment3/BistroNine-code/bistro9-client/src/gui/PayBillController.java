@@ -62,7 +62,8 @@ public class PayBillController extends BaseTerminalController implements Initial
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        comboPaymentMethod.setItems(FXCollections.observableArrayList("Credit Card", "Cash", "App"));
+    	ClientController.payBillController = this;
+    	comboPaymentMethod.setItems(FXCollections.observableArrayList("Credit Card", "Cash", "App"));
         comboPaymentMethod.getSelectionModel().selectFirst();
         
         // Initial UI state
