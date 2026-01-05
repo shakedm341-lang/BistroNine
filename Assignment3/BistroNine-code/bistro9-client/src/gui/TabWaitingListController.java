@@ -92,6 +92,7 @@ public class TabWaitingListController implements Initializable {
     public void refreshData() {
         if (client != null) {
             client.handleMessageFromBoundary(TypeMessage.WAITLIST, null, Command.GET_WAIT_LIST);
+            System.out.println("TabWaitingList: Sending request to server for wait list...");
         }
     }
 
@@ -119,6 +120,7 @@ public class TabWaitingListController implements Initializable {
         Platform.runLater(() -> {
             if (data instanceof ArrayList) {
                 ArrayList<ManWaiting> list = (ArrayList<ManWaiting>) data;
+                System.out.println("Updating table data with " + list.size() + " items");
                 waitingList.setAll(list);
                 waitingTable.refresh();
             } else if (data instanceof Boolean) {

@@ -25,6 +25,7 @@ public class ClientMain extends Application {
             primaryStage.setResizable(false);
             
             primaryStage.show();
+            primaryStage.centerOnScreen();
             
         } catch(Exception e) {
             System.out.println("Error loading FXML:");

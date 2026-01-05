@@ -47,45 +47,51 @@ public class ReservationBoundry {
     
     private boolean isRepMod = false;
     
-    public void initData(Subscriber user,boolean custMod) {
+    public void initData(Subscriber user, boolean custMod) {
+        initData(user, custMod, false);
+    }
+
+    public void initData(Subscriber user, boolean custMod, boolean isEmbedded) {
         this.currentUser = user;
-        this.isRepMod= custMod;
-        
+        this.isRepMod = custMod;
+
         if (user != null && !custMod) {
             // mode: SUBSCRIBER
-            
+
             // 1. Pre-fill the fields with subscriber details
             // Note: Using First+Last name is usually better for reservations than Username
-            nameTxt.setText(user.getFirstName() + " " + user.getLastName()); 
-            phoneTxt.setText(user.getPhoneNumber()); 
+            nameTxt.setText(user.getFirstName() + " " + user.getLastName());
+            phoneTxt.setText(user.getPhoneNumber());
             emailTxt.setText(user.getEmail());
-            
+
             // 2. Disable fields - Subscribers cannot edit their registered details here
             nameTxt.setDisable(true);
             phoneTxt.setDisable(true);
             emailTxt.setDisable(true);
-            
+
             // 3. Hide the return to login button for subscribers
             btnReturnToLogin.setVisible(false);
-            
+
         } else {
             // mode: GUEST USER
-            
+
             // 1. Clear any previous data to ensure a clean form
             nameTxt.clear();
             phoneTxt.clear();
             emailTxt.clear();
-            
+
             // 2. Enable fields - Guests must manually enter their details
             nameTxt.setDisable(false);
             phoneTxt.setDisable(false);
             emailTxt.setDisable(false);
-            
-            
-            if (user == null) {
+
+            if (isEmbedded) {
+                btnReturnToLogin.setVisible(false);
+                btnReturnToLogin.setManaged(false);
+            } else if (user == null) {
                 btnReturnToLogin.setVisible(true);
             } else {
-                btnReturnToLogin.setVisible(false); 
+                btnReturnToLogin.setVisible(false);
             }
         }
     }
@@ -368,6 +374,7 @@ public class ReservationBoundry {
             Scene scene = new Scene(root);
             stage.setScene(scene);
             stage.show();
+            stage.centerOnScreen();
 
         } catch (Exception e) {
             e.printStackTrace();

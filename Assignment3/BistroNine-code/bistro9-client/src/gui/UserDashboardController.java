@@ -1,16 +1,24 @@
 package gui;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Optional;
 
 import controller.ClientController;
+import data.Command;
 import data.Subscriber;
+import data.TypeMessage;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
@@ -30,6 +38,9 @@ public class UserDashboardController {
     
     @FXML
     private Button btnLiveDashboard;
+    
+    @FXML
+    private Button btnPayBill;
 
     private ClientController client;
     private Subscriber currentUser;
@@ -47,6 +58,7 @@ public class UserDashboardController {
      */
     public void loadUserDetails(Subscriber user) {
         this.currentUser = user;
+        ClientController.userDashboardController = this;
         lblWelcome.setText("Hello, " + user.getUsername());
 
         String type = user.getType(); // Assuming format like "restaurant manager"
@@ -55,6 +67,7 @@ public class UserDashboardController {
         setButtonVisible(btnRestaurantOps, false);
         setButtonVisible(btnViewReports, false);
         setButtonVisible(btnLiveDashboard, false);
+        setButtonVisible(btnPayBill, false);
 
         // 2. Turn on buttons based on specific roles
         if (type.equals("restaurant manager")) {
@@ -62,13 +75,17 @@ public class UserDashboardController {
             setButtonVisible(btnRestaurantOps, true);
             setButtonVisible(btnViewReports, true);
             setButtonVisible(btnLiveDashboard, true); // Visible for Manager
+            setButtonVisible(btnPayBill, true);
 
         } else if (type.equals("restaurant representative")) {
             // Representative sees Operations AND Live Dashboard
             setButtonVisible(btnRestaurantOps, true);
             setButtonVisible(btnLiveDashboard, true); // Visible for Representative
+            setButtonVisible(btnPayBill, true);
             
             // Note: btnViewReports remains hidden for Representative (default behavior)
+        } else if (type.equals("subscriber")) {
+            setButtonVisible(btnPayBill, true);
         }
     }
 
@@ -132,7 +149,39 @@ public class UserDashboardController {
             e.printStackTrace();
         }
     }
-    
+
+    @FXML
+    void handleExitWaitlist(ActionEvent event) {
+        Alert alert = new Alert(AlertType.CONFIRMATION);
+        alert.setTitle("Leave Waitlist");
+        alert.setHeaderText("Confirmation");
+        alert.setContentText("Are you sure you want to leave the waitlist?");
+
+        Optional<ButtonType> result = alert.showAndWait();
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            ArrayList<Object> content = new ArrayList<>();
+            content.add("subscriber"); 
+            content.add(currentUser.getCustomerId());
+            content.add(null);
+
+            if (client != null) {
+                client.handleMessageFromBoundary(TypeMessage.WAITLIST, content, Command.DELETE_FROM_WAIT_LIST);
+            } else {
+                TerminalUtils.showError("Error", "Client is not connected.");
+            }
+        }
+    }
+
+    public void onWaitlistDeleteResponse(Object response) {
+        Platform.runLater(() -> {
+            if (Boolean.TRUE.equals(response)) {
+                TerminalUtils.showSuccess("Success", "You have been removed from the waitlist successfully.");
+            } else {
+                TerminalUtils.showError("Waitlist Info", "We couldn't find your entry on the waitlist or an error occurred.");
+            }
+        });
+    }
+
     @FXML
     void goToLiveDashboard(ActionEvent event) {
         System.out.println("DEBUG: Go to Live Dashboard");
@@ -187,6 +236,23 @@ public class UserDashboardController {
     }
 
     @FXML
+    void goToPayBill(ActionEvent event) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/PayBillScreen.fxml"));
+            Parent root = loader.load();
+
+            PayBillController controller = loader.getController();
+            controller.setDependencies(this.client, this.currentUser, this);
+
+            contentArea.getChildren().clear();
+            contentArea.getChildren().add(root);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @FXML
     void doLogout(ActionEvent event) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/MainSelection.fxml"));
@@ -198,6 +264,7 @@ public class UserDashboardController {
             stage.setTitle("BistroNine - Select Mode");
             stage.setScene(new Scene(root));
             stage.show();
+            stage.centerOnScreen();
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -26,37 +26,21 @@ public class MainSelectionController {
 
     @FXML
     void enterTerminalMode(ActionEvent event) {
-        
-            
-            //System.out.println("Entering Terminal Mode...");
-            //for test, we load the updateReservationBoundry directly
-            
-            try {
-                System.out.println("Entering Terminal Mode (Test: Update Reservation)...");
+        try {
+            System.out.println("Entering Terminal Mode Identification...");
 
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/ReservationGui.fxml"));
-                Parent root = loader.load();
-
-                UpdateReservtionBoundry controller = loader.getController();
-
-                controller.setClient(this.client);
-
-                switchScene(event, root, "BistroNine Client - Update Reservation");
-
-            } catch (Exception e) {
-                System.out.println("Error loading Update Reservation Screen:");
-                e.printStackTrace();
-            }
-			
-            // TODO: Load TerminalMenu.fxml
-            /* FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/TerminalMenu.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/TerminalIdentificationScreen.fxml"));
             Parent root = loader.load();
-            TerminalMenuController controller = loader.getController();
-            controller.setClient(client);
-            switchScene(event, root);
-            */
-            
-        
+
+            TerminalIdentificationController controller = loader.getController();
+            controller.setClient(this.client);
+
+            switchScene(event, root, "BistroNine - Terminal Identification");
+
+        } catch (Exception e) {
+            System.out.println("Error loading Terminal Identification Screen:");
+            e.printStackTrace();
+        }
     }
 
     @FXML
@@ -84,5 +68,6 @@ public class MainSelectionController {
         Scene scene = new Scene(root);
         stage.setScene(scene);
         stage.show();
+        stage.centerOnScreen();
     }
 }

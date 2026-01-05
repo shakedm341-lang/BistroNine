@@ -76,6 +76,30 @@
 					</font>
 				</Button>
 
+				<Button mnemonicParsing="false"
+					onAction="#handleExitWaitlist" prefHeight="45.0" prefWidth="220.0"
+					style="-fx-background-color: transparent; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;"
+					text="Leave Waitlist" textFill="#333333">
+					<padding>
+						<Insets left="20.0" />
+					</padding>
+					<font>
+						<Font size="14.0" />
+					</font>
+				</Button>
+
+				<Button fx:id="btnPayBill" mnemonicParsing="false"
+					onAction="#goToPayBill" prefHeight="45.0" prefWidth="220.0"
+					style="-fx-background-color: transparent; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;"
+					text="Pay Bill" textFill="#333333">
+					<padding>
+						<Insets left="40.0" />
+					</padding>
+					<font>
+						<Font size="14.0" />
+					</font>
+				</Button>
+
 				<Separator prefWidth="200.0" />
 				
 				<Button fx:id="btnLiveDashboard" mnemonicParsing="false"

@@ -118,6 +118,7 @@ public class LoginController {
             Scene scene = new Scene(root);
             stage.setScene(scene);
             stage.show();
+            stage.centerOnScreen();
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -127,23 +128,22 @@ public class LoginController {
     @FXML
     void enterAsGuest(ActionEvent event) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/NewReservation.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/GuestTerminalScreen.fxml"));
             Parent root = loader.load();
 
-            ReservationBoundry resController = loader.getController();
-            resController.setClient(this.client);
+            GuestTerminalController terminalController = loader.getController();
+            terminalController.setClient(this.client);
             
-            resController.initData(null,true); 
-
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            stage.setTitle("BistroNine - Guest Reservation");
+            stage.setTitle("BistroNine - Guest Terminal");
             Scene scene = new Scene(root);
             stage.setScene(scene);
             stage.show();
+            stage.centerOnScreen();
 
         } catch (Exception e) {
             e.printStackTrace();
-            showAlert(AlertType.ERROR, "Error", "Could not load reservation screen.");
+            showAlert(AlertType.ERROR, "Error", "Could not load guest terminal.");
         }
     }
 

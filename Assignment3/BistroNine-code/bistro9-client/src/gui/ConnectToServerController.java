@@ -55,6 +55,7 @@ public class ConnectToServerController {
 			Scene scene = new Scene(root);
 			stage.setScene(scene);
 			stage.show();
+			stage.centerOnScreen();
 
 		} catch (NumberFormatException nfe) {
 			showAlert(AlertType.ERROR, "Invalid Port", "Port must be a number.");
