@@ -1,0 +1,36 @@
+/* Standard button styling */
+.connect-btn {
+    -fx-background-color: #4CAF50;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+    -fx-cursor: hand; /* Changes cursor to a hand pointer */
+}
+
+/* When mouse hovers over the button */
+.connect-btn:hover {
+    -fx-background-color: #45a049; /* Slightly darker green */
+    
+    /* Glow effect: */
+    /* dropshadow(blur-type, color, radius, spread, offset-x, offset-y) */
+    -fx-effect: dropshadow(three-pass-box, #66BB6A, 15, 0.4, 0, 0);
+}
+
+/* When button is pressed - stronger effect */
+.connect-btn:pressed {
+    -fx-background-color: #3e8e41; /* Very dark green */
+    
+    /* Shrinking effect to make it more noticeable */
+    -fx-scale-x: 0.80;
+    -fx-scale-y: 0.80;
+}
+
+/* Exit button styling (in case you want to restore it later) */
+.exit-btn {
+    -fx-background-color: #f44336;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+}
+.exit-btn:hover { -fx-background-color: #d32f2f; }
+.exit-btn:pressed { -fx-background-color: #b71c1c; }

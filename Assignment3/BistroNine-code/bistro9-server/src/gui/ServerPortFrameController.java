@@ -3,8 +3,10 @@ package gui;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
+import javafx.scene.control.Alert;           
+import javafx.scene.control.Alert.AlertType; 
 import javafx.scene.control.Button;
-import javafx.scene.control.PasswordField; // Import this
+import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 
 public class ServerPortFrameController {
@@ -17,7 +19,7 @@ public class ServerPortFrameController {
 	private TextField portxt;
 	
 	@FXML
-	private PasswordField dbPassTxt; // Added Variable
+	private PasswordField dbPassTxt;
 
 	private String getport() {
 		return portxt.getText();
@@ -25,7 +27,18 @@ public class ServerPortFrameController {
 
 	public void Done(ActionEvent event) throws Exception {
 		String p = getport();
-		String password = dbPassTxt.getText(); // Get password
+		String password = dbPassTxt.getText();
+		
+		//Check if password field is empty 
+		if (password.trim().isEmpty()) {
+			Alert alert = new Alert(AlertType.ERROR);
+			alert.setTitle("Error");
+			alert.setHeaderText("Missing Input");
+			alert.setContentText("Please enter the Database Password.");
+			alert.showAndWait();
+			return; // Stops the function and does not proceed to the server
+		}
+		
 		
 		if (p.trim().isEmpty()) {
 			System.out.println("You must enter a port number");
@@ -36,21 +49,6 @@ public class ServerPortFrameController {
 			ServerMain.runServer(p, password);
 		}
 	}
-	
-//	public void Done(ActionEvent event) throws Exception {
-//		String p = getport();
-//		String password = dbPassTxt.getText(); // Get password
-//		
-//		// DEBUG PRINT: Remove this after it works!
-//		System.out.println("DEBUG: Password sent to server is: [" + password + "]");
-//		
-//		if (p.trim().isEmpty()) {
-//			System.out.println("You must enter a port number");
-//		} else {
-//			((Node) event.getSource()).getScene().getWindow().hide();
-//			ServerMain.runServer(p, password);
-//		}
-//	}
 
 	public void getExitBtn(ActionEvent event) throws Exception {
 		System.out.println("Exit Server Tool");

@@ -141,16 +141,16 @@ public class TimeReportController
 
 			LocalDate currentDate = lastMonth.withDayOfMonth(i);
 
-			int avgArrival = DBC.getDailyAvgArrivalQuery(currentDate);//return the average arrival time(Customer arrival time - time of order) for the day else -1 if an error occurred if bistro close return 0
+			Integer avgArrival = DBC.getDailyAvgArrivalQuery(currentDate);//return the average arrival time(Customer arrival time - time of order) for the day else -1 if an error occurred if bistro close return 0
 
-			if (avgArrival == -1) {
+			if (avgArrival == null) {
 				System.out.println("Error retrieving average arrival time for date: " + currentDate);
 				
 			}
 
-			int avgLeaving = DBC.getDailyAvgLeavingQuery(currentDate);//return the average leaving time(Customer leaving time - (Customer arrival time+  2 Hours)) for the day else -1 if an error occurred if bistro close return 0
+			Integer avgLeaving = DBC.getDailyAvgLeavingQuery(currentDate);//return the average leaving time(Customer leaving time - (Customer arrival time+  2 Hours)) for the day else -1 if an error occurred if bistro close return 0
 
-			if (avgLeaving == -1) 
+			if (avgLeaving == null) 
 			{
 				System.out.println("Error retrieving average leaving time for date: " + currentDate);
 				

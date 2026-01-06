@@ -1,23 +1,21 @@
 package controller;
 
 import java.io.*;
-import java.lang.reflect.Field; // Import for Reflection
+import java.lang.reflect.Field;
 import java.net.Socket;
-import data.*; 
+import data.*;
 import ocsf.server.*;
 import gui.ServerDashboardController;
 import javafx.application.Platform;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+
 public class ServerController extends AbstractServer {
 
-	/**
-	 * Default port number for the server.
-	 */
 	final public static int DEFAULT_PORT = 5555;
 
-	// Controllers for handling specific functionalities
+	// Controllers
 	private ReservationControler reservationsController;
 	private CustomerController customerController;
 	private BillController billController;
@@ -26,42 +24,77 @@ public class ServerController extends AbstractServer {
 	private OpeningTimeController openingTimeController;
 	private TimeReportController timeReportController;
 	private SubscriberReportController subscriberReportController;
-	private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);// Scheduler for outonomous tasks
-	private ServerDashboardController serverUI;// Reference to the server UI controller
+	
+	private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+	private ServerDashboardController serverUI;
 
-	/**
-	 * Constructor for ServerController class.
-	 * 
-	 * @param port       The port number on which the server will listen for client
-	 *                   connections.
-	 * @param dbPassword The password for the database connection.
-	 * @param serverUI   The ServerDashboardController instance for updating the UI.
-	 */
 	public ServerController(int port, String dbPassword, ServerDashboardController serverUI) {
 		super(port);
 		this.serverUI = serverUI;
-		// Initialize the DB controller and other controllers for handling specific functionalities
+		
 		DataBaseController.initiateDBC(dbPassword);
 		this.reservationsController = new ReservationControler();
 		this.customerController = new CustomerController();
 		this.billController = new BillController();
-		this.tableController=new TableController();
-		this.waitListController=new WaitListController();
-		this.openingTimeController=new OpeningTimeController();
-		this.timeReportController=new TimeReportController();
-		this.subscriberReportController=new SubscriberReportController();
-		startAutoTasks();// Start automated tasks
+		this.tableController = new TableController();
+		this.waitListController = new WaitListController();
+		this.openingTimeController = new OpeningTimeController();
+		this.timeReportController = new TimeReportController();
+		this.subscriberReportController = new SubscriberReportController();
+		
+		startAutoTasks();
 	}
-	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	//////////////////////////managing messages //////////////////////////////////////////////////////////////////
-	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
 	/**
-	 * Handles messages received from clients and routes them to the appropriate
-	 * controller based on the message type.
-	 *
-	 * @param msg    The message received from the client.
-	 * @param client The connection to the client that sent the message.
+	 * Updates the server reference to the new Dashboard controller and updates the DB password.
+	 * Also repopulates the table with existing clients.
 	 */
+	public void updateServerDetails(ServerDashboardController newUI, String newDbPassword) {
+		this.serverUI = newUI;
+
+		// 1. Update DB Password
+		DataBaseController.initiateDBC(newDbPassword);
+
+		// 2. Repopulate the new table with existing clients
+		refreshClientList();
+
+		System.out.println("Server UI replaced, DB password updated, and client list refreshed.");
+	}
+
+	/**
+	 * Iterates over all active connections and adds them to the GUI table.
+	 */
+	private void refreshClientList() {
+		// OCSF method to get all active threads (clients)
+		Thread[] clientThreads = getClientConnections();
+
+		for (Thread clientThread : clientThreads) {
+			ConnectionToClient client = (ConnectionToClient) clientThread;
+
+			// Retrieve the info we saved earlier
+			String clientIp = (String) client.getInfo("IP");
+			String hostName = (String) client.getInfo("Host");
+			String clientPort = (String) client.getInfo("Port");
+
+			// Safety check: if info is missing, try to fetch it again
+			if (clientIp == null) clientIp = client.getInetAddress().getHostAddress();
+			if (hostName == null) hostName = client.getInetAddress().getHostName();
+			if (clientPort == null) clientPort = getClientPortUsingReflection(client);
+
+			final String fIp = clientIp;
+			final String fHost = hostName;
+			final String fPort = clientPort;
+
+			// Add to the new Table
+			if (serverUI != null) {
+				Platform.runLater(() -> {
+					serverUI.addClient(fIp, fHost, fPort);
+				});
+			}
+		}
+	}
+	
 	@Override
 	public void handleMessageFromClient(Object msg, ConnectionToClient client) {
 		if (msg instanceof byte[]) {
@@ -71,23 +104,18 @@ public class ServerController extends AbstractServer {
 			case RESERVATION:
 				handleReservationRequest(message, client);
 				break;
-
 			case CUSTOMER:
 				handleCustomerRequest(message, client);
 				break;
-
 			case TABLE:
 				handleTableRequest(message, client);
 				break;
-				
 			case BILL:
 				handleBillRequest(message, client);
 				break;
-				
 			case WAITLIST:
 				handleWaitListRequest(message, client);
 				break;
-				
 			case OPENING_TIME:
 				handleOpeningTimeRequest(message, client);
 				break;
@@ -106,12 +134,6 @@ public class ServerController extends AbstractServer {
 		}
 	}
 
-	/**
-	 *  Handles reservation-related requests from clients.
-	 *
-	 * @param message The message containing the reservation request.
-	 * @param client  The connection to the client that sent the request.
-	 */
 	private void handleReservationRequest(Message message, ConnectionToClient client) {
 		Object response = reservationsController.handleMessageFromServer(message);
 		message.content = response;
@@ -123,12 +145,6 @@ public class ServerController extends AbstractServer {
 		}
 	}
 
-	/**
-	 *  Handles customer-related requests from clients.
-	 *
-	 * @param message The message containing the customer request.
-	 * @param client  The connection to the client that sent the request.
-	 */
 	private void handleCustomerRequest(Message message, ConnectionToClient client) {
 		Object response = customerController.handleMessageFromServer(message);
 		message.content = response;
@@ -140,14 +156,7 @@ public class ServerController extends AbstractServer {
 		}
 	}
 
-	/**
-	 *  Handles table-related requests from clients.
-	 *
-	 * @param message The message containing the table request.
-	 * @param client  The connection to the client that sent the request.
-	 */
-	private void handleTableRequest(Message message, ConnectionToClient client) 
-	{
+	private void handleTableRequest(Message message, ConnectionToClient client) {
 		Object response = tableController.handleMessageFromServer(message);
 		message.content = response;
 		try {
@@ -158,14 +167,7 @@ public class ServerController extends AbstractServer {
 		}
 	}
 
-	/**
-	 * Handles bill-related requests from clients.
-	 *
-	 * @param message The message containing the bill request.
-	 * @param client  The connection to the client that sent the request.
-	 */
-	private void handleBillRequest(Message message, ConnectionToClient client) 
-	{
+	private void handleBillRequest(Message message, ConnectionToClient client) {
 		Object response = billController.handleMessageFromServer(message);
 		message.content = response;
 		try {
@@ -176,14 +178,7 @@ public class ServerController extends AbstractServer {
 		}
 	}
 
-	/**
-	 *  Handles waitlist-related requests from clients.
-	 *
-	 * @param message The message containing the waitlist request.
-	 * @param client  The connection to the client that sent the request.
-	 */
-	private void handleWaitListRequest(Message message, ConnectionToClient client) 
-	{
+	private void handleWaitListRequest(Message message, ConnectionToClient client) {
 		Object response = waitListController.handleMessageFromServer(message);
 		message.content = response;
 		try {
@@ -194,12 +189,6 @@ public class ServerController extends AbstractServer {
 		}
 	}
 
-	/**
-	 *  Handles opening time-related requests from clients.
-	 *
-	 * @param message The message containing the opening time request.
-	 * @param client  The connection to the client that sent the request.
-	 */
 	private void handleOpeningTimeRequest(Message message, ConnectionToClient client) {
 		Object response = openingTimeController.handleMessageFromServer(message);
 		message.content = response;
@@ -211,12 +200,6 @@ public class ServerController extends AbstractServer {
 		}
 	}
 
-	/**
-	 *  Handles time report-related requests from clients.
-	 *
-	 * @param message The message containing the time report request.
-	 * @param client  The connection to the client that sent the request.
-	 */
 	private void handleTimeReportRequest(Message message, ConnectionToClient client) {
 		Object response = timeReportController.handleMessageFromServer(message);
 		message.content = response;
@@ -228,12 +211,6 @@ public class ServerController extends AbstractServer {
 		}
 	}
 
-	/**
-	 * handles subscriber report-related requests from clients.
-	 *
-	 * @param message The message containing the subscriber report request.
-	 * @param client  The connection to the client that sent the request.
-	 */
 	private void handleSubscriberReportRequest(Message message, ConnectionToClient client) {
 		Object response = subscriberReportController.handleMessageFromServer(message);
 		message.content = response;
@@ -244,87 +221,55 @@ public class ServerController extends AbstractServer {
 			e.printStackTrace();
 		}
 	}
-	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	///////////////////////////////initialization Automated tasks//////////////////////////////////////////////////////////////////////
-	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	/**
-	 * Starts automated tasks that run at scheduled intervals. Tasks include
-	 * cleaning up late reservations, sending reminders, sending bills, and
-	 * generating monthly time reports.
-	 */
-	private void startAutoTasks() 
-	{
+
+	private void startAutoTasks() {
 		scheduler.scheduleAtFixedRate(() -> {
 			try {
-
-				reservationsController.deleteLateReservations();//clean up reservations that were not confirmed befor 15 minutes
-				reservationsController.sendReminderAlertsForReservation();//send reminders for upcoming reservations 2 hours before
-				BillController.sendBillReservation();//send bills for reservations 
+				reservationsController.deleteLateReservations();
+				reservationsController.sendReminderAlertsForReservation();
+				BillController.sendBillReservation();
 			} catch (Exception e) {
 				System.err.println("Error during auto-cleanup: " + e.getMessage());
 			}
-		}, 0, 1, TimeUnit.MINUTES); // initial delay 0, run every 1 minute
-	
-		
-			scheduler.scheduleAtFixedRate(() -> {
-		        try {
-		            
-		            TimeReportController.timeReportGenerate();//generate monthly time report
-		            SubscriberReportController.subscriberReportGenerate();//generate monthly Subscriber report
-		            
-		        } catch (Exception e) {
-		            System.err.println("Error in daily tasks: " + e.getMessage());
-		        }
-		    }, 0, 24, TimeUnit.HOURS);
+		}, 0, 1, TimeUnit.MINUTES); 
 
+		scheduler.scheduleAtFixedRate(() -> {
+			try {
+				TimeReportController.timeReportGenerate();
+				SubscriberReportController.subscriberReportGenerate();
+			} catch (Exception e) {
+				System.err.println("Error in daily tasks: " + e.getMessage());
+			}
+		}, 0, 24, TimeUnit.HOURS);
 	}
 
-	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	//////////////////////////Client server architecture management methods//////////////////////////////////////////////////////////////////
-	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	/**
-	 * Called when the server has started successfully.
-	 */
 	@Override
 	protected void serverStarted() {
 		System.out.println("Server listening for connections on port " + getPort());
 	}
 
-	/**
-	 * * Called when the server has stopped.
-	 */
 	@Override
 	protected void serverStopped() {
-		scheduler.shutdown(); 
+		scheduler.shutdown();
 		System.out.println("Server and scheduler stopped.");
 		System.out.println("Server has stopped listening for connections.");
 	}
 
-	/**
-	 * * Called when a client connects to the server. Retrieves the client's IP
-	 * address, host name, and port number using Reflection, saves this information,
-	 * and updates the server UI.
-	 * 
-	 * @param client The connection to the client that has connected.
-	 */
 	@Override
 	protected void clientConnected(ConnectionToClient client) {
 		super.clientConnected(client);
 
 		String clientIp = client.getInetAddress().getHostAddress();
 		String hostName = client.getInetAddress().getHostName();
-
-		// 1. Get the port using Reflection (works on all OCSF versions)
 		String clientPort = getClientPortUsingReflection(client);
 
-		// 2. SAVE the info
+		// SAVE the info so we can retrieve it later if the UI refreshes
 		client.setInfo("IP", clientIp);
 		client.setInfo("Host", hostName);
 		client.setInfo("Port", clientPort);
 
 		System.out.println("Client Connected: " + clientIp + ":" + clientPort);
 
-		// 3. Update GUI
 		if (serverUI != null) {
 			final String finalIp = clientIp;
 			final String finalHost = hostName;
@@ -336,13 +281,6 @@ public class ServerController extends AbstractServer {
 		}
 	}
 
-	/**
-	 * * Called when a client disconnects from the server. Retrieves the client's IP
-	 * address and port number, and updates the server UI to reflect the
-	 * disconnection.
-	 * 
-	 * @param client The connection to the client that has disconnected.
-	 */
 	@Override
 	synchronized protected void clientDisconnected(ConnectionToClient client) {
 		String clientIp = (String) client.getInfo("IP");
@@ -357,14 +295,6 @@ public class ServerController extends AbstractServer {
 		}
 	}
 
-	/**
-	 * * * Called when a client connection encounters an exception. Retrieves the
-	 * client's IP address and port number, and updates the server UI to reflect the
-	 * aborted connection.
-	 * 
-	 * @param client    The connection to the client that encountered the exception.
-	 * @param exception The exception that occurred.
-	 */
 	@Override
 	synchronized protected void clientException(ConnectionToClient client, Throwable exception) {
 		String clientIp = (String) client.getInfo("IP");
@@ -377,26 +307,16 @@ public class ServerController extends AbstractServer {
 		}
 	}
 
-	/**
-	 * Uses Reflection to access the private 'clientSocket' field in
-	 * ConnectionToClient to retrieve the client's port number.
-	 * 
-	 * @param client The ConnectionToClient instance.
-	 * @return The client's port number as a String, or "Unknown" if it cannot be
-	 *         retrieved.
-	 */
 	private String getClientPortUsingReflection(ConnectionToClient client) {
 		try {
-			// Access the private variable 'clientSocket' inside ConnectionToClient
 			Field field = client.getClass().getDeclaredField("clientSocket");
-			field.setAccessible(true); // Make it accessible even though it's private
+			field.setAccessible(true); 
 			Socket socket = (Socket) field.get(client);
 
 			if (socket != null) {
 				return String.valueOf(socket.getPort());
 			}
 		} catch (Exception e) {
-			// If reflection fails, fallback to "Unknown"
 			System.out.println("Could not read private socket: " + e.getMessage());
 		}
 		return "Unknown";

@@ -13,15 +13,14 @@ import java.util.Random;
  * Database Initialization class.
  * Final Version:
  * 1. Historical & Future data.
- * 2. Waiting list for NOW.
- * 3. Live Dining for NOW (Arrived, Table Occupied, Bill Created but Unpaid).
+ * 2. Historical Waiting List data (Seated/Cancelled).
+ * 3. Waiting list for NOW.
+ * 4. Live Dining for NOW.
  */
 public class Init_All {
 
-    // --- הגדרות חיבור ---
     private static final String DB_URL = "jdbc:mysql://localhost:3306/restaurant_db?allowLoadLocalInfile=true&allowPublicKeyRetrieval=true&serverTimezone=Asia/Jerusalem&useSSL=false";
     private static final String USER = "root";
-    // Change password if needed
     private static final String PASSWORD = "Aa123456"; 
 
     private static final Random random = new Random();
@@ -44,13 +43,13 @@ public class Init_All {
                 initTables(con, stmt);
                 initUsersAndSubscribers(con);
                 
-                // 1. היסטוריה ועתיד
+                // 1. היסטוריה ועתיד (כולל רשימת המתנה היסטורית)
                 initReservationsAndBills(con);
                 
-                // 2. רשימת המתנה (אנשים שמחכים עכשיו)
+                // 2. רשימת המתנה (עכשיו)
                 initWaitingListForToday(con);
 
-                // 3. סועדים בפועל (אנשים שאוכלים עכשיו -> שולחן תפוס -> חשבון לא שולם)
+                // 3. סועדים בפועל (עכשיו)
                 initLiveDiningForNow(con);
                 
                 initReports(con, stmt);
@@ -242,34 +241,37 @@ public class Init_All {
         } catch (SQLException e) { e.printStackTrace(); }
     }
 
-    // --- 5. Reservations and Bills (History/Future) ---
+    // --- 5. Reservations (History/Future) + Historical Waiting List ---
     private static void initReservationsAndBills(Connection con) {
         String selectCust = "SELECT customerId FROM customer";
         String insertRes = "INSERT INTO table_reservations (tableId, numberOfDiners, confirmationCode, customerId, reservationDate, arrivalTime, leavingTime, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         String insertBill = "INSERT INTO bills (reservationId, totalAmount, totalAmountAfterDiscount, discountPercentage, isPaid, discountType, paymentMethod) VALUES (?, ?, ?, ?, true, ?, 'credit')";
+        // SQL עבור רשימת המתנה היסטורית
+        String insertWaitHistory = "INSERT INTO waiting_list (reservationId, numberOfDiners, type, status, entryTimeToList, exitTimeFromList) VALUES (?, ?, ?, ?, ?, ?)";
 
         try (Statement stmt = con.createStatement();
              PreparedStatement psRes = con.prepareStatement(insertRes, Statement.RETURN_GENERATED_KEYS);
-             PreparedStatement psBill = con.prepareStatement(insertBill)) {
+             PreparedStatement psBill = con.prepareStatement(insertBill);
+             PreparedStatement psWaitHistory = con.prepareStatement(insertWaitHistory)) {
 
             List<Integer> custIds = new ArrayList<>();
             ResultSet rs = stmt.executeQuery(selectCust);
             while (rs.next()) custIds.add(rs.getInt(1));
 
-            System.out.println("Generating reservations...");
+            System.out.println("Generating reservations & historical waiting list...");
             int confCode = 5000;
             
             // Dec
             for (int day = 1; day <= 31; day++) {
-                createDailyReservations(con, psRes, psBill, custIds, LocalDate.of(2025, 12, day), confCode);
+                createDailyReservations(con, psRes, psBill, psWaitHistory, custIds, LocalDate.of(2025, 12, day), confCode);
                 confCode += 20; 
             }
             // Jan
             for (int day = 1; day <= 31; day++) {
-                createDailyReservations(con, psRes, psBill, custIds, LocalDate.of(2026, 1, day), confCode);
+                createDailyReservations(con, psRes, psBill, psWaitHistory, custIds, LocalDate.of(2026, 1, day), confCode);
                 confCode += 20;
             }
-            System.out.println("Reservations populated successfully.");
+            System.out.println("Reservations & Historical Waiting List populated.");
         } catch (SQLException e) { e.printStackTrace(); }
     }
 
@@ -325,17 +327,11 @@ public class Init_All {
         } catch (SQLException e) { e.printStackTrace(); }
     }
 
-    // --- 7. Live Dining (Status: Arrived + Occupied Table + Unpaid Bill) ---
+    // --- 7. Live Dining ---
     private static void initLiveDiningForNow(Connection con) {
         String selectCust = "SELECT customerId FROM customer";
-        
-        // 1. הוספת הזמנה: arrived, יש שולחן, יש זמן הגעה, אין זמן עזיבה
         String insertRes = "INSERT INTO table_reservations (tableId, numberOfDiners, confirmationCode, customerId, reservationDate, arrivalTime, leavingTime, status) VALUES (?, ?, ?, ?, ?, ?, NULL, 'arrived')";
-        
-        // 2. עדכון שולחן ל-occupied
         String updateTableStatus = "UPDATE restaurant_tables SET status = 'occupied' WHERE tableId = ?";
-        
-        // 3. הוספת חשבונית: לא שולמה (FALSE), שיטת תשלום NULL
         String insertBill = "INSERT INTO bills (reservationId, totalAmount, totalAmountAfterDiscount, discountPercentage, isPaid, discountType, paymentMethod) VALUES (?, ?, ?, ?, false, ?, NULL)";
 
         try (Statement stmt = con.createStatement();
@@ -348,7 +344,7 @@ public class Init_All {
             while (rs.next()) custIds.add(rs.getInt(1));
 
             LocalDateTime now = LocalDateTime.now();
-            System.out.println("Generating LIVE DINING (Arrived, Occupied Tables, Unpaid Bills)...");
+            System.out.println("Generating LIVE DINING...");
 
             if (isDayClosed(con, now.toLocalDate())) {
                  System.out.println("Restaurant closed today, skipping live dining.");
@@ -357,44 +353,35 @@ public class Init_All {
 
             int confCode = 9500; 
             List<Integer> usedTables = new ArrayList<>();
-
-            // יצירת 3-5 שולחנות תפוסים
             int liveTables = 3 + random.nextInt(3);
 
             for (int i = 0; i < liveTables; i++) {
                 int custId = custIds.get(random.nextInt(custIds.size()));
                 int diners = 2 + random.nextInt(4);
-                
-                // מציאת שולחן פנוי רנדומלי (פשטני)
                 int tableId;
                 do {
                     tableId = 1 + random.nextInt(10);
                 } while (usedTables.contains(tableId));
                 usedTables.add(tableId);
 
-                // הגיעו לפני 30-90 דקות
                 int minutesAgo = 30 + random.nextInt(60); 
                 LocalDateTime arrivalTime = now.minusMinutes(minutesAgo);
 
-                // --- שלב 1: הזמנה ---
                 psRes.setInt(1, tableId);
                 psRes.setInt(2, diners);
                 psRes.setInt(3, confCode++);
                 psRes.setInt(4, custId);
-                psRes.setTimestamp(5, Timestamp.valueOf(arrivalTime)); // Scheduled
-                psRes.setTimestamp(6, Timestamp.valueOf(arrivalTime)); // Actual Arrival
+                psRes.setTimestamp(5, Timestamp.valueOf(arrivalTime));
+                psRes.setTimestamp(6, Timestamp.valueOf(arrivalTime));
                 psRes.executeUpdate();
 
-                // --- שלב 2: עדכון שולחן ---
                 psTable.setInt(1, tableId);
                 psTable.executeUpdate();
 
-                // --- שלב 3: יצירת חשבון פתוח ---
                 ResultSet rsRes = psRes.getGeneratedKeys();
                 if (rsRes.next()) {
                     int resId = rsRes.getInt(1);
                     double amount = 150.0 + random.nextInt(200);
-                    
                     boolean isSubscriberBill = random.nextBoolean();
                     double discountPercent = isSubscriberBill ? 10.0 : 0.0;
                     double finalAmount = isSubscriberBill ? (amount * 0.9) : amount;
@@ -404,12 +391,11 @@ public class Init_All {
                     psBill.setDouble(2, amount);
                     psBill.setDouble(3, finalAmount);
                     psBill.setDouble(4, discountPercent);
-                    psBill.setString(5, type); // Discount Type
-                    
+                    psBill.setString(5, type);
                     psBill.executeUpdate();
                 }
             }
-            System.out.println("Live Dining populated (" + liveTables + " tables occupied).");
+            System.out.println("Live Dining populated (" + liveTables + " tables).");
 
         } catch (SQLException e) { e.printStackTrace(); }
     }
@@ -464,7 +450,7 @@ public class Init_All {
         return getRandomOpenTime(con, date) == null;
     }
 
-    private static void createDailyReservations(Connection con, PreparedStatement psRes, PreparedStatement psBill, List<Integer> custIds, LocalDate date, int startConfCode) throws SQLException {
+    private static void createDailyReservations(Connection con, PreparedStatement psRes, PreparedStatement psBill, PreparedStatement psWaitHistory, List<Integer> custIds, LocalDate date, int startConfCode) throws SQLException {
         if (isDayClosed(con, date)) {
             return; 
         }
@@ -488,28 +474,60 @@ public class Init_All {
             psRes.setTimestamp(5, Timestamp.valueOf(scheduledTime));
 
             if (isFutureDate) {
+                // עתיד - Active
                 psRes.setNull(1, java.sql.Types.INTEGER); 
                 psRes.setNull(6, java.sql.Types.TIMESTAMP); 
                 psRes.setNull(7, java.sql.Types.TIMESTAMP); 
                 psRes.setString(8, "active");
                 psRes.executeUpdate();
             } else {
+                // היסטוריה - Completed / Cancelled
                 int tableId = 1 + random.nextInt(10); 
                 psRes.setInt(1, tableId); 
                 int arrivalOffset = random.nextInt(31) - 15;
                 LocalDateTime actualArrival = scheduledTime.plusMinutes(arrivalOffset);
                 int durationVariance = random.nextInt(61) - 30;
                 LocalDateTime actualLeaving = actualArrival.plusHours(2).plusMinutes(durationVariance);
+                
                 boolean isCancelled = random.nextDouble() < 0.20; 
                 String status = isCancelled ? "cancelled" : "completed";
+                
                 psRes.setTimestamp(6, Timestamp.valueOf(actualArrival));
                 psRes.setTimestamp(7, Timestamp.valueOf(actualLeaving));
                 psRes.setString(8, status);
                 psRes.executeUpdate();
-                if (!isCancelled) {
-                    ResultSet rsRes = psRes.getGeneratedKeys();
-                    if (rsRes.next()) {
-                        int resId = rsRes.getInt(1);
+                
+                ResultSet rsRes = psRes.getGeneratedKeys();
+                if (rsRes.next()) {
+                    int resId = rsRes.getInt(1);
+
+                    // --- לוגיקה חדשה: רשימת המתנה היסטורית ---
+                    // סיכוי של 30% שהלקוח הזה היה ברשימת המתנה לפני שנכנס (או ביטל)
+                    if (random.nextDouble() < 0.30) {
+                        int waitDuration = 5 + random.nextInt(40); // חיכה בין 5 ל-45 דקות
+                        LocalDateTime entryToList = actualArrival.minusMinutes(waitDuration);
+                        LocalDateTime exitFromList = actualArrival; // יצא כשהתיישב או ביטל
+                        
+                        String waitStatus = "seated";
+                        String type = random.nextBoolean() ? "walk_in" : "check_in";
+
+                        if (isCancelled) {
+                            waitStatus = "cancelled"; // התייאש וביטל
+                            // אם ביטל, יצא מהרשימה בזמן הביטול המשוער
+                            exitFromList = entryToList.plusMinutes(waitDuration);
+                        }
+
+                        psWaitHistory.setInt(1, resId);
+                        psWaitHistory.setInt(2, diners);
+                        psWaitHistory.setString(3, type);
+                        psWaitHistory.setString(4, waitStatus);
+                        psWaitHistory.setTimestamp(5, Timestamp.valueOf(entryToList));
+                        psWaitHistory.setTimestamp(6, Timestamp.valueOf(exitFromList));
+                        psWaitHistory.executeUpdate();
+                    }
+                    // ---------------------------------------------
+
+                    if (!isCancelled) {
                         double amount = 150.0 + random.nextInt(200);
                         boolean isSubscriberBill = random.nextBoolean();
                         double discountPercent = isSubscriberBill ? 10.0 : 0.0;
