@@ -79,8 +79,8 @@ public class DataBaseController {
 	// 43. getDailyTotalReservationsQuery(LocalDate) : int
 	// 44. getDailyTotalWaitingQuery(LocalDate) : int
 	// 45. addSubscriberReportQuery(SubscriberReport) : boolean
-	// 47. getDailyAvgArrivalQuery(LocalDate) : int
-	// 48. getDailyAvgLeavingQuery(LocalDate) : int
+	// 47. getDailyAvgArrivalQuery(LocalDate) : Integer
+	// 48. getDailyAvgLeavingQuery(LocalDate) : Integer
 	// 49. addTimeReportQuery(TimeReport) : boolean
 	// 50. deleteFromWaitListByReservationIdQuery(int) : boolean
 	// 51. checkReportExistsQuery(LocalDate, LocalDate, String) : boolean
@@ -229,8 +229,7 @@ public class DataBaseController {
 	 * /////////////////////////////////////////////////////////////////////////////
 	 * ///////////////////////////////////
 	 */
-	
-	
+
 	/**
 	 * Checks if a report already exists in the report_manager table for the given
 	 * date range and type.
@@ -278,11 +277,11 @@ public class DataBaseController {
 
 		return false;
 	}
-	
-	
+
 	/**
-	 * Cancels a waiting list entry by setting status to 'cancelled' based on the reservation ID.
-	 * This is used when a reservation is auto-cancelled due to lateness.
+	 * Cancels a waiting list entry by setting status to 'cancelled' based on the
+	 * reservation ID. This is used when a reservation is auto-cancelled due to
+	 * lateness.
 	 *
 	 * @param reservationId The reservation ID linked to the waiting list entry.
 	 * @return true if an entry was found and updated, false otherwise.
@@ -326,17 +325,18 @@ public class DataBaseController {
 	/**
 	 * Calculates the average arrival delay (Actual Arrival - Scheduled Time) in
 	 * minutes for a specific date. Only considers 'completed' reservations.
+	 * * @param date The date to analyze.
 	 * 
-	 * @param date The date to analyze.
-	 * @return The average delay in minutes (rounded), 0 if no data, or -1 on error.
+	 * @return The average delay in minutes (rounded). Returns null if an error
+	 *         occurs.
 	 */
-	public int getDailyAvgArrivalQuery(LocalDate date) {
-		// 1. Get connection from the pool
+	public Integer getDailyAvgArrivalQuery(LocalDate date) {
 		PooledConnection pConn = this.getConnection();
 
-		// Safety check
+		// DEBUG: Print if connection failed
 		if (pConn == null) {
-			return -1;
+			System.err.println("CRITICAL ERROR: Could not get connection for date: " + date);
+			return null;
 		}
 
 		Connection conn = pConn.getConnection();
@@ -344,8 +344,6 @@ public class DataBaseController {
 		ResultSet rs = null;
 
 		try {
-			// Formula: AVG(Actual Arrival - Scheduled Reservation Time)
-			// We use TIMESTAMPDIFF(MINUTE, start, end)
 			String query = "SELECT ROUND(AVG(TIMESTAMPDIFF(MINUTE, reservationDate, arrivalTime))) "
 					+ "FROM table_reservations " + "WHERE DATE(reservationDate) = ? AND status = 'completed'";
 
@@ -355,36 +353,37 @@ public class DataBaseController {
 			rs = ps.executeQuery();
 
 			if (rs.next()) {
-				// getInt returns 0 if the value is SQL NULL (which happens if count is 0),
-				// which matches your requirement "if bistro close return 0"
-				return rs.getInt(1);
+				int result = rs.getInt(1);
+				System.out.println("Avg Arrival Delay for " + date + ": " + result + " minutes");
+				return result; // Autoboxing to Integer
 			}
 
 		} catch (SQLException e) {
+			System.err.println("SQL CRASH on Date: " + date);
 			e.printStackTrace();
 		} finally {
 			closeResources(ps, rs);
-			releaseConnection(pConn); // Release back to pool
+			releaseConnection(pConn);
 		}
 
-		return -1; // Return -1 on error
+		return null; // Return null on error
 	}
 
 	/**
 	 * Calculates the average overstay duration (Leaving Time - (Arrival Time + 2
-	 * Hours)) in minutes. Only considers 'completed' reservations.
+	 * Hours)) in minutes. Only considers 'completed' reservations. * @param date
+	 * The date to analyze.
 	 * 
-	 * @param date The date to analyze.
-	 * @return The average overstay in minutes (rounded), 0 if no data, or -1 on
-	 *         error.
+	 * @return The average overstay in minutes (rounded). Returns null if an error
+	 *         occurs.
 	 */
-	public int getDailyAvgLeavingQuery(LocalDate date) {
-		// 1. Get connection from the pool
+	public Integer getDailyAvgLeavingQuery(LocalDate date) {
 		PooledConnection pConn = this.getConnection();
 
-		// Safety check
+		// DEBUG: Print if connection failed
 		if (pConn == null) {
-			return -1;
+			System.err.println("CRITICAL ERROR: Could not get connection for Leaving Time Query on date: " + date);
+			return null;
 		}
 
 		Connection conn = pConn.getConnection();
@@ -392,7 +391,6 @@ public class DataBaseController {
 		ResultSet rs = null;
 
 		try {
-			// Formula: AVG(Leaving Time - (Arrival Time + 2 hours))
 			String query = "SELECT ROUND(AVG(TIMESTAMPDIFF(MINUTE, DATE_ADD(arrivalTime, INTERVAL 2 HOUR), leavingTime))) "
 					+ "FROM table_reservations " + "WHERE DATE(reservationDate) = ? AND status = 'completed'";
 
@@ -402,17 +400,20 @@ public class DataBaseController {
 			rs = ps.executeQuery();
 
 			if (rs.next()) {
-				return rs.getInt(1);
+				int result = rs.getInt(1);
+				System.out.println("Avg Overstay for " + date + ": " + result + " minutes");
+				return result; // Autoboxing to Integer
 			}
 
 		} catch (SQLException e) {
+			System.err.println("SQL CRASH in Leaving Time Query on Date: " + date);
 			e.printStackTrace();
 		} finally {
 			closeResources(ps, rs);
-			releaseConnection(pConn); // Release back to pool
+			releaseConnection(pConn);
 		}
 
-		return -1; // Return -1 on error
+		return null; // Return null on error
 	}
 
 	/**
@@ -2980,9 +2981,8 @@ public class DataBaseController {
 
 	/**
 	 * Checks if a specific confirmation code already exists in the waiting_list
-	 * table.
-	 * joins waiting_list with table_reservations to find the code.
-	 * 
+	 * table. joins waiting_list with table_reservations to find the code.  
+	 * 
 	 * @param code The confirmation code to check.
 	 * @return true if the code exists in the waiting list, false otherwise.
 	 */
@@ -3001,9 +3001,9 @@ public class DataBaseController {
 
 		try {
 			// FIXED QUERY: Join waiting_list and table_reservations
-			String query = "SELECT 1 FROM waiting_list w " +
-						   "JOIN table_reservations r ON w.reservationId = r.reservationId " +
-						   "WHERE r.confirmationCode = ?";
+			String query = "SELECT 1 FROM waiting_list w "
+					+ "JOIN table_reservations r ON w.reservationId = r.reservationId "
+					+ "WHERE r.confirmationCode = ?";
 
 			ps = conn.prepareStatement(query);
 			ps.setInt(1, code);
