@@ -244,7 +244,7 @@ public class LeaveWaitlistController extends BaseTerminalController {
             if (Boolean.TRUE.equals(response)) {
                 TerminalUtils.showSuccess("Success", "You have been removed from the waitlist successfully.");
                 if (!isDashboardMode) {
-                    handleBack(null);
+                    handleBack(new ActionEvent(rbSubscriber, null));
                 }
             } else {
                 TerminalUtils.showError("Error", "We couldn't find your entry on the waitlist or an error occurred.");

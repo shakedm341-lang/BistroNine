@@ -176,11 +176,11 @@ public class JoinWaitlistController extends BaseTerminalController {
                     // Immediate seating: negative table ID
                     int tableId = Math.abs(val);
                     TerminalUtils.showSuccess("Table Ready!", "A table is available immediately!\nPlease proceed to Table No. " + tableId);
-                    handleBack(null); // Return to menu
+                    handleBack(new ActionEvent(btnJoin, null)); // Return to menu
                 } else {
                     // Waitlist: confirmation code
                     TerminalUtils.showSuccess("Waitlist Joined", "You have been added to the waitlist.\nYour confirmation code is: " + val + "\nYou will receive a notification when your table is ready.");
-                    handleBack(null); // Return to menu
+                    handleBack(new ActionEvent(btnJoin, null)); // Return to menu
                 }
             }
         });

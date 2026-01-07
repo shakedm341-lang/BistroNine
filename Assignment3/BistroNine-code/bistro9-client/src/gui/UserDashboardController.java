@@ -231,8 +231,21 @@ public class UserDashboardController {
 
     @FXML
     void goToViewReports(ActionEvent event) {
-        System.out.println("DEBUG: Go to View Reports");
-        // TODO: Load Reports screen (Analytical reports for Manager)
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/ReportsScreen.fxml"));
+            Parent root = loader.load();
+
+            ReportsController controller = loader.getController();
+            controller.setDependencies(this.client);
+            ClientController.reportsController = controller;
+
+            contentArea.getChildren().clear();
+            contentArea.getChildren().add(root);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.err.println("Error loading Reports screen: " + e.getMessage());
+        }
     }
 
     @FXML

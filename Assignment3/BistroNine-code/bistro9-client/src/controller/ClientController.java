@@ -38,6 +38,7 @@ public class ClientController extends AbstractClient {
     public static gui.LeaveWaitlistController leaveWaitlistController;
     public static gui.PayBillController payBillController;
     public static gui.UserDashboardController userDashboardController;
+    public static gui.ReportsController reportsController;
     private gui.IReservationViewer currentReservationViewer;
     private gui.IReservationDeleter currentReservationDeleter;
     
@@ -90,6 +91,14 @@ public class ClientController extends AbstractClient {
                 case BILL:
                     handleBillMessage(message);
                     break;  
+
+                case SUBSCRIBER_REPORT:
+                    handleSubscriberReportResponse(message);
+                    break;
+
+                case TIME_REPORT:
+                    handleTimeReportResponse(message);
+                    break;
 
                 default:
                     System.out.println("Unknown TypeMessage received: " + message.type);
@@ -468,6 +477,18 @@ public class ClientController extends AbstractClient {
     private void handlePayBillResponse(Message message) {
         if (payBillController != null) {
             payBillController.handlePayBillResponse((Boolean) message.content); // Pass payment success status to the controller
+        }
+    }
+
+    private void handleSubscriberReportResponse(Message message) {
+        if (reportsController != null) {
+            reportsController.displaySubscriberReport((SubscriberReport) message.content);
+        }
+    }
+
+    private void handleTimeReportResponse(Message message) {
+        if (reportsController != null) {
+            reportsController.displayTimeReport((TimeReport) message.content);
         }
     }
     
