@@ -69,6 +69,56 @@ public class CustomerController
 	////////////////////////////////Helper methods//////////////////////////////////////////////////////////////////
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+	
+	/**
+	 * Converts a list of reservations into a list of unique Subscribers.
+	 * Iterates through the provided reservations, identifies unique customer IDs, 
+	 * and fetches their full details from the database to create Subscriber objects.
+	 * 
+	 * * @param reservations The list of TableReservation objects containing customer IDs.
+	 * @return ArrayList<Subscriber> A list of unique Subscriber objects. Returns an empty list if input is null.
+	 */
+	public static ArrayList<Subscriber> getSubscribersFromReservations(ArrayList<TableReservation> reservations)
+	{
+		// Safety check: if input is null, return null 
+		if (reservations == null) return null;
+
+		ArrayList<Subscriber> subscribersList = new ArrayList<>();
+		ArrayList<Integer> addedCustomerIds = new ArrayList<>(); // Used to filter out duplicate customers
+
+		// Iterate through all reservations to identify unique customers
+		for (TableReservation res : reservations) 
+		{
+			int customerId = res.getCustomerId();
+			
+			// Process only if we haven't already fetched this customer's details
+			if (!addedCustomerIds.contains(customerId)) 
+			{
+				Subscriber sub = new Subscriber();
+				sub.setCustomerId(customerId);
+				
+				// Attempt to fetch full customer details from the Database based on ID
+				if (DBC.getCustomerByCustomerId(sub)) 
+				{
+					// Success: Add  subscriber to the result list
+					subscribersList.add(sub);
+					addedCustomerIds.add(customerId); 
+				}
+				else
+				{
+					// Error: The reservation points to a Customer ID that doesn't exist 
+
+					System.out.println(" Critical Data Integrity Issue: Reservation " + 
+									   res.getReservationId() + " belongs to Customer ID " + 
+									   customerId + ", but this customer does not exist in DB!");
+					return null; 
+				}
+			}
+		}
+		
+		return subscribersList;
+	}
+	
 	/**
 	 * Retrieves the customer type based on the provided customer ID.
 	 *

@@ -1,12 +1,13 @@
 package controller;
 
 import java.sql.Timestamp;
-import java.time.LocalDate;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 
-import data.Bill;
+
 import data.Message;
+import data.Subscriber;
 import data.Table;
 import data.TableReservation;
 import data.WaitList;
@@ -57,6 +58,266 @@ public class TableController
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////Helper methods//////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	/**
+	 * Identifies reservations that conflict with a proposed update to a table's seat count.
+	 * Simulates the restaurant state with the updated seat count to verify if all existing reservations 
+	 * can still be accommodated using the "Time Snapshot" logic.
+	 *
+	 * @param tableId  The ID of the table to be updated.
+	 * @param newSeats The proposed new number of seats for the table.
+	 * @return ArrayList<TableReservation> A list of reservations that would cause overbooking if the update is applied.
+	 */
+	
+	private ArrayList<TableReservation> getConflictingReservationsForUpdate(int tableId, int newSeats) 
+	{
+		// ---------------------------------------------------------
+		// Retrieve current snapshot
+		// ---------------------------------------------------------
+		// Fetch all currently active reservations and the current  tables 
+		ArrayList<TableReservation> allReservations = ReservationControler.getAllReservationsActive();
+		ArrayList<Table> allTables = TableController.getTableInRestaurant();
+		
+		ArrayList<TableReservation> conflicts = new ArrayList<>();
+		ArrayList<Integer> addedReservationIds = new ArrayList<>(); // Helper to avoid duplicates
+
+		//if data is null, return empty list.
+		if (allReservations == null || allTables == null) return new ArrayList<>();
+
+		// ---------------------------------------------------------
+		// Check for immediate conflicts 
+		// ---------------------------------------------------------
+		// Check if the table is currently occupied ("arrived").
+		// Physical changes (like changing seats) cannot be made while customers are seated.
+		for (TableReservation res : allReservations) 
+		{
+			if (res.getStatus().equalsIgnoreCase("arrived") && res.getTableId() == tableId) 
+			{
+				conflicts.add(res);
+				addedReservationIds.add(res.getReservationId());
+			}
+		}
+
+		// ---------------------------------------------------------
+		// Build Simulated Table List ("Virtual Restaurant")
+		// ---------------------------------------------------------
+		// Create a copy of the restaurant tables, but apply the NEW seat count 
+		// specifically to the table being updated.
+		ArrayList<Table> simulatedTables = new ArrayList<>();
+		for (Table t : allTables) 
+		{
+			if (!t.getStatus().equalsIgnoreCase("cancelled")) 
+			{
+				Table copy = new Table();
+				copy.setTableId(t.getTableId());
+				
+				// Critical Step: Apply the proposed change to the simulation
+				if (t.getTableId() == tableId) {
+					copy.setSeatsNumber(newSeats); // Use the new requested size
+				} else {
+					copy.setSeatsNumber(t.getSeatsNumber()); // Keep original size for others
+				}
+				
+				simulatedTables.add(copy);
+			}
+		}
+		
+		// Sort the remaining tables by seat count (Ascending).
+		// This is crucial for the "Best Fit" algorithm to try assigning small groups to small tables first.
+		sortTablesBySeatsAscending(simulatedTables);
+
+		// ---------------------------------------------------------
+		// Filter only active future reservations
+		// ---------------------------------------------------------
+		// We filter out cancelled or completed reservations, focusing only on future "active" ones.
+		ArrayList<TableReservation> futureRes = new ArrayList<>();
+		for (TableReservation res : allReservations) 
+		{
+			if (res.getStatus().equalsIgnoreCase("active")) futureRes.add(res);
+		}
+
+		// ---------------------------------------------------------
+		//  Apply "Time Snapshot" Logic 
+		// ---------------------------------------------------------
+		// Collect all unique time points (start times) to check for overlaps.
+		ArrayList<LocalDateTime> timePointsToCheck = new ArrayList<>();
+		
+		for (TableReservation res : futureRes) 
+		{
+			LocalDateTime time = res.getReservationDate().toLocalDateTime();
+			// Manual check for duplicates to mimic Set behavior
+			if (!timePointsToCheck.contains(time)) 
+			{
+				timePointsToCheck.add(time);
+			}
+		}
+
+		// ---------------------------------------------------------
+		// Execute Time Snapshot Analysis
+		// ---------------------------------------------------------
+		// Iterate through every critical time point to check if the NEW table configuration works.
+		for (LocalDateTime timePoint : timePointsToCheck) 
+		{
+			// Get all reservations that are happening at this exact moment
+			ArrayList<TableReservation> activeAtMoment = new ArrayList<>();
+			for (TableReservation res : futureRes) 
+			{
+				LocalDateTime start = res.getReservationDate().toLocalDateTime();
+				LocalDateTime end = start.plusHours(2); // Assuming 2 hours duration
+				
+				if ((start.isBefore(timePoint) || start.equals(timePoint)) && end.isAfter(timePoint)) 
+				{
+					activeAtMoment.add(res);
+				}
+			}
+
+			// Check capacity: Does the updated table layout (simulatedTables) support the load?
+			if (!canFitOptimally(activeAtMoment, simulatedTables)) 
+			{
+				// If not, flag all reservations in this time slot as conflicts
+				for (TableReservation problematicRes : activeAtMoment)
+				{
+					if (!addedReservationIds.contains(problematicRes.getReservationId()))
+					{
+						conflicts.add(problematicRes);
+						addedReservationIds.add(problematicRes.getReservationId());
+					}
+				}
+			}
+		}
+
+		return conflicts;
+	}
+	
+	
+	/**
+	 * Identifies reservations that conflict with the proposed deletion of a specific table.
+	 * Simulates the restaurant state without the specified table to verify if remaining tables 
+	 * can support existing reservations using the "Time Snapshot" logic.
+	 *
+	 * @param tableId The ID of the table to be deleted.
+	 * @return ArrayList<TableReservation> A list of reservations that would be displaced/unassigned if the table is deleted.
+	 */
+	private ArrayList<TableReservation> getConflictingReservationsForDeletion(int tableId) 
+	{
+		// ---------------------------------------------------------
+		// Retrieve Data Snapshot
+		// ---------------------------------------------------------
+		// Fetch all currently active reservations and the current  tables.
+		ArrayList<TableReservation> allReservations = ReservationControler.getAllReservationsActive();
+		ArrayList<Table> allTables = TableController.getTableInRestaurant();
+		
+		ArrayList<TableReservation> conflicts = new ArrayList<>();
+		ArrayList<Integer> addedReservationIds = new ArrayList<>(); // Helper set to prevent duplicate entries in the conflict list
+
+		// Safety check: if data is unavailable, assume no conflicts (or handle as error upstream)
+		if (allReservations == null || allTables == null) return new ArrayList<>();
+
+		// ---------------------------------------------------------
+		// Immediate Conflict Check 
+		// ---------------------------------------------------------
+		// Check if the table is currently occupied by a customer ("arrived").
+		// We cannot physically remove a table while people are sitting at it.
+		for (TableReservation res : allReservations) 
+		{
+			if (res.getStatus().equalsIgnoreCase("arrived") && res.getTableId() == tableId) 
+			{
+				conflicts.add(res);
+				addedReservationIds.add(res.getReservationId());
+			}
+		}
+
+		// ---------------------------------------------------------
+		//  Build Simulated Environment ("Virtual Restaurant")
+		// ---------------------------------------------------------
+		// Create a new list of tables that represents the restaurant state AFTER the proposed deletion.
+		// We copy every table EXCEPT the one being deleted.
+		ArrayList<Table> simulatedTables = new ArrayList<>();
+		for (Table t : allTables) 
+		{
+			// Filter out cancelled tables and the specific tableId we want to delete
+			if (!t.getStatus().equalsIgnoreCase("cancelled") && t.getTableId() != tableId) 
+			{
+				Table copy = new Table();
+				copy.setTableId(t.getTableId());
+				copy.setSeatsNumber(t.getSeatsNumber());
+				simulatedTables.add(copy);
+			}
+		}
+		
+		// Sort the remaining tables by seat count (Ascending).
+		// This is crucial for the "Best Fit" algorithm to try assigning small groups to small tables first.
+		sortTablesBySeatsAscending(simulatedTables);
+
+		// ---------------------------------------------------------
+		// Filter Relevant Future Reservations
+		// ---------------------------------------------------------
+		// We only care about "active" reservations (future bookings). 
+		// "Arrived" ones were handled , and "Cancelled/Completed" are irrelevant.
+		ArrayList<TableReservation> futureRes = new ArrayList<>();
+		for (TableReservation res : allReservations) 
+		{
+			if (res.getStatus().equalsIgnoreCase("active")) futureRes.add(res);
+		}
+
+		// ---------------------------------------------------------
+		// Time Snapshot Logic Preparation
+		// ---------------------------------------------------------
+		// we collect critical "Time Points" (reservation start times).
+		// If an overbooking happens, it will start at one of these moments.
+		ArrayList<LocalDateTime> timePointsToCheck = new ArrayList<>();
+		
+		for (TableReservation res : futureRes) 
+		{
+			LocalDateTime time = res.getReservationDate().toLocalDateTime();
+			// Manual check to ensure we only process each unique time slot once
+			if (!timePointsToCheck.contains(time)) 
+			{
+				timePointsToCheck.add(time);
+			}
+		}
+
+		// ---------------------------------------------------------
+		// Execute Time Snapshot Analysis
+		// ---------------------------------------------------------
+		// Iterate through every critical time point to check restaurant capacity.
+		for (LocalDateTime timePoint : timePointsToCheck) 
+		{
+			// Find all reservations that overlap with this specific time point.
+			// (A reservation is active if: StartTime <= TimePoint < EndTime)
+			ArrayList<TableReservation> activeAtMoment = new ArrayList<>();
+			for (TableReservation res : futureRes) 
+			{
+				LocalDateTime start = res.getReservationDate().toLocalDateTime();
+				LocalDateTime end = start.plusHours(2); // Assuming fixed duration of 2 hours per booking
+				
+				if ((start.isBefore(timePoint) || start.equals(timePoint)) && end.isAfter(timePoint)) 
+				{
+					activeAtMoment.add(res);
+				}
+			}
+
+			// ---------------------------------------------------------
+			// Verify Capacity 
+			// ---------------------------------------------------------
+			// Check if the REDUCED list of tables (simulatedTables) can handle the load (activeAtMoment).
+			if (!canFitOptimally(activeAtMoment, simulatedTables)) 
+			{
+				// If they don't fit, mark ALL reservations active at this moment as potential conflicts.
+				// This indicates that at this specific time, the restaurant is overbooked without the deleted table.
+				for (TableReservation problematicRes : activeAtMoment)
+				{
+					if (!addedReservationIds.contains(problematicRes.getReservationId()))
+					{
+						conflicts.add(problematicRes);
+						addedReservationIds.add(problematicRes.getReservationId());
+					}
+				}
+			}
+		}
+
+		return conflicts;
+	}
+	
 	/**
 	 * "Finds the smallest available table for immediate seating that does not conflict with 
 	 * incoming reservations for the next 2 hours
@@ -261,26 +522,7 @@ public class TableController
 	    }
 	}
 	
-	/**
-	 * Checks if two reservations overlap in time.
-	 *
-	 * @param r1 The first TableReservation object.
-	 * @param r2 The second TableReservation object.
-	 * @return true if the reservations overlap, false otherwise.
-	 */
-	private boolean checkOverlap(TableReservation r1, TableReservation r2) 
-	{
-		// Assuming each reservation lasts for 2 hours
-		LocalDateTime start1 = r1.getReservationDate().toLocalDateTime();
-		LocalDateTime end1 = start1.plusHours(2); //assuming each reservation lasts for 2 hours
-
-		
-		LocalDateTime start2 = r2.getReservationDate().toLocalDateTime();
-		LocalDateTime end2 = start2.plusHours(2);
-
-		// Check for overlap
-		return start1.isBefore(end2) && start2.isBefore(end1);
-	}
+	
 
 	/**
 	 * Checks if a list of reservations can fit optimally into a list of available
@@ -340,127 +582,7 @@ public class TableController
 	}
 	
 	
-	/**
-	 * Calculates the earliest safe date to update or delete a table without
-	 * conflicting with existing reservations.
-	 *
-	 * @param tableId  The ID of the table to be updated or deleted.
-	 * @param newSeats The new number of seats for the table (if updating), or 0 if
-	 *                 deleting.
-	 * @return A LocalDate indicating the earliest safe date for the operation, or null or today if safe to proceed immediately.
-	 */
-	private LocalDate calculateEarliestSafeDate(int tableId, int newSeats) 
-	{
-	    //get all active reservations and all tables in the restaurant
-	    ArrayList<TableReservation> allReservations = ReservationControler.getAllReservationsActive();
-	    ArrayList<Table> allTables = TableController.getTableInRestaurant(); 
-
-	    if (allReservations == null || allTables == null) 
-	    {
-	        return null; // Fail safe handling
-	    }
-	    
-	    //a parameter to hold the last conflict date found
-	    LocalDate lastConflictDate = null;
-	    LocalDate today = LocalDate.now();
-
-	    //check if there is an arrived reservation for this table today
-	    for (TableReservation res : allReservations) 
-	    {
-	        	        if (res.getStatus().equalsIgnoreCase("arrived") && res.getTableId() == tableId) 
-	        {
-	            lastConflictDate = today;
-	        }
-	    }
-
-	    //create a simulated list of tables without the table we want to delete or with the table updated seats number
-	    ArrayList<Table> simulatedTables = new ArrayList<>();
-	    
-	    for (Table t : allTables) 
-	    {
-		    	if ( t.getStatus().equalsIgnoreCase("cancelled")) 
-		    	{
-		    	    continue; 
-		    	}
-	    	
-	        if (t.getTableId() == tableId)//the table we want to update or delete 
-	        {
-	            //if updating seats number
-	            if (newSeats > 0) 
-	            {
-	                //add the updated table to the simulated list
-	                Table updatedTable = new Table();
-	                updatedTable.setTableId(t.getTableId());
-	                updatedTable.setSeatsNumber(newSeats);
-	                simulatedTables.add(updatedTable);
-	            }
-	            //if deleting (newSeats == -1), we simply DO NOT add it to the list
-	        } 
-	        else //other tables
-	        {
-	            Table copy = new Table();
-	            copy.setTableId(t.getTableId());
-	            copy.setSeatsNumber(t.getSeatsNumber());
-	            simulatedTables.add(copy); 
-	        }
-	    }
-
-	    //sorting the simulated tables by seats number from smallest to largest
-	    sortTablesBySeatsAscending(simulatedTables);
-
-	    // creating a list of future reservations (active only)
-	    ArrayList<TableReservation> futureRes = new ArrayList<>();
-	    
-	    for (TableReservation res : allReservations) 
-	    {
-	        if (res.getStatus().equalsIgnoreCase("active")) 
-	        {
-	            futureRes.add(res);
-	        }
-	    }
-
-	    
-
-	    for (TableReservation currentRes : futureRes) 
-	    {
-	        // creating a group of conflicting reservations relative to the current reservation
-	        ArrayList<TableReservation> conflictingGroup = new ArrayList<>();
-	        conflictingGroup.add(currentRes); 
-
-	        for (TableReservation otherRes : futureRes) 
-	        {
-	            // check against all other reservations (don't skip any!)
-	            if (currentRes.getReservationId() != otherRes.getReservationId()) 
-	            {
-	                // if there is an overlap, add to the conflicting group
-	                if (checkOverlap(currentRes, otherRes)) 
-	                {
-	                    conflictingGroup.add(otherRes);
-	                }
-	            }
-	        }
-	        
-	        // check if the conflicting group for the current reservation can fit optimally in the simulated tables
-	        if (!canFitOptimally(conflictingGroup, simulatedTables)) 
-	        {
-	            LocalDate conflictDate = currentRes.getReservationDate().toLocalDateTime().toLocalDate();
-	            
-	            // update the latest conflict date found so far
-	            if (lastConflictDate == null || conflictDate.isAfter(lastConflictDate)) 
-	            {
-	                lastConflictDate = conflictDate;
-	            }
-	        }
-	    }
-
-	    //after checking all reservations, see if there was any conflict
-	    if (lastConflictDate != null) 
-	    {
-	        return lastConflictDate.plusDays(1); //return the next available date after the last conflict date
-	    }
-	    
-	    return today; //no conflicts found, safe to update/delete immediately
-	}
+	
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////Logic methods//////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -701,30 +823,27 @@ public class TableController
 
 	}
 
+
 	/**
-	 * Deletes a table from the database based on the table ID provided in the
-	 * message.checks for conflicts with existing reservations before deletion.
-	 *
-	 * @param msg The message containing the table ID. The content of the message is
-	 *            expected to be an ArrayList<Object> with the following order:
-	 *            [Location 0 : tableId (Integer)]
-	 * @return A String indicating the result of the deletion:
-	 *         - "true" if the table was deleted successfully.
-	 *         - A date string (YYYY-MM-DD) if there are conflicts, indicating the next
-	 *         available date to delete.
-	 *         - null if an error occurs.
+	 * Deletes a table. Returns a list of subscribers associated with conflicting reservations if conflicts exist.
+	 * 
+	 * * @param msg The message containing the table details. The content of the
+	 *            message is expected to be an ArrayList<Object> with the following
+	 *            order: [Location 0 : tableId (Integer)].
+	 * @return 
+	 * - Empty ArrayList<Subscriber>: Table deleted 
+	 * - ArrayList<Subscriber> : can't deleted Table (List contains the subscribers involved in conflicting reservations).
+	 * - null: Error or Invalid Input.
 	 */
-	private String deleteTable(Message msg)
+	private ArrayList<Subscriber> deleteTable(Message msg)
 	{
-		@SuppressWarnings("unchecked") 
-		ArrayList<Object> list = (ArrayList<Object>) msg.content;//get the reservation details from the message content
+		@SuppressWarnings("unchecked")
+		ArrayList<Object> list = (ArrayList<Object>) msg.content;
 
-		int tableId=0;
-
-		// Setting tableId from the list we got from the message content
+		int tableId = 0;
 		if (list.get(0) instanceof Integer) 
 		{
-			tableId =(int) list.get(0); 
+			tableId = (int) list.get(0);
 		} 
 		else 
 		{
@@ -732,102 +851,108 @@ public class TableController
 			return null;
 		}
 
-		LocalDate safeDateToDelete = calculateEarliestSafeDate(tableId, -1);
+		// Check for conflicts
+		ArrayList<TableReservation> conflicts = getConflictingReservationsForDeletion(tableId);
 
-
-		//if the calculation failed
-		if (safeDateToDelete == null) 
+		// If the list is NOT empty, we have conflicts. 
+		if (!conflicts.isEmpty()) 
 		{
-			return null;
+			
+			System.out.println("\n====== Delete Table Failed: Conflicts Found ===");
+			System.out.println("Cannot delete Table ID: " + tableId + " because of the following reservations:");
+			
+			for (TableReservation res : conflicts) 
+			{
+				System.out.println(" -> Reservation ID: " + res.getReservationId() + 
+								   " | Date: " + res.getReservationDate() + 
+								   " | Diners: " + res.getNumberOfDiners() + 
+								   " | Customer ID: " + res.getCustomerId());
+			}
+			System.out.println("====================================================\n");
+
+
+			ArrayList<Subscriber> conflictingSubscribers = CustomerController.getSubscribersFromReservations(conflicts);
+			
+			return conflictingSubscribers; 
 		}
 
-		//if there are conflicts, return the next available date to delete
-		else if (safeDateToDelete.isAfter(LocalDate.now()))
+		// else list is empty , Safe to delete.
+		if (DBC.deleteTableQuery(tableId)) 
 		{
-			return safeDateToDelete.toString();
+			System.out.println("Table ID: " + tableId + " deleted successfully.");
+			return new ArrayList<Subscriber>();
 		}
 		
-		else if (safeDateToDelete.isEqual(LocalDate.now()))
-        {
-			// delete the table from the DB
-			if (DBC.deleteTableQuery(tableId)) 
-			{
-				return "true"; //table deleted successfully;
-			}
-			return null; // DB Error
-        }
-		return null;
+		//Database Error
+		System.out.println("Failed to delete table ID: " + tableId + " (DB Error).");
+		return null; 
 	}
 	
 	/**
-	 * Updates the number of seats for a table in the database based on the details
-	 * provided in the message. Checks for conflicts with existing reservations
-	 * before updating.
+	 * Updates the number of seats for a table. 
+	 * Returns a list of subscribers associated with conflicting reservations if the update is not possible.
 	 *
 	 * @param msg The message containing the table update details. The content of
-	 *            the message is expected to be an ArrayList<Object> with the
-	 *            following order: [Location 0 : tableId (Integer), Location 1 :
-	 *            seatsNumber (Integer)]
-	 * @return A String indicating the result of the update: - "true" if the table
-	 *         was updated successfully. - A date string (YYYY-MM-DD) if there are
-	 *         conflicts, indicating the next available date to update. - null if an
-	 *         error occurs.
+	 * 		the message is expected to be an ArrayList<Object> with the
+	 * 		following order: [Location 0 : tableId (Integer), Location 1 :seatsNumber (Integer)]
+	 * 
+	 * @return 
+	 * - Empty ArrayList<Subscriber>: Table updated
+	 * - ArrayList<Subscriber>: can't updated Table (List contains the subscribers involved in conflicting reservations).
+	 * - null: Error or Invalid Input.
 	 */
-	private String updateTableSeatsNumber(Message msg)
+	private ArrayList<Subscriber> updateTableSeatsNumber(Message msg)
 	{
-		@SuppressWarnings("unchecked") 
-		ArrayList<Object> list = (ArrayList<Object>) msg.content;//get the reservation details from the message content
+		@SuppressWarnings("unchecked")
+		ArrayList<Object> list = (ArrayList<Object>) msg.content;
 		
-		int tableId=0;
-		int seatsNumber=0;
+		int tableId = 0;
+		int seatsNumber = 0;
 		
-		// Setting tableId from the list we got from the message content
-		if (list.get(0) instanceof Integer) 
-		{
-			tableId =(int) list.get(0); 
-		} 
-		else 
-		{
-			System.out.println("Error: Index 0 is not a Integer!");
+		// Parse Input
+		if (list.get(0) instanceof Integer) {
+			tableId = (int) list.get(0);
+		} else {
 			return null;
 		}
 		
-		// Setting seats Number from the list we got from the message content
-		if (list.get(1) instanceof Integer) 
-		{
-			seatsNumber=(int) list.get(1); 
-		} 
-		else 
-		{
-			System.out.println("Error: Index 1 is not a Integer!");
-			return null;
-		}
-		//calculate the earliest safe date to update the table seats number
-		LocalDate safeDateToUpdate = calculateEarliestSafeDate(tableId, seatsNumber);
-
-		//if the calculation failed
-		if (safeDateToUpdate == null) 
-		{
+		if (list.get(1) instanceof Integer) {
+			seatsNumber = (int) list.get(1);
+		} else {
 			return null;
 		}
 
-		//if there are conflicts, return the next available date to update
-		else if (safeDateToUpdate.isAfter(LocalDate.now()))
-		{
-			return safeDateToUpdate.toString();
-		}
+		// 1. Check for conflicts using the snapshot logic (Update Version)
+		ArrayList<TableReservation> conflicts = getConflictingReservationsForUpdate(tableId, seatsNumber);
 
-		//else if safe to update today
-		else if (safeDateToUpdate.isEqual(LocalDate.now()))
-        {
+		// 2. If conflicts exist, print and return them
+		if (!conflicts.isEmpty()) 
+		{
+			System.out.println("\n===  Update Table Failed: Conflicts Found ===");
 			
-			if (updateTable(tableId, "seatsNumber", seatsNumber)) 
+			
+			System.out.println("Cannot update Table ID: " + tableId + " to " + seatsNumber + " seats because of:");
+			for (TableReservation res : conflicts) 
 			{
-				return "true"; //table updated successfully;
+				System.out.println(" -> Reservation ID: " + res.getReservationId() + 
+								   " | Diners: " + res.getNumberOfDiners() + 
+								   " | Date: " + res.getReservationDate());
 			}
-			return null; // DB Error
-        }
-		return null;
+			System.out.println("====================================================\n");
+			
+			ArrayList<data.Subscriber> conflictingSubscribers = CustomerController.getSubscribersFromReservations(conflicts);
+			
+			return conflictingSubscribers;
+		}
+
+		// 3. No conflicts -> Perform Update
+		if (updateTable(tableId, "seatsNumber", seatsNumber)) 
+		{
+			System.out.println(" Table ID: " + tableId + " updated to " + seatsNumber + " seats successfully.");
+			return new ArrayList<Subscriber>(); // Success
+		}
+		
+		return null; // DB Error
 	}
 }
 
