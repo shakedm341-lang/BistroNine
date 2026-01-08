@@ -85,6 +85,9 @@ public class DataBaseController {
 	// 49. addTimeReportQuery(TimeReport) : boolean
 	// 50. deleteFromWaitListByReservationIdQuery(int) : boolean
 	// 51. checkReportExistsQuery(LocalDate, LocalDate, String) : boolean
+	// 52. updateReservationDateQuery(int, Timestamp) : boolean
+	// 53. getReservationIdByBillIdQuery(Bill) : int
+	// 54. payBillQuery(Bill) : boolean
 	// .
 	// END OF API.
 
@@ -230,6 +233,154 @@ public class DataBaseController {
 	 * /////////////////////////////////////////////////////////////////////////////
 	 * ///////////////////////////////////
 	 */
+	
+	//54
+	
+	
+	/**
+	 * Updates an existing bill record with payment details, amounts, and discount info.
+	 *
+	 * @param bill The fully populated Bill object.
+	 * @return true if the update was successful, false otherwise.
+	 */
+	public boolean payBillQuery(Bill bill) {
+		// 1. Get connection from the pool
+		PooledConnection pConn = this.getConnection();
+
+		// Safety check
+		if (pConn == null) {
+			return false;
+		}
+
+		Connection conn = pConn.getConnection();
+		PreparedStatement ps = null;
+
+		try {
+			// Update all relevant fields calculated during the payment process
+			String query = "UPDATE bills SET totalAmount = ?, totalAmountAfterDiscount = ?, "
+					+ "discountPercentage = ?, isPaid = ?, discountType = ?, paymentMethod = ? "
+					+ "WHERE billId = ?";
+
+			ps = conn.prepareStatement(query);
+
+			ps.setDouble(1, bill.getTotalAmount());
+			ps.setDouble(2, bill.getTotalAmountAfterDiscount());
+			
+			// CHANGED: Use setDouble instead of setFloat
+			ps.setDouble(3, bill.getDiscountSize());
+			
+			ps.setBoolean(4, bill.isPaid());
+			ps.setString(5, bill.getDiscountType()); 
+			ps.setString(6, bill.getPaymentMethod()); 
+			
+			// WHERE clause
+			ps.setInt(7, bill.getBillId());
+
+			int rowsAffected = ps.executeUpdate();
+
+			if (rowsAffected > 0) {
+				return true;
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			closeResources(ps, null);
+			releaseConnection(pConn); // Release back to pool
+		}
+
+		return false;
+	}
+	
+	//53
+	
+	/**
+	 * Retrieves the reservation ID associated with a specific bill ID.
+	 *
+	 * @param bill The Bill object containing the billId.
+	 * @return The reservationId associated with the bill, or 0 if not found.
+	 */
+	public int getReservationIdByBillIdQuery(Bill bill) {
+		// 1. Get connection from the pool
+		PooledConnection pConn = this.getConnection();
+
+		// Safety check
+		if (pConn == null) {
+			return 0;
+		}
+
+		Connection conn = pConn.getConnection();
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+
+		try {
+			String query = "SELECT reservationId FROM bills WHERE billId = ?";
+
+			ps = conn.prepareStatement(query);
+			ps.setInt(1, bill.getBillId());
+
+			rs = ps.executeQuery();
+
+			if (rs.next()) {
+				return rs.getInt("reservationId");
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			closeResources(ps, rs);
+			releaseConnection(pConn); // Release back to pool
+		}
+
+		return 0;
+	}
+	
+	
+	//52
+	
+	/**
+	 * Updates the reservation date and time for a specific reservation.
+	 *
+	 * @param reservationId The ID of the reservation to update.
+	 * @param newDate       The new Timestamp (Date and Time) to set.
+	 * @return true if the update was successful, false otherwise.
+	 */
+	public boolean updateReservationDateQuery(int reservationId, java.sql.Timestamp newDate) {
+		// 1. Get connection from the pool
+		PooledConnection pConn = this.getConnection();
+
+		// Safety check
+		if (pConn == null) {
+			return false;
+		}
+
+		Connection conn = pConn.getConnection();
+		PreparedStatement ps = null;
+
+		try {
+			// SQL Update query
+			String query = "UPDATE table_reservations SET reservationDate = ? WHERE reservationId = ?";
+
+			ps = conn.prepareStatement(query);
+			ps.setTimestamp(1, newDate); // Set the new date/time
+			ps.setInt(2, reservationId); // Identify the row
+
+			int rowsAffected = ps.executeUpdate();
+
+			// If rowsAffected > 0, the update succeeded
+			if (rowsAffected > 0) {
+				return true;
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			closeResources(ps, null);
+			releaseConnection(pConn); // Release back to pool
+		}
+
+		return false;
+	}
 
 	/**
 	 * Checks if a report already exists in the report_manager table for the given
@@ -511,11 +662,11 @@ public class DataBaseController {
 		return false;
 	}
 
-	
 	/**
 	 * Retrieves the time report data for a specific date range by fetching
-	 * pre-saved data directly from the time_report table.
-	 * * @param report The TimeReport object containing startDay and endDay.
+	 * pre-saved data directly from the time_report table. * @param report The
+	 * TimeReport object containing startDay and endDay.
+	 * 
 	 * @return true if the query executed successfully, false otherwise.
 	 */
 	public boolean getTimeReportByRangeDateQuery(TimeReport report) {
@@ -531,10 +682,8 @@ public class DataBaseController {
 
 		try {
 			// SIMPLIFIED QUERY: Direct access to time_report without JOIN
-			String query = "SELECT reportDate, avgArrival, avgLeaving " 
-					     + "FROM time_report "
-					     + "WHERE reportDate BETWEEN ? AND ? " 
-					     + "ORDER BY reportDate ASC";
+			String query = "SELECT reportDate, avgArrival, avgLeaving " + "FROM time_report "
+					+ "WHERE reportDate BETWEEN ? AND ? " + "ORDER BY reportDate ASC";
 
 			ps = conn.prepareStatement(query);
 			ps.setDate(1, java.sql.Date.valueOf(report.getStartDay()));
@@ -746,8 +895,9 @@ public class DataBaseController {
 
 	/**
 	 * Retrieves the subscriber report data for a specific date range by fetching
-	 * pre-saved data directly from the subscriber_report table.
-	 * * @param report The SubscriberReport object containing startDay and endDay.
+	 * pre-saved data directly from the subscriber_report table. * @param report The
+	 * SubscriberReport object containing startDay and endDay.
+	 * 
 	 * @return true if the query executed successfully, false otherwise.
 	 */
 	public boolean getSubscriberReportByRangeDateQuery(SubscriberReport report) {
@@ -763,10 +913,8 @@ public class DataBaseController {
 
 		try {
 			// SIMPLIFIED QUERY: Direct access to subscriber_report without JOIN
-			String query = "SELECT reportDate, totalReservations, totalWaiting " 
-					     + "FROM subscriber_report "
-					     + "WHERE reportDate BETWEEN ? AND ? " 
-					     + "ORDER BY reportDate ASC";
+			String query = "SELECT reportDate, totalReservations, totalWaiting " + "FROM subscriber_report "
+					+ "WHERE reportDate BETWEEN ? AND ? " + "ORDER BY reportDate ASC";
 
 			ps = conn.prepareStatement(query);
 			ps.setDate(1, java.sql.Date.valueOf(report.getStartDay()));
