@@ -271,9 +271,9 @@ public class BillController
 			return  false;
 		}
 
-		ReservationControler.updateReservation(reservationId,"status", "completed");
+		ReservationControler.updateReservation(res,"status", "completed");
 		Timestamp nowTime = java.sql.Timestamp.valueOf(LocalDateTime.now());
-		ReservationControler.updateReservation(reservationId,"leavingTime", nowTime);
+		ReservationControler.updateReservation(res,"leavingTime", nowTime);
 
 		Table freeTable=new Table();
 		freeTable.setTableId(res.getTableId());
@@ -286,6 +286,7 @@ public class BillController
 		
 		//find match in the waiting list for the freed table
 		WaitList waiter = WaitListController.findMatchInWaitingList(freeTable);
+		DBC.updateTableStatus(freeTable.getTableId(), "available");// set table status to available 
 		if (waiter!=null)
 		{
 			//status of the table is already  occupied from the last customer that was seated from the waiting list
@@ -298,6 +299,8 @@ public class BillController
 				return false;
 			}
 			
+			ReservationControler.updateReservation(waiterRes, "reservationDate", LocalDate.now());// set reservation date to now
+	
 			
 			Subscriber sub = new Subscriber();
 			sub.setCustomerId( waiterRes.getCustomerId());

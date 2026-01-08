@@ -363,7 +363,7 @@ public class TableController
 	                for (TableReservation res : futureReservations) 
 	                {
 	                    // check only active or arrived reservations for counting the reservations that may need this table (t)
-	                    if (res.getStatus().equals("active") || res.getStatus().equals("arrived")) {
+	                    if (res.getStatus().equals("active")) {
 	                        
 	                        // check if the reservation can fit on this table (t)
 	                        if (res.getNumberOfDiners() <= t.getSeatsNumber()) {

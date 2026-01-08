@@ -118,16 +118,18 @@ public class ReservationControler
 
 		//ArrivalTime and leavingTime not set at the beginning,changed when the customer get into and leaves the restaurant
 
-		newRes.setStatus("waiting");//Setting status to the reservation to "active" because the customer did not arrive yet
+		
 
 		if (DBC.createNewReservation(newRes))//Return that the reservation was created successfully in the DB
 		{
-
-			return newRes;//Return the confirmation code of the new reservation
-			//No need to update table status because the table is not assigned yet
-			//no need to create bill because the customer did not arrive yet
-
-
+			
+			if (updateReservation(newRes, "status", "waiting"))//Update the status of the reservation to "waiting" in the DB)
+			{
+				return newRes;//Return the confirmation code of the new reservation
+				//No need to update table status because the table is not assigned yet
+				//no need to create bill because the customer did not arrive yet
+			}
+			return null;//Return false if reservation status was not updated successfully in the DB
 		}
 		return null;//Return false if the reservation was not created successfully in the DB
 	}
@@ -144,7 +146,7 @@ public class ReservationControler
 	 * @param status         The status of the reservation.
 	 * @return true if the reservation was created successfully, false otherwise.
 	 */
-	public static boolean createReservationWithoutWait(int tableId, int numberOfDiners, int customerId )
+	public static TableReservation createReservationWithoutWait(int tableId, int numberOfDiners, int customerId )
 	{
 		Random rand = new Random();//Random object to generate a random confirmation code
 		TableReservation newRes = new TableReservation();//Creating a new reservation object
@@ -183,25 +185,23 @@ public class ReservationControler
 
 		if (DBC.createNewReservation(newRes))//Return that the reservation was created successfully in the DB
 		{
-			if (TableController.updateTable(newRes.getTableId(),"status", "occupied"))//Update the status of the table to "occupied" in the DB
+			 
+			if (updateReservation(newRes, "status", "arrived"))// Update the status of the reservation to "arrived" in the DB)
 			{
+				if (TableController.updateTable(newRes.getTableId(),"status", "occupied"))//Update the status of the table to "occupied" in the DB
+				{
 
-				if (BillController.createNewBill(newRes))
-				{
-					return true;//Return to server the confirmation code of the new reservation);
+					if (BillController.createNewBill(newRes))
+					{
+						return newRes;//Return to server the confirmation code of the new reservation);
+					}
+						return null;//Return false if bill was not created successfully in the DB
 				}
-				else
-				{
-					return false;//Return false if bill was not created successfully in the DB
-				}
+					return null;//Return false if table status was not updated successfully in the DB
 			}
-			else
-			{
-				return false;//Return false if table status was not updated successfully in the DB
-			}
+			return null;//Return false if reservation status was not updated successfully in the DB
 		}
-		return false;//Return false if the reservation was not created successfully in the DB
-
+		return null;//Return false if the reservation was not created successfully in the DB
 	}
 
 
@@ -454,14 +454,14 @@ public class ReservationControler
 	 * @param newValue      The new value to be set for the specified column.
 	 * @return true if the update was successful, false otherwise.
 	 */
-	public static boolean updateReservation(int reservationId, String columnName, Object newValue) 
+	public static boolean updateReservation(TableReservation res, String columnName, Object newValue) 
 	{
 
 		if (columnName.equals("status")) 
 		{
 			if (newValue instanceof String) 
 			{
-				return DBC.updateReservationStatus(reservationId, (String) newValue);
+				return DBC.updateReservationStatus(res.getConfirmationCode(), (String) newValue);
 			} 
 			else 
 			{
@@ -473,10 +473,19 @@ public class ReservationControler
 		{
 			if (newValue instanceof Timestamp) 
 			{
-				return DBC.updateReservationLeavingTime(reservationId, (Timestamp) newValue);
+				return DBC.updateReservationLeavingTime(res.getReservationId(), (Timestamp) newValue);
 			} 
 			else 
 			{
+				System.out.println("Error: newValue is not a Timestamp!");
+				return false;
+			}
+		}
+		else if (columnName.equals("reservationDate")) 
+		{
+			if (newValue instanceof Timestamp) {
+			return DBC.updateReservationDateQuery(res.getReservationId(), (Timestamp) newValue);//Update reservation date in the DB
+			} else {
 				System.out.println("Error: newValue is not a Timestamp!");
 				return false;
 			}
@@ -1036,7 +1045,12 @@ public class ReservationControler
 				if (resTime.plusMinutes(15).isBefore(nowTime)) 
 				{
 					// Update the reservation status to "canceled" in the DB
-					DBC.updateReservationStatus(res.getConfirmationCode(), "cancelled");
+					if (updateReservation(res, "status", "cancelled") == false) {
+						System.out.println("Error: could not update reservation " + res.getConfirmationCode()
+								+ " status to cancelled.");
+						continue;
+					}
+					
 					System.out.println("Reservation " + res.getConfirmationCode() + " was auto-canceled due to late arrival.");
 					
 					Subscriber sub = new Subscriber();
@@ -1048,6 +1062,7 @@ public class ReservationControler
 					}
 					
 					DBC.deleteFromWaitListByReservationIdQuery(res.getReservationId());//update waitlist if the reservation was in the waitlist changed status to cancelled
+					updateReservation(res, "leavingTime", Timestamp.valueOf(LocalDateTime.now()));//update leaving time to now"
 					
 					if (sub.getType()!=null) 
 					{

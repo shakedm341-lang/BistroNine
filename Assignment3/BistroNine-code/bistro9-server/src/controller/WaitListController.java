@@ -470,20 +470,28 @@ public class WaitListController
 	}
 
 
+
 	/**
 	 * Handles the process of adding a walk-in customer to the wait list. It checks
-	 * for immediate table availability(now and for 2 hours) . If a table is
-	 * available, it creates a reservation and bill and returns the negative table ID 
-	 *  If no table is available, it adds the customer to the wait list and creates a reservation
-	 *  and returns the confirmation code. 
-	 *!!!!!walk-in customer that added to wait list need to do receiveTableIdByConfCode when he arrives to get his table ID
-	 * @param msg The Message object containing customer details and number of
-	 *            diners.
-	 * @return An Integer representing either the confirmation code for the wait
-	 *         list or a negative table ID if seated immediately. Returns null on
-	 *         failure.
+	 * for immediate table availability(now and for 2 hours) . 
+	 * If a table is available, it creates a reservation(with table and conf code) and bill and returns the reservation
+	 *  If no table is available, it adds the customer to the wait list and
+	 * creates a reservation (without table and with conf code) and returns the reservation
+	 * 
+	 * !!!!!walk-in customer that added to wait list need to do receiveTableIdByConfCode when he
+	 * arrives to get his table ID
+	 *
+	 * @param msg The message containing the confirmation code of the reservation to
+	 *            be deleted. The content of the message is expected to be an
+	 *            ArrayList<Object> with the following order: [Location 0 : String 
+	 *            type of customer ("customer" or "subscriber"), Location 1 : String
+	 *            phone number (if type is "customer") or Integer Customer ID (if type is "subscriber"),
+	 *             Location 2 : String email (if type is "customer"),
+	 *            
+	 * @return A TableReservation object representing the newly created reservation,
+	 *           or null if the operation failed.         
 	 */
-	private Integer getInToWaitList(Message msg)
+	private TableReservation getInToWaitList(Message msg)
 	{
 		@SuppressWarnings("unchecked") 
 		ArrayList<Object> list = (ArrayList<Object>) msg.content;
@@ -553,7 +561,7 @@ public class WaitListController
 
 		else if (typeCustomer.equals("subscriber")) 
 		{
-			// Setting subscriber ID from the list we got from the message content
+			// Setting Customer ID from the list we got from the message content
 			if (list.get(1) instanceof Integer) {
 				customerId = (int) list.get(1);
 			} else {
@@ -606,11 +614,13 @@ public class WaitListController
 		if (bestTable != null && canSitImmediately) 
 		{
 			//Create reservation without wait for walk-in customer
-			boolean result=ReservationControler.createReservationWithoutWait(bestTable.getTableId(),newWait.getNumberOfDiners(),customerId);
+			TableReservation result=ReservationControler.createReservationWithoutWait(bestTable.getTableId(),newWait.getNumberOfDiners(),customerId);
 
-			if (result)
+			if (result!=null)
 			{
-				return -bestTable.getTableId(); //return table number with minus sign to indicate immediate seating
+				System.out.println("Reservation created successfully with confirmation code: " +result.getConfirmationCode());
+				System.out.println("table ID: " + result.getTableId());
+				return result; //Return to server the reservation with table and confirmation code 
 			}
 			else
 			{
@@ -631,7 +641,10 @@ public class WaitListController
 
 			if (DBC.addToWaitList(newWait))//Return that the add to Wait List was created successfully in the DB 
 			{
-				return newRes.getConfirmationCode();//Return to server the confirmation code of the new reservation);
+				
+				System.out.println("Reservation created successfully with confirmation code: " + newRes.getConfirmationCode());
+				System.out.println("table ID: " + newRes.getTableId());//table ID will be null because no table assigned yet
+				return newRes;//Return to server reservation without table and with confirmation code
 			}
 
 			return null;//Return null if the reservation was not created successfully in the DB
