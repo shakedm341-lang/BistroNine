@@ -15,11 +15,18 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.Button;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
 public class LoginController {
+
+    public enum Mode {
+        REMOTE,
+        TERMINAL
+    }
 
     @FXML
     private TextField usernameTxt;
@@ -27,13 +34,83 @@ public class LoginController {
     @FXML
     private PasswordField passwordTxt;
 
+    @FXML
+    private Button btnGuest;
+
+    @FXML
+    private Button btnScanTag;
+
+    @FXML
+    private VBox orSeparator;
+
     private ClientController client;
+    private Mode mode = Mode.REMOTE;
 
     // Method to set the client reference
     public void setClient(ClientController client) {
         this.client = client;
      
         ClientController.loginController = this; 
+    }
+
+    public void setMode(Mode mode) {
+        this.mode = mode;
+        updateUI();
+    }
+
+    private void updateUI() {
+        if (mode == Mode.TERMINAL) {
+            if (btnGuest != null) {
+                btnGuest.setVisible(false);
+                btnGuest.setManaged(false);
+            }
+            if (btnScanTag != null) {
+                btnScanTag.setVisible(true);
+                btnScanTag.setManaged(true);
+            }
+        } else {
+            if (btnGuest != null) {
+                btnGuest.setVisible(true);
+                btnGuest.setManaged(true);
+            }
+            if (btnScanTag != null) {
+                btnScanTag.setVisible(false);
+                btnScanTag.setManaged(false);
+            }
+        }
+    }
+
+    @FXML
+    void handleScanTag(ActionEvent event) {
+        TerminalUtils.simulateBarcodeScan(id -> {
+            if (id != null && !id.trim().isEmpty()) {
+                try {
+                    int subId = Integer.parseInt(id.trim());
+                    ArrayList<Object> content = new ArrayList<>();
+                    content.add(subId);
+                    
+                    if (client != null) {
+                        client.handleMessageFromBoundary(TypeMessage.CUSTOMER, content, 
+                            Command.CHECK_LOGIN_DETAILSֹֹ_BY_TAG_READER);
+                    } else {
+                        showAlert(AlertType.ERROR, "Connection Error", "Client is not connected.");
+                    }
+                } catch (NumberFormatException e) {
+                    showAlert(AlertType.ERROR, "Input Error", "Subscriber ID must be a number.");
+                }
+            }
+        });
+    }
+
+    public void onIdentificationResponse(Object response) {
+        Platform.runLater(() -> {
+            if (response instanceof Subscriber) {
+                Subscriber sub = (Subscriber) response;
+                handleServerLoginResponse(sub);
+            } else {
+                showAlert(AlertType.ERROR, "Identification Failed", "Could not identify subscriber. Please check the ID and try again.");
+            }
+        });
     }
 
     @FXML
@@ -75,9 +152,37 @@ public class LoginController {
             } else {
                 
                 System.out.println("Login successful! User type: " + subscriber.getType());
-                openDashboard(subscriber); 
+                if (mode == Mode.TERMINAL) {
+                    enterTerminalMenu(subscriber);
+                } else {
+                    openDashboard(subscriber); 
+                }
             }
         });
+    }
+
+    private void enterTerminalMenu(Subscriber subscriber) {
+        try {
+            BaseTerminalController.setUserType(BaseTerminalController.UserType.SUBSCRIBER);
+            BaseTerminalController.currentSubscriberId = String.valueOf(subscriber.getCustomerId());
+
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/TerminalMenu.fxml"));
+            Parent root = loader.load();
+
+            TerminalMenuController controller = loader.getController();
+            controller.setClient(this.client);
+
+            Stage stage = (Stage) usernameTxt.getScene().getWindow();
+            stage.setTitle("BistroNine - Terminal Mode");
+            Scene scene = new Scene(root);
+            scene.getStylesheets().add(getClass().getResource("/gui/styles.css").toExternalForm());
+            stage.setScene(scene);
+            stage.show();
+            stage.centerOnScreen();
+        } catch (Exception e) {
+            e.printStackTrace();
+            showAlert(AlertType.ERROR, "Error", "Could not load terminal menu.");
+        }
     }
 
     private void openDashboard(Subscriber user) {
@@ -94,7 +199,10 @@ public class LoginController {
             Stage stage = (Stage) usernameTxt.getScene().getWindow();
             stage.setTitle("BistroNine Client - User Dashboard");
             Scene scene = new Scene(root);
+            scene.getStylesheets().add(getClass().getResource("/gui/styles.css").toExternalForm());
             stage.setScene(scene);
+            stage.setResizable(true);
+            //stage.setMaximized(true);
             stage.centerOnScreen();
             stage.show();
 

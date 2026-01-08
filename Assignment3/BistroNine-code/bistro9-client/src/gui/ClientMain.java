@@ -16,12 +16,13 @@ public class ClientMain extends Application {
             Parent root = loader.load();
             
             Scene scene = new Scene(root);
+            scene.getStylesheets().add(getClass().getResource("/gui/styles.css").toExternalForm());
             
            // Set the stage title and scene
             primaryStage.setTitle("BistroNine Client - Connection to Server");
             primaryStage.setScene(scene);
             
-            // Make the window non-resizable
+            // Connection-to-server window should have a fixed size
             primaryStage.setResizable(false);
             
             primaryStage.show();

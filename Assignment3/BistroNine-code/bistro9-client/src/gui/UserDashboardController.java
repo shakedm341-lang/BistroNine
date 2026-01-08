@@ -30,17 +30,24 @@ public class UserDashboardController {
     @FXML
     private StackPane contentArea;
 
- 
+    @FXML
+    private Button btnHome;
+    @FXML
+    private Button btnMyReservations;
+    @FXML
+    private Button btnNewReservation;
+    @FXML
+    private Button btnLeaveWaitlist;
+    @FXML
+    private Button btnPayBill;
     @FXML
     private Button btnRestaurantOps; 
     @FXML
     private Button btnViewReports;   
-    
     @FXML
     private Button btnLiveDashboard;
-    
-    @FXML
-    private Button btnPayBill;
+
+    private Button currentActiveBtn;
 
     private ClientController client;
     private Subscriber currentUser;
@@ -87,6 +94,9 @@ public class UserDashboardController {
         } else if (type.equals("subscriber")) {
             setButtonVisible(btnPayBill, true);
         }
+
+        // Set default active button (e.g., Home)
+        setActiveButton(btnHome);
     }
 
     private void setButtonVisible(Button btn, boolean isVisible) {
@@ -96,11 +106,28 @@ public class UserDashboardController {
         }
     }
 
+    /**
+     * Updates the visual state of the sidebar buttons to show which one is active.
+     */
+    private void setActiveButton(Button clickedBtn) {
+        // Remove active class from previous button
+        if (currentActiveBtn != null) {
+            currentActiveBtn.getStyleClass().remove("nav-btn-active");
+        }
+
+        // Add active class to new button
+        if (clickedBtn != null) {
+            clickedBtn.getStyleClass().add("nav-btn-active");
+            currentActiveBtn = clickedBtn;
+        }
+    }
+
     // --- Action Methods ---
 
     @FXML
     void goToHome(ActionEvent event) {
     	 try {
+             setActiveButton((Button) event.getSource());
              FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/ProfileView.fxml"));
              Parent root = loader.load();
 
@@ -118,6 +145,7 @@ public class UserDashboardController {
     @FXML
     void goToMyReservations(ActionEvent event) {
         try {
+            setActiveButton((Button) event.getSource());
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/MyReservations.fxml"));
             Parent root = loader.load();
 
@@ -135,6 +163,7 @@ public class UserDashboardController {
     @FXML
     void openNewReservation(ActionEvent event) {
         try {
+            setActiveButton((Button) event.getSource());
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/NewReservation.fxml"));
             Parent root = loader.load();
 
@@ -152,6 +181,7 @@ public class UserDashboardController {
 
     @FXML
     void handleExitWaitlist(ActionEvent event) {
+        setActiveButton((Button) event.getSource());
         Alert alert = new Alert(AlertType.CONFIRMATION);
         alert.setTitle("Leave Waitlist");
         alert.setHeaderText("Confirmation");
@@ -184,6 +214,7 @@ public class UserDashboardController {
 
     @FXML
     void goToLiveDashboard(ActionEvent event) {
+        setActiveButton((Button) event.getSource());
         System.out.println("DEBUG: Go to Live Dashboard");
          
         try {
@@ -208,6 +239,7 @@ public class UserDashboardController {
      */
     @FXML
     void goToRestaurantOps(ActionEvent event) {
+        setActiveButton((Button) event.getSource());
         try {
             // Load the FXML that contains the Tabs
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/RestaurantManagement.fxml"));
@@ -231,6 +263,7 @@ public class UserDashboardController {
 
     @FXML
     void goToViewReports(ActionEvent event) {
+        setActiveButton((Button) event.getSource());
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/ReportsScreen.fxml"));
             Parent root = loader.load();
@@ -250,6 +283,7 @@ public class UserDashboardController {
 
     @FXML
     void goToPayBill(ActionEvent event) {
+        setActiveButton((Button) event.getSource());
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/PayBillScreen.fxml"));
             Parent root = loader.load();
@@ -275,7 +309,9 @@ public class UserDashboardController {
 
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             stage.setTitle("BistroNine - Select Mode");
-            stage.setScene(new Scene(root));
+            Scene scene = new Scene(root);
+            scene.getStylesheets().add(getClass().getResource("/gui/styles.css").toExternalForm());
+            stage.setScene(scene);
             stage.show();
             stage.centerOnScreen();
         } catch (Exception e) {

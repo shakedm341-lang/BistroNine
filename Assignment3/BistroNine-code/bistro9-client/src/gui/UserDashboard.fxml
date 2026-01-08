@@ -4,179 +4,97 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
-<?import javafx.scene.text.Font?>
+<?import javafx.scene.layout.HBox?>
 
-<BorderPane prefHeight="700.0" prefWidth="1024.0"
-	xmlns="http://javafx.com/javafx/8.0.171"
-	xmlns:fx="http://javafx.com/fxml/1"
-	fx:controller="gui.UserDashboardController">
-	<left>
-		<VBox prefHeight="650.0" prefWidth="220.0" spacing="8.0"
-			style="-fx-background-color: #F4F4F4;" BorderPane.alignment="CENTER">
-			<children>
-				<VBox alignment="CENTER_LEFT" prefHeight="80.0" spacing="5.0">
-					<children>
-						<Label text="BistroNine" textFill="#2196f3">
-							<font>
-								<Font name="System Bold" size="24.0" />
-							</font>
-						</Label>
-						<Label fx:id="lblWelcome" text="Welcome, User"
-							textFill="#666666">
-							<font>
-								<Font size="14.0" />
-							</font>
-						</Label>
-					</children>
-					<padding>
-						<Insets left="20.0" />
-					</padding>
-				</VBox>
+<BorderPane prefHeight="700.0" prefWidth="1000.0" styleClass="main-background"
+            xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="gui.UserDashboardController">
+    
+    <left>
+        <VBox prefWidth="240.0" styleClass="sidebar" spacing="10.0" BorderPane.alignment="CENTER">
+            <padding>
+                <Insets top="20" bottom="20"/>
+            </padding>
+            <children>
+                
+                <VBox spacing="5.0">
+                    <padding>
+                        <Insets left="25.0" right="20.0" bottom="20.0" />
+                    </padding>
+                    <children>
+                        <Label text="BistroNine" styleClass="sidebar-logo"/>
+                        <Label fx:id="lblWelcome" text="Welcome, User" styleClass="sidebar-user-label"/>
+                    </children>
+                </VBox>
 
-				<Separator prefWidth="200.0" />
+                <Separator styleClass="sidebar-separator" />
 
-				
+                <VBox spacing="5.0" VBox.vgrow="ALWAYS">
+                    
+                    <Button fx:id="btnHome" mnemonicParsing="false" onAction="#goToHome"
+                            styleClass="nav-btn" text="Home / Profile" maxWidth="Infinity"/>
 
-				<Button mnemonicParsing="false" onAction="#goToHome"
-					prefHeight="45.0" prefWidth="220.0"
-					style="-fx-background-color: transparent; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;"
-					text="Home / Profile" textFill="#333333">
-					<padding>
-						<Insets left="20.0" />
-					</padding>
-					<font>
-						<Font size="14.0" />
-					</font>
-				</Button>
+                    <Button fx:id="btnMyReservations" mnemonicParsing="false" onAction="#goToMyReservations"
+                            styleClass="nav-btn" text="My Reservations" maxWidth="Infinity"/>
 
-				<Button mnemonicParsing="false"
-					onAction="#goToMyReservations" prefHeight="45.0" prefWidth="220.0"
-					style="-fx-background-color: transparent; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;"
-					text="My Reservations" textFill="#333333">
-					<padding>
-						<Insets left="20.0" />
-					</padding>
-					<font>
-						<Font size="14.0" />
-					</font>
-				</Button>
+                    <Button fx:id="btnNewReservation" mnemonicParsing="false" onAction="#openNewReservation"
+                            styleClass="nav-btn" text="New Reservation" maxWidth="Infinity"/>
+                    
+                    <Button fx:id="btnLeaveWaitlist" mnemonicParsing="false" onAction="#handleExitWaitlist"
+                            styleClass="nav-btn" text="Leave Waitlist" maxWidth="Infinity"/>
 
-				<Button mnemonicParsing="false"
-					onAction="#openNewReservation" prefHeight="45.0" prefWidth="220.0"
-					style="-fx-background-color: transparent; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;"
-					text="New Reservation" textFill="#333333">
-					<padding>
-						<Insets left="20.0" />
-					</padding>
-					<font>
-						<Font size="14.0" />
-					</font>
-				</Button>
+                    <Button fx:id="btnPayBill" mnemonicParsing="false" onAction="#goToPayBill"
+                            styleClass="nav-btn" text="Pay Bill" maxWidth="Infinity"/>
+                    
+                    <HBox alignment="CENTER">
+                        <padding><Insets top="10" bottom="10"/></padding>
+                        <Separator prefWidth="150" styleClass="sidebar-separator-small"/>
+                    </HBox>
 
-				<Button mnemonicParsing="false"
-					onAction="#handleExitWaitlist" prefHeight="45.0" prefWidth="220.0"
-					style="-fx-background-color: transparent; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;"
-					text="Leave Waitlist" textFill="#333333">
-					<padding>
-						<Insets left="20.0" />
-					</padding>
-					<font>
-						<Font size="14.0" />
-					</font>
-				</Button>
+                    <Button fx:id="btnLiveDashboard" mnemonicParsing="false" onAction="#goToLiveDashboard"
+                            styleClass="nav-btn, nav-btn-admin" text="Live Dashboard" maxWidth="Infinity"/>
 
-				<Button fx:id="btnPayBill" mnemonicParsing="false"
-					onAction="#goToPayBill" prefHeight="45.0" prefWidth="220.0"
-					style="-fx-background-color: transparent; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;"
-					text="Pay Bill" textFill="#333333">
-					<padding>
-						<Insets left="40.0" />
-					</padding>
-					<font>
-						<Font size="14.0" />
-					</font>
-				</Button>
+                    <Button fx:id="btnRestaurantOps" mnemonicParsing="false" onAction="#goToRestaurantOps"
+                            styleClass="nav-btn, nav-btn-admin" text="Restaurant Operations" maxWidth="Infinity"/>
 
-				<Separator prefWidth="200.0" />
-				
-				<Button fx:id="btnLiveDashboard" mnemonicParsing="false"
-					onAction="#goToLiveDashboard" prefHeight="45.0" prefWidth="220.0"
-					style="-fx-background-color: transparent; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;"
-					text="Live Dashboard" textFill="#333333">
-					<padding>
-						<Insets left="20.0" />
-					</padding>
-					<font>
-						<Font name="System Bold" size="14.0" />
-					</font>
-				</Button>
+                    <Button fx:id="btnViewReports" mnemonicParsing="false" onAction="#goToViewReports"
+                            styleClass="nav-btn, nav-btn-admin" text="View Reports" maxWidth="Infinity"/>
+                    
+                    <VBox VBox.vgrow="ALWAYS" />
 
-				<Button fx:id="btnRestaurantOps" mnemonicParsing="false"
-					onAction="#goToRestaurantOps" prefHeight="45.0" prefWidth="220.0"
-					style="-fx-background-color: transparent; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;"
-					text="Restaurant Operations" textFill="#333333">
-					<padding>
-						<Insets left="20.0" />
-					</padding>
-					<font>
-						<Font name="System Bold" size="14.0" />
-					</font>
-				</Button>
+                    <Button mnemonicParsing="false" onAction="#doLogout"
+                            styleClass="nav-btn-logout" text="Logout" maxWidth="Infinity">
+                         <VBox.margin>
+                            <Insets top="20.0" left="20" right="20"/>
+                         </VBox.margin>
+                    </Button>
 
-				<Button fx:id="btnViewReports" mnemonicParsing="false"
-					onAction="#goToViewReports" prefHeight="45.0" prefWidth="220.0"
-					style="-fx-background-color: transparent; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;"
-					text="View Reports" textFill="#333333">
-					<padding>
-						<Insets left="20.0" />
-					</padding>
-					<font>
-						<Font size="14.0" />
-					</font>
-				</Button>
+                </VBox>
+            </children>
+        </VBox>
+    </left>
 
-				<VBox VBox.vgrow="ALWAYS" />
-
-				<Separator prefWidth="200.0" />
-
-				<Button mnemonicParsing="false" onAction="#doLogout"
-					prefHeight="50.0" prefWidth="220.0"
-					style="-fx-background-color: transparent; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;"
-					text="Logout" textFill="#d32f2f">
-					<padding>
-						<Insets left="20.0" />
-					</padding>
-					<font>
-						<Font name="System Bold" size="14.0" />
-					</font>
-				</Button>
-			</children>
-		</VBox>
-	</left>
-
-	<center>
-		<StackPane fx:id="contentArea"
-			style="-fx-background-color: white;" BorderPane.alignment="CENTER">
-			<children>
-				<VBox alignment="CENTER" spacing="10.0">
-					<children>
-						<Label text="Welcome to BistroNine" textFill="#cccccc">
-							<font>
-								<Font name="System Bold" size="32.0" />
-							</font>
-						</Label>
-						<Label text="Select an action from the left menu"
-							textFill="#999999">
-							<font>
-								<Font size="16.0" />
-							</font>
-						</Label>
-					</children>
-				</VBox>
-			</children>
-		</StackPane>
-	</center>
+    <center>
+        <ScrollPane fitToWidth="true" styleClass="edge-to-edge" style="-fx-background-color: transparent;">
+            <content>
+                <StackPane fx:id="contentArea" styleClass="content-area" BorderPane.alignment="CENTER">
+                    <padding>
+                        <Insets top="30" right="30" bottom="30" left="30"/>
+                    </padding>
+                    <children>
+                        <VBox alignment="CENTER" spacing="10.0">
+                            <children>
+                                <Label text="BistroNine" style="-fx-text-fill: #E2E8F0; -fx-font-size: 48px; -fx-font-weight: bold;"/>
+                                <Label text="Select an action from the menu" style="-fx-text-fill: #A0AEC0; -fx-font-size: 16px;"/>
+                            </children>
+                        </VBox>
+                    </children>
+                </StackPane>
+            </content>
+        </ScrollPane>
+    </center>
 </BorderPane>

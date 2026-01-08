@@ -60,8 +60,7 @@
             <!-- Subscriber Fields -->
             <VBox fx:id="subscriberFields" spacing="10.0">
                <children>
-                  <Button fx:id="btnScanBarcode" mnemonicParsing="false" onAction="#handleScanBarcode" prefHeight="40.0" prefWidth="250.0" style="-fx-background-color: #1976D2; -fx-text-fill: white; -fx-font-weight: bold;" text="SCAN BARCODE (Simulated)" />
-                  <Label text="OR Enter Subscriber ID:" />
+                  <Label text="Subscriber ID:" />
                   <TextField fx:id="subscriberIdField" prefHeight="40.0" promptText="Subscriber ID" />
                </children>
             </VBox>

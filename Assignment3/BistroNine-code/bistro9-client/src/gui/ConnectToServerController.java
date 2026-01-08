@@ -53,6 +53,7 @@ public class ConnectToServerController {
 			Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
 			stage.setTitle("BistroNine Client - Main Menu");
 			Scene scene = new Scene(root);
+			scene.getStylesheets().add(getClass().getResource("/gui/styles.css").toExternalForm());
 			stage.setScene(scene);
 			stage.show();
 			stage.centerOnScreen();

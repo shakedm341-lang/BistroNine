@@ -417,15 +417,9 @@ public class ClientController extends AbstractClient {
     
     // Helper method for handling tag identification response 
     private void handleTagIdentificationResponse(Message message) {
-        if (getTableController != null) {
-            getTableController.onIdentificationResponse(message.content); // Pass identification result to the Kiosk controller
+        if (loginController != null) {
+            loginController.onIdentificationResponse(message.content); // Pass identification result to the Login controller
         }
-        if (joinWaitlistController != null) {
-            joinWaitlistController.onIdentificationResponse(message.content); // Pass identification result to the Join Waitlist Kiosk
-        }
-        if (leaveWaitlistController != null) {
-            leaveWaitlistController.onIdentificationResponse(message.content); // Pass identification result to the Leave Waitlist Kiosk
-        } 
     }
     
     // Helper method for handling the retrieval of confirmation codes

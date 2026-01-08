@@ -24,7 +24,6 @@ public class LeaveWaitlistController extends BaseTerminalController {
     @FXML private TextField phoneField;
     @FXML private TextField emailField;
     @FXML private TextField subscriberIdField;
-    @FXML private Button btnScanBarcode;
     @FXML private Button btnBack;
 
     private boolean isDashboardMode = false;
@@ -121,8 +120,6 @@ public class LeaveWaitlistController extends BaseTerminalController {
             // Show subscriber fields but hide the scanner
             subscriberFields.setVisible(true);
             subscriberFields.setManaged(true);
-            btnScanBarcode.setVisible(false);
-            btnScanBarcode.setManaged(false);
 
             // Pre-fill and lock subscriber ID
             subscriberIdField.setText(String.valueOf(user.getCustomerId()));
@@ -135,52 +132,13 @@ public class LeaveWaitlistController extends BaseTerminalController {
     }
 
     @FXML
-    void handleScanBarcode(ActionEvent event) {
-        TerminalUtils.simulateBarcodeScan(id -> {
-            if (id != null && !id.trim().isEmpty()) {
-                try {
-                    int subId = Integer.parseInt(id.trim());
-                    ArrayList<Object> content = new ArrayList<>();
-                    content.add(subId);
-                    
-                    if (client != null) {
-                        client.handleMessageFromBoundary(TypeMessage.CUSTOMER, content, 
-                            Command.CHECK_LOGIN_DETAILSֹֹ_BY_TAG_READER);
-                    } else {
-                        TerminalUtils.showError("Connection Error", "Client connection is not initialized.");
-                    }
-                } catch (NumberFormatException e) {
-                    TerminalUtils.showError("Input Error", "Subscriber ID must be a number.");
-                }
-            }
-        });
-    }
-
-    /**
-     * Handles server response for subscriber identification.
-     */
-    public void onIdentificationResponse(Object response) {
-        Platform.runLater(() -> {
-            if (response instanceof Subscriber) {
-                Subscriber sub = (Subscriber) response;
-                BaseTerminalController.currentSubscriberId = String.valueOf(sub.getCustomerId());
-                subscriberIdField.setText(BaseTerminalController.currentSubscriberId);
-                rbSubscriber.setSelected(true);
-                TerminalUtils.showSuccess("Identification Successful", "Welcome, " + sub.getFirstName() + " " + sub.getLastName() + "!");
-            } else {
-                TerminalUtils.showError("Identification Failed", "Could not identify subscriber. Please check the ID and try again.");
-            }
-        });
-    }
-
-    @FXML
     void handleLeave(ActionEvent event) {
         String type = rbSubscriber.isSelected() ? "subscriber" : "customer";
         
         if (rbSubscriber.isSelected() && !isDashboardMode) {
             if (BaseTerminalController.currentSubscriberId == null || BaseTerminalController.currentSubscriberId.isEmpty()) {
-                // Trigger identification if not already identified
-                handleScanBarcode(null);
+                // Should not happen in terminal mode anymore
+                TerminalUtils.showError("Identification Required", "Please login at the beginning.");
                 return;
             }
         }

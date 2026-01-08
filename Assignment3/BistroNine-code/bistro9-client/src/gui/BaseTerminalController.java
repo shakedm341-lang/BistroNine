@@ -33,30 +33,6 @@ public abstract class BaseTerminalController {
         }
     }
 
-    /**
-     * Checks if the user is a subscriber and identified.
-     * If not identified, triggers the identification flow.
-     */
-    protected void ensureSubscriberIdentified(Runnable onSuccess) {
-        if (currentUserType != UserType.SUBSCRIBER) {
-            onSuccess.run();
-            return;
-        }
-
-        if (currentSubscriberId != null && !currentSubscriberId.isEmpty()) {
-            onSuccess.run();
-        } else {
-            TerminalUtils.simulateBarcodeScan(id -> {
-                if (id != null && !id.trim().isEmpty()) {
-                    currentSubscriberId = id.trim();
-                    onSuccess.run();
-                } else {
-                    TerminalUtils.showError("Identification Required", "Please identify yourself to proceed.");
-                }
-            });
-        }
-    }
-
     protected void switchScene(ActionEvent event, String fxmlPath, String title) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
@@ -73,7 +49,9 @@ public abstract class BaseTerminalController {
 
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             stage.setTitle(title);
-            stage.setScene(new Scene(root));
+            Scene scene = new Scene(root);
+            scene.getStylesheets().add(getClass().getResource("/gui/styles.css").toExternalForm());
+            stage.setScene(scene);
             stage.show();
             stage.centerOnScreen();
         } catch (Exception e) {

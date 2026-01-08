@@ -19,8 +19,19 @@ public class TerminalIdentificationController {
 
     @FXML
     void handleSubscriber(ActionEvent event) {
-        BaseTerminalController.setUserType(BaseTerminalController.UserType.SUBSCRIBER);
-        goToTerminalMenu(event);
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/LoginScreen.fxml"));
+            Parent root = loader.load();
+
+            LoginController loginController = loader.getController();
+            loginController.setClient(this.client);
+            loginController.setMode(LoginController.Mode.TERMINAL);
+
+            switchScene(event, root, "BistroNine - Subscriber Login");
+        } catch (Exception e) {
+            System.out.println("Error loading Login Screen for Terminal Mode:");
+            e.printStackTrace();
+        }
     }
 
     @FXML
@@ -63,7 +74,9 @@ public class TerminalIdentificationController {
     private void switchScene(ActionEvent event, Parent root, String title) {
         Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
         stage.setTitle(title);
-        stage.setScene(new Scene(root));
+        Scene scene = new Scene(root);
+        scene.getStylesheets().add(getClass().getResource("/gui/styles.css").toExternalForm());
+        stage.setScene(scene);
         stage.show();
         stage.centerOnScreen();
     }

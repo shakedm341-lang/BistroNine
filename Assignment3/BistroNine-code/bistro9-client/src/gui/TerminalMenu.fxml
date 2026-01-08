@@ -3,68 +3,61 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
-<?import javafx.scene.text.Font?>
 
-<VBox alignment="CENTER" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="800.0" spacing="25.0" style="-fx-background-color: #f5f5f5;" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gui.TerminalMenuController">
-   <children>
-      <Label text="Terminal Mode" textFill="#2c3e50">
-         <font>
-            <Font name="System Bold" size="36.0" />
-         </font>
-         <VBox.margin>
-            <Insets bottom="5.0" />
-         </VBox.margin>
-      </Label>
-      
-      <Label fx:id="lblMode" text="Mode: Guest" textFill="#7f8c8d">
-         <font>
-            <Font name="System Italic" size="18.0" />
-         </font>
-         <VBox.margin>
-            <Insets bottom="15.0" />
-         </VBox.margin>
-      </Label>
-      
-      <Button fx:id="btnGetTable" mnemonicParsing="false" onAction="#handleGetTable" prefHeight="80.0" prefWidth="400.0" style="-fx-background-color: #2196F3; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 10;" text="1. Get a table">
-         <font>
-            <Font name="System Bold" size="24.0" />
-         </font>
-      </Button>
-      
-      <Button fx:id="btnJoinWaitlist" mnemonicParsing="false" onAction="#handleJoinWaitlist" prefHeight="80.0" prefWidth="400.0" style="-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 10;" text="2. Join the waiting list">
-         <font>
-            <Font name="System Bold" size="24.0" />
-         </font>
-      </Button>
-      
-      <Button fx:id="btnPayBill" mnemonicParsing="false" onAction="#handlePayBill" prefHeight="80.0" prefWidth="400.0" style="-fx-background-color: #FF9800; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 10;" text="3. Pay bill">
-         <font>
-            <Font name="System Bold" size="24.0" />
-         </font>
-      </Button>
-      
-      <Button mnemonicParsing="false" onAction="#handleLeaveWaitlist" prefHeight="80.0" prefWidth="400.0" style="-fx-background-color: #795548; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 10;" text="4. Leave waitlist">
-         <font>
-            <Font name="System Bold" size="24.0" />
-         </font>
-      </Button>
-      
-      <VBox alignment="BOTTOM_CENTER" VBox.vgrow="ALWAYS">
-         <children>
-            <Button fx:id="btnExit" mnemonicParsing="false" onAction="#handleExit" prefHeight="50.0" prefWidth="200.0" style="-fx-background-color: #f44336; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 5;" text="Exit">
-               <font>
-                  <Font name="System Bold" size="18.0" />
-               </font>
-            </Button>
-         </children>
-         <padding>
-            <Insets top="40.0" />
-         </padding>
-      </VBox>
-   </children>
-   <padding>
-      <Insets bottom="40.0" left="40.0" right="40.0" top="40.0" />
-   </padding>
-</VBox>
+<StackPane prefHeight="600.0" prefWidth="800.0" styleClass="main-background" 
+           xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" 
+           fx:controller="gui.TerminalMenuController">
+    
+    <VBox alignment="TOP_CENTER" maxHeight="-Infinity" maxWidth="-Infinity" styleClass="card" spacing="20.0">
+        
+        <padding>
+            <Insets bottom="40.0" left="40.0" right="40.0" top="40.0" />
+        </padding>
 
+        <VBox alignment="CENTER" spacing="5.0">
+            <Label text="Terminal Mode" styleClass="title-text" />
+            <Label fx:id="lblMode" text="Mode: Guest" styleClass="subtitle-text" />
+        </VBox>
+
+        <GridPane hgap="20.0" vgap="20.0" alignment="CENTER">
+            <columnConstraints>
+                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="220.0" />
+                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="220.0" />
+            </columnConstraints>
+            <rowConstraints>
+                <RowConstraints minHeight="10.0" prefHeight="140.0" vgrow="SOMETIMES" />
+                <RowConstraints minHeight="10.0" prefHeight="140.0" vgrow="SOMETIMES" />
+            </rowConstraints>
+            
+            <children>
+                <Button fx:id="btnGetTable" mnemonicParsing="false" onAction="#handleGetTable" 
+                        styleClass="tile-btn, tile-blue" text="Get a Table" 
+                        GridPane.columnIndex="0" GridPane.rowIndex="0" maxWidth="Infinity" maxHeight="Infinity"/>
+
+                <Button fx:id="btnJoinWaitlist" mnemonicParsing="false" onAction="#handleJoinWaitlist" 
+                        styleClass="tile-btn, tile-green" text="Join Waitlist" 
+                        GridPane.columnIndex="1" GridPane.rowIndex="0" maxWidth="Infinity" maxHeight="Infinity"/>
+
+                <Button fx:id="btnPayBill" mnemonicParsing="false" onAction="#handlePayBill" 
+                        styleClass="tile-btn, tile-orange" text="Pay Bill" 
+                        GridPane.columnIndex="0" GridPane.rowIndex="1" maxWidth="Infinity" maxHeight="Infinity"/>
+
+                <Button mnemonicParsing="false" onAction="#handleLeaveWaitlist" 
+                        styleClass="tile-btn, tile-gray" text="Leave Waitlist" 
+                        GridPane.columnIndex="1" GridPane.rowIndex="1" maxWidth="Infinity" maxHeight="Infinity"/>
+            </children>
+            <VBox.margin>
+                <Insets top="20.0" bottom="20.0" />
+            </VBox.margin>
+        </GridPane>
+
+        <Button fx:id="btnExit" mnemonicParsing="false" onAction="#handleExit" 
+                styleClass="btn-danger-outline" text="Exit System" />
+
+    </VBox>
+</StackPane>

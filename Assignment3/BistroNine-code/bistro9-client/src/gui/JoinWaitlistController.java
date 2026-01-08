@@ -27,9 +27,6 @@ public class JoinWaitlistController extends BaseTerminalController {
     @FXML private TextField scannedSubIdField;
     @FXML private Spinner<Integer> dinersSpinner;
     @FXML private Button btnJoin;
-    @FXML private Label lblDetected;
-
-    public static String lastScannedCode = "";
 
     @FXML
     public void initialize() {
@@ -66,18 +63,12 @@ public class JoinWaitlistController extends BaseTerminalController {
             subscriberFields.setVisible(true);
             subscriberFields.setManaged(true);
             
-            lastScannedCode = BaseTerminalController.currentSubscriberId != null ? BaseTerminalController.currentSubscriberId : "";
-            scannedSubIdField.setText(lastScannedCode);
+            String currentId = BaseTerminalController.currentSubscriberId != null ? BaseTerminalController.currentSubscriberId : "";
+            scannedSubIdField.setText(currentId);
             scannedSubIdField.setEditable(false);
             
-            // If subscriber is not yet identified, disable join button until they scan
-            if (lastScannedCode.isEmpty()) {
-                btnJoin.setDisable(true);
-                lblDetected.setVisible(false);
-            } else {
-                btnJoin.setDisable(false);
-                lblDetected.setVisible(true);
-            }
+            // In Terminal Mode, subscriber is already identified at login
+            btnJoin.setDisable(currentId.isEmpty());
         } else {
             rbGuest.setSelected(true);
             rbSubscriber.setSelected(false);
@@ -89,45 +80,13 @@ public class JoinWaitlistController extends BaseTerminalController {
             subscriberFields.setManaged(false);
             
             btnJoin.setDisable(false);
-            lblDetected.setVisible(false);
         }
-    }
-
-    @FXML
-    void handleScanBarcode(ActionEvent event) {
-        TerminalUtils.simulateBarcodeScan(id -> {
-            if (id != null && !id.trim().isEmpty()) {
-                try {
-                    int subId = Integer.parseInt(id.trim());
-                    ArrayList<Object> content = new ArrayList<>();
-                    content.add(subId);
-                    
-                    if (client != null) {
-                        client.handleMessageFromBoundary(TypeMessage.CUSTOMER, content, 
-                            Command.CHECK_LOGIN_DETAILSֹֹ_BY_TAG_READER);
-                    } else {
-                        TerminalUtils.showError("Connection Error", "Client connection is not initialized.");
-                    }
-                } catch (NumberFormatException e) {
-                    TerminalUtils.showError("Input Error", "Subscriber ID must be a number.");
-                } catch (IllegalArgumentException e) {
-                    TerminalUtils.showError("System Error", "The identification command is not recognized by the system.");
-                }
-            }
-        });
     }
 
     @FXML
     void handleJoin(ActionEvent event) {
         String type = rbSubscriber.isSelected() ? "subscriber" : "customer";
-        
-        if (rbSubscriber.isSelected()) {
-            ensureSubscriberIdentified(() -> {
-                performJoin(type);
-            });
-        } else {
-            performJoin(type);
-        }
+        performJoin(type);
     }
 
     private void performJoin(String type) {
@@ -182,30 +141,6 @@ public class JoinWaitlistController extends BaseTerminalController {
                     TerminalUtils.showSuccess("Waitlist Joined", "You have been added to the waitlist.\nYour confirmation code is: " + val + "\nYou will receive a notification when your table is ready.");
                     handleBack(new ActionEvent(btnJoin, null)); // Return to menu
                 }
-            }
-        });
-    }
-
-    /**
-     * Handles server response for subscriber identification.
-     */
-    public void onIdentificationResponse(Object response) {
-        Platform.runLater(() -> {
-            if (response instanceof data.Subscriber) {
-                data.Subscriber sub = (data.Subscriber) response;
-                lastScannedCode = String.valueOf(sub.getCustomerId());
-                BaseTerminalController.currentSubscriberId = lastScannedCode;
-                scannedSubIdField.setText(lastScannedCode);
-                
-                lblDetected.setVisible(true);
-                btnJoin.setDisable(false);
-                
-                // If it was casual guest mode, switch to subscriber (though in Terminal Mode it's usually fixed)
-                rbSubscriber.setSelected(true);
-            } else {
-                lblDetected.setVisible(false);
-                btnJoin.setDisable(true);
-                TerminalUtils.showError("Identification Failed", "Could not identify subscriber. Please check the ID and try again.");
             }
         });
     }

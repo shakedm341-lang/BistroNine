@@ -7,6 +7,7 @@
 <?import javafx.scene.control.RadioButton?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.control.ToggleGroup?>
+<?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
@@ -21,11 +22,6 @@
                   <Font name="System Bold" size="30.0" />
                </font>
             </Label>
-            <Label text="Please identify to receive your table" textFill="#555555">
-               <font>
-                  <Font size="16.0" />
-               </font>
-            </Label>
          </children>
          <VBox.margin>
             <Insets top="15.0" />
@@ -35,73 +31,64 @@
       <StackPane fx:id="mainStack" maxWidth="750.0" VBox.vgrow="ALWAYS">
          <children>
             <!-- Screen 1: Check-In View -->
-            <VBox fx:id="checkInView" alignment="CENTER" spacing="30.0" style="-fx-background-color: white; -fx-background-radius: 15; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 5); -fx-padding: 30;">
+            <VBox fx:id="checkInView" alignment="CENTER" style="-fx-background-color: white; -fx-background-radius: 15; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 5); -fx-padding: 30;">
                <children>
-                  <Label fx:id="checkInTitle" text="Enter Confirmation Code" textFill="#1976D2">
-                     <font>
-                        <Font name="System Bold" size="28.0" />
-                     </font>
-                  </Label>
-                  
-                  <HBox alignment="CENTER" spacing="50.0">
-                     <children>
-                        <!-- Way 1: By Code (Visible for all) -->
-                        <VBox alignment="TOP_CENTER" spacing="15.0" HBox.hgrow="ALWAYS">
+                  <BorderPane VBox.vgrow="ALWAYS">
+                     <top>
+                        <VBox alignment="CENTER" spacing="10.0" BorderPane.alignment="CENTER">
                            <children>
-                              <Label fx:id="codeSubtitle" alignment="CENTER" prefHeight="60.0" text="Option 1: By Code" textAlignment="CENTER" textFill="#1976D2" wrapText="true">
+                              <Label fx:id="checkInTitle" text="Reservation Check-In" textFill="#1976D2">
                                  <font>
-                                    <Font name="System Bold" size="18.0" />
+                                    <Font name="System Bold" size="28.0" />
                                  </font>
                               </Label>
-                              <TextField fx:id="confCodeField" alignment="CENTER" maxWidth="280.0" promptText="######" style="-fx-font-size: 26; -fx-background-radius: 5; -fx-font-weight: bold;" />
-                              <Button mnemonicParsing="false" onAction="#handleCheckInByCode" prefHeight="50.0" prefWidth="250.0" style="-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand; -fx-font-size: 18;" text="CHECK-IN" />
+                              <Label fx:id="checkInGuidance" text="Select an active reservation or enter your code manually." textFill="#555555">
+                                 <font>
+                                    <Font size="16.0" />
+                                 </font>
+                              </Label>
                            </children>
+                           <padding>
+                              <Insets bottom="30.0" />
+                           </padding>
                         </VBox>
-
-                        <!-- Way 2: By ReaderTag (Visible for subscribers only) -->
-                        <VBox fx:id="tagIdentificationBox" alignment="TOP_CENTER" managed="false" spacing="15.0" visible="false" HBox.hgrow="ALWAYS">
+                     </top>
+                     <center>
+                        <HBox alignment="CENTER" spacing="50.0" BorderPane.alignment="CENTER">
                            <children>
-                              <VBox fx:id="scanTagView" alignment="TOP_CENTER" spacing="15.0">
+                              <!-- Left Side: ListView -->
+                              <VBox fx:id="subscriberCodesBox" alignment="TOP_CENTER" spacing="15.0" HBox.hgrow="ALWAYS">
                                  <children>
-                                    <Label alignment="CENTER" prefHeight="60.0" text="Option 2: By ReaderTag" textAlignment="CENTER" textFill="#1976D2" wrapText="true">
+                                    <Label text="Your Active Codes" textFill="#1976D2">
                                        <font>
                                           <Font name="System Bold" size="18.0" />
                                        </font>
                                     </Label>
-                                    <Button mnemonicParsing="false" onAction="#handleCheckInByTag" prefHeight="50.0" prefWidth="250.0" style="-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand; -fx-font-size: 18;" text="SCAN TAG" />
-                                    <Label text="(Use your Subscriber Tag)" textFill="#757575">
-                                       <font>
-                                          <Font size="13.0" />
-                                       </font>
-                                    </Label>
+                                    <ListView fx:id="codesListView" prefHeight="250.0" prefWidth="280.0" style="-fx-font-size: 16; -fx-background-radius: 5;" />
                                  </children>
                               </VBox>
                               
-                              <VBox fx:id="codesListViewContainer" alignment="TOP_CENTER" managed="false" spacing="10.0" visible="false">
+                              <!-- Right Side: Manual Input -->
+                              <VBox alignment="CENTER" spacing="20.0" HBox.hgrow="ALWAYS">
                                  <children>
-                                    <Label text="Select Your Reservation" textFill="#1976D2">
+                                    <Label text="Manual Entry" textFill="#1976D2">
                                        <font>
                                           <Font name="System Bold" size="18.0" />
                                        </font>
                                     </Label>
-                                    <ListView fx:id="codesListView" maxHeight="150.0" maxWidth="250.0" style="-fx-font-size: 16;" />
-                                    <Button mnemonicParsing="false" onAction="#handleResetIdentification" style="-fx-background-color: transparent; -fx-text-fill: #757575; -fx-underline: true; -fx-cursor: hand;" text="Scan another tag">
+                                    <TextField fx:id="confCodeField" alignment="CENTER" maxWidth="250.0" promptText="######" style="-fx-font-size: 26; -fx-background-radius: 5; -fx-font-weight: bold;" />
+                                    <Button mnemonicParsing="false" onAction="#handleCheckInByCode" prefHeight="55.0" prefWidth="220.0" style="-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand; -fx-font-size: 20;" text="CHECK-IN" />
+                                    <Button fx:id="lostCodeButton" mnemonicParsing="false" onAction="#handleShowRecovery" style="-fx-background-color: transparent; -fx-text-fill: #1976D2; -fx-underline: true; -fx-cursor: hand;" text="I lost my code">
                                        <font>
-                                          <Font size="12.0" />
+                                          <Font size="14.0" />
                                        </font>
                                     </Button>
                                  </children>
                               </VBox>
                            </children>
-                        </VBox>
-                     </children>
-                  </HBox>
-                  
-                  <Button fx:id="lostCodeButton" mnemonicParsing="false" onAction="#handleShowRecovery" style="-fx-background-color: transparent; -fx-text-fill: #1976D2; -fx-underline: true; -fx-cursor: hand;" text="I lost my code">
-                     <font>
-                        <Font size="14.0" />
-                     </font>
-                  </Button>
+                        </HBox>
+                     </center>
+                  </BorderPane>
                </children>
             </VBox>
             

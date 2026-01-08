@@ -29,6 +29,7 @@ public class TerminalPlaceholderController {
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             stage.setTitle("BistroNine - Terminal Mode");
             Scene scene = new Scene(root);
+            scene.getStylesheets().add(getClass().getResource("/gui/styles.css").toExternalForm());
             stage.setScene(scene);
             stage.show();
             stage.centerOnScreen();

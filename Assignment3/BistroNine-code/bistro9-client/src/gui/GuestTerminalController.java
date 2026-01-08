@@ -1,5 +1,6 @@
 package gui;
 
+import java.io.IOException;
 import controller.ClientController;
 import data.Subscriber;
 import javafx.event.ActionEvent;
@@ -8,7 +9,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.TabPane;
+import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 
 public class GuestTerminalController {
@@ -16,33 +17,64 @@ public class GuestTerminalController {
     private ClientController client;
 
     @FXML
-    private TabPane guestTabPane;
-
-    @FXML
-    private ReservationBoundry reservationScreenController;
-
-    @FXML
-    private LeaveWaitlistController leaveWaitlistScreenController;
-
-    @FXML
-    private PayBillController payBillScreenController;
+    private StackPane contentArea;
 
     public void setClient(ClientController client) {
         this.client = client;
-        
-        // Initialize sub-controllers
-        if (reservationScreenController != null) {
-            reservationScreenController.setClient(client);
-            reservationScreenController.initData(null, true, true); // Guest, Customer Mode, Embedded
+        // Default view: New Order / Reservation
+        goToNewReservation(null);
+    }
+
+    @FXML
+    void goToNewReservation(ActionEvent event) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/NewReservation.fxml"));
+            Parent root = loader.load();
+
+            ReservationBoundry controller = loader.getController();
+            controller.setClient(client);
+            controller.initData(null, true, true); // Guest, Customer Mode, Embedded
+
+            contentArea.getChildren().clear();
+            contentArea.getChildren().add(root);
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        
-        if (leaveWaitlistScreenController != null) {
-            leaveWaitlistScreenController.setClient(client);
-            leaveWaitlistScreenController.setTerminalMode(true);
+    }
+
+    @FXML
+    void goToLeaveWaitlist(ActionEvent event) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/LeaveWaitlistScreen.fxml"));
+            Parent root = loader.load();
+
+            LeaveWaitlistController controller = loader.getController();
+            controller.setClient(client);
+            controller.setTerminalMode(true);
+
+            contentArea.getChildren().clear();
+            contentArea.getChildren().add(root);
+
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        
-        if (payBillScreenController != null) {
-            payBillScreenController.setTerminalDependencies(client);
+    }
+
+    @FXML
+    void goToPayBill(ActionEvent event) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/PayBillScreen.fxml"));
+            Parent root = loader.load();
+
+            PayBillController controller = loader.getController();
+            controller.setTerminalDependencies(client);
+
+            contentArea.getChildren().clear();
+            contentArea.getChildren().add(root);
+
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 

@@ -1,7 +1,6 @@
 package gui;
 
 import data.Command;
-import data.Subscriber;
 import data.TableReservation;
 import data.TypeMessage;
 import controller.ClientController;
@@ -31,19 +30,13 @@ public class GetTableController extends BaseTerminalController {
     
     @FXML private VBox checkInView;
     @FXML private VBox recoveryView;
-    
-    @FXML private VBox tagIdentificationBox;
-    @FXML private VBox scanTagView;
-    @FXML private VBox codesListViewContainer;
-    @FXML private ListView<Integer> codesListView;
+    @FXML private VBox subscriberCodesBox;
+    @FXML private ListView<String> codesListView;
     
     @FXML private Label checkInTitle;
-    @FXML private Label codeSubtitle;
+    @FXML private Label checkInGuidance;
     @FXML private Button lostCodeButton;
     
-    // Stores the ID from the simulated barcode/tag scan
-    public static String lastScannedCode = "";
-
     @FXML
     public void initialize() {
         // Register this controller instance globally for message routing
@@ -52,43 +45,49 @@ public class GetTableController extends BaseTerminalController {
         // Default UI state
         checkInView.setVisible(true);
         recoveryView.setVisible(false);
-        
-        // Add selection listener to the codes list
-        codesListView.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
-            if (newVal != null) {
-                confCodeField.setText(String.valueOf(newVal));
-            }
-        });
+        subscriberCodesBox.setVisible(false);
+        subscriberCodesBox.setManaged(false);
         
         // Initial state logic based on Terminal Mode
         if (BaseTerminalController.currentUserType == BaseTerminalController.UserType.SUBSCRIBER) {
-            lastScannedCode = BaseTerminalController.currentSubscriberId != null ? BaseTerminalController.currentSubscriberId : "";
-            
             // Subscriber check-in options
-            checkInTitle.setText("Choose Identification Method");
-            codeSubtitle.setText("Option 1: Enter Confirmation Code Manually");
-            codeSubtitle.setVisible(true);
-            codeSubtitle.setManaged(true);
-            tagIdentificationBox.setVisible(true);
-            tagIdentificationBox.setManaged(true);
-            
-            // Reset to scan view initially
-            scanTagView.setVisible(true);
-            scanTagView.setManaged(true);
-            codesListViewContainer.setVisible(false);
-            codesListViewContainer.setManaged(false);
+            checkInTitle.setText("Reservation Check-In");
+            checkInGuidance.setText("Select an active reservation or enter your code manually.");
             
             lostCodeButton.setVisible(false);
             lostCodeButton.setManaged(false);
+
+            // Show and request codes list
+            subscriberCodesBox.setVisible(true);
+            subscriberCodesBox.setManaged(true);
+            
+            // Add selection listener to ListView
+            codesListView.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
+                if (newVal != null) {
+                    confCodeField.setText(newVal);
+                }
+            });
         } else {
             // Guest check-in options (default)
             checkInTitle.setText("Enter Confirmation Code");
-            codeSubtitle.setVisible(false);
-            codeSubtitle.setManaged(false);
-            tagIdentificationBox.setVisible(false);
-            tagIdentificationBox.setManaged(false);
+            checkInGuidance.setText("Please enter your 6-digit confirmation code below.");
             lostCodeButton.setVisible(true);
             lostCodeButton.setManaged(true);
+        }
+    }
+
+    @Override
+    public void setClient(ClientController client) {
+        super.setClient(client);
+        // If we are a subscriber, request the codes now that we have the client
+        if (BaseTerminalController.currentUserType == BaseTerminalController.UserType.SUBSCRIBER && client != null && currentSubscriberId != null) {
+            ArrayList<Object> content = new ArrayList<>();
+            try {
+                content.add(Integer.parseInt(currentSubscriberId));
+                client.handleMessageFromBoundary(TypeMessage.CUSTOMER, content, Command.GET_ALL_CONF_CODE_BY_CUSTOMER_ID);
+            } catch (NumberFormatException e) {
+                System.out.println("Error parsing subscriber ID: " + currentSubscriberId);
+            }
         }
     }
 
@@ -108,99 +107,6 @@ public class GetTableController extends BaseTerminalController {
     void handleShowCheckIn(ActionEvent event) {
         recoveryView.setVisible(false);
         checkInView.setVisible(true);
-    }
-
-    @FXML
-    void handleCheckInByTag(ActionEvent event) {
-        TerminalUtils.simulateBarcodeScan(id -> {
-            if (id != null && !id.trim().isEmpty()) {
-                try {
-                    int subId = Integer.parseInt(id.trim());
-                    ArrayList<Object> content = new ArrayList<>();
-                    content.add(subId);
-                    
-                    if (client != null) {
-                        // Use the command string as specified on server
-                        client.handleMessageFromBoundary(TypeMessage.CUSTOMER, content, 
-                            Command.CHECK_LOGIN_DETAILSֹֹ_BY_TAG_READER);
-                    } else {
-                        TerminalUtils.showError("Connection Error", "Client connection is not initialized.");
-                    }
-                } catch (NumberFormatException e) {
-                    TerminalUtils.showError("Input Error", "Subscriber ID must be a number.");
-                } catch (IllegalArgumentException e) {
-                    TerminalUtils.showError("System Error", "The identification command is not recognized by the system.");
-                }
-            }
-        });
-    }
-
-    /**
-     * Handles server response for subscriber identification by tag.
-     */
-    public void onIdentificationResponse(Object response) {
-        Platform.runLater(() -> {
-            if (response instanceof Subscriber) {
-                Subscriber sub = (Subscriber) response;
-                int customerId = sub.getCustomerId();
-                
-                // Now request all active confirmation codes for this customer for today
-                ArrayList<Object> content = new ArrayList<>();
-                content.add(customerId);
-                
-                if (client != null) {
-                    try {
-                        client.handleMessageFromBoundary(TypeMessage.CUSTOMER, content, 
-                            Command.GET_ALL_CONF_CODE_BY_CUSTOMER_ID);
-                    } catch (IllegalArgumentException e) {
-                        TerminalUtils.showError("System Error", "The code retrieval command is not recognized.");
-                    }
-                }
-            } else {
-                TerminalUtils.showError("Identification Failed", "Could not identify subscriber. Please check the ID and try again.");
-            }
-        });
-    }
-
-    /**
-     * Handles server response for retrieving confirmation codes.
-     */
-    @SuppressWarnings("unchecked")
-    public void onCodesResponse(Object response) {
-        Platform.runLater(() -> {
-            if (response instanceof ArrayList) {
-                ArrayList<Integer> codes = (ArrayList<Integer>) response;
-                if (codes.isEmpty()) {
-                    TerminalUtils.showError("No Reservations", "No active reservations found for your account for today.");
-                    return;
-                }
-                
-                // Populate ListView
-                codesListView.getItems().clear();
-                codesListView.getItems().addAll(codes);
-                
-                // Show codes list area, hide scan button
-                scanTagView.setVisible(false);
-                scanTagView.setManaged(false);
-                codesListViewContainer.setVisible(true);
-                codesListViewContainer.setManaged(true);
-            } else {
-                TerminalUtils.showError("Error", "Failed to retrieve confirmation codes.");
-            }
-        });
-    }
-
-    @FXML
-    void handleResetIdentification(ActionEvent event) {
-        // Reset to scan view
-        codesListViewContainer.setVisible(false);
-        codesListViewContainer.setManaged(false);
-        scanTagView.setVisible(true);
-        scanTagView.setManaged(true);
-        
-        // Clear selection
-        codesListView.getSelectionModel().clearSelection();
-        confCodeField.clear();
     }
 
     /**
@@ -262,6 +168,24 @@ public class GetTableController extends BaseTerminalController {
         }
     }
 
+    /**
+     * Handles the server's response with all active confirmation codes for a subscriber.
+     */
+    public void onCodesResponse(Object response) {
+        Platform.runLater(() -> {
+            if (response instanceof ArrayList) {
+                ArrayList<Integer> list = (ArrayList<Integer>) response;
+                codesListView.getItems().clear();
+                if(list.isEmpty()) {
+                    TerminalUtils.showError("Retrieval Error", "No active reservations found");
+                    return;
+                }
+                for (Integer code : list) {
+                    codesListView.getItems().add(String.valueOf(code));
+                }
+            }
+        });
+    }
     /**
      * Handles the server's response to a check-in attempt.
      * Redirects the user to their table or notifies waitlist status.

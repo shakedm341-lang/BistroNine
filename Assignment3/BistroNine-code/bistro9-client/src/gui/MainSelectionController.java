@@ -65,7 +65,17 @@ public class MainSelectionController {
     private void switchScene(ActionEvent event, Parent root, String title) {
         Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
         stage.setTitle(title);
+
+        // By default, allow resizing unless we explicitly want a fixed window.
+        // The login screen should NOT be resizable.
+        if (title.contains("Login Screen")) {
+            stage.setResizable(false);
+        } else {
+            stage.setResizable(true);
+        }
+
         Scene scene = new Scene(root);
+        scene.getStylesheets().add(getClass().getResource("/gui/styles.css").toExternalForm());
         stage.setScene(scene);
         stage.show();
         stage.centerOnScreen();

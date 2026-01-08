@@ -43,7 +43,7 @@
          </VBox.margin>
       </Button>
       
-      <VBox alignment="CENTER" spacing="5.0">
+      <VBox fx:id="orSeparator" alignment="CENTER" spacing="5.0">
          <children>
             <Label text="OR" textFill="#999999">
                <font>
@@ -54,7 +54,13 @@
          </children>
       </VBox>
       
-      <Button mnemonicParsing="false" onAction="#enterAsGuest" prefHeight="35.0" prefWidth="220.0" style="-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-cursor: hand;" text="Order as Guest">
+      <Button fx:id="btnScanTag" managed="false" mnemonicParsing="false" onAction="#handleScanTag" prefHeight="35.0" prefWidth="220.0" style="-fx-background-color: #FF9800; -fx-text-fill: white; -fx-cursor: hand;" text="Scan Tag" visible="false">
+         <font>
+            <Font name="System Bold" size="14.0" />
+         </font>
+      </Button>
+      
+      <Button fx:id="btnGuest" mnemonicParsing="false" onAction="#enterAsGuest" prefHeight="35.0" prefWidth="220.0" style="-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-cursor: hand;" text="Order as Guest">
          <font>
             <Font name="System Bold" size="14.0" />
          </font>
