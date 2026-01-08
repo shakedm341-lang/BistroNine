@@ -79,6 +79,7 @@ public class DataBaseController {
 	// 43. getDailyTotalReservationsQuery(LocalDate) : int
 	// 44. getDailyTotalWaitingQuery(LocalDate) : int
 	// 45. addSubscriberReportQuery(SubscriberReport) : boolean
+	// 46. getTimeReportByRangeDateQuery(TimeReport) : boolean
 	// 47. getDailyAvgArrivalQuery(LocalDate) : Integer
 	// 48. getDailyAvgLeavingQuery(LocalDate) : Integer
 	// 49. addTimeReportQuery(TimeReport) : boolean
@@ -510,46 +511,66 @@ public class DataBaseController {
 		return false;
 	}
 
+	
 	/**
-	 * Retrieves the time report data for a specific date range. Joins
-	 * report_manager and time_report tables.
-	 * 
-	 * @param report The TimeReport object containing startDay and endDay.
+	 * Retrieves the time report data for a specific date range by calculating it
+	 * directly from the table_reservations table.
+	 * * @param report The TimeReport object containing startDay and endDay.
 	 * @return true if the query executed successfully, false otherwise.
 	 */
 	public boolean getTimeReportByRangeDateQuery(TimeReport report) {
-		// 1. Get connection from the pool
 		PooledConnection pConn = this.getConnection();
 
-		// Safety check
 		if (pConn == null) {
 			return false;
 		}
 
 		Connection conn = pConn.getConnection();
-		PreparedStatement ps = null;
+		PreparedStatement psArrival = null;
+		PreparedStatement psLeaving = null;
 		ResultSet rs = null;
 
 		try {
-			// JOIN query to find the correct report ID based on dates, then get the data
-			// Filtering by reportType = 'time'
-			String query = "SELECT t.reportDate, t.avgArrival, t.avgLeaving " + "FROM time_report t "
-					+ "JOIN report_manager m ON t.reportId = m.reportId "
-					+ "WHERE m.startDay = ? AND m.endDay = ? AND m.reportType = 'time' " + "ORDER BY t.reportDate ASC";
+			// Pre-compile the queries to reuse them in the loop (Efficiency)
+			String queryArrival = "SELECT ROUND(AVG(TIMESTAMPDIFF(MINUTE, reservationDate, arrivalTime))) "
+					+ "FROM table_reservations WHERE DATE(reservationDate) = ? AND status = 'completed'";
 
-			ps = conn.prepareStatement(query);
-			ps.setDate(1, java.sql.Date.valueOf(report.getStartDay()));
-			ps.setDate(2, java.sql.Date.valueOf(report.getEndDay()));
+			String queryLeaving = "SELECT ROUND(AVG(TIMESTAMPDIFF(MINUTE, DATE_ADD(arrivalTime, INTERVAL 2 HOUR), leavingTime))) "
+					+ "FROM table_reservations WHERE DATE(reservationDate) = ? AND status = 'completed'";
 
-			rs = ps.executeQuery();
+			psArrival = conn.prepareStatement(queryArrival);
+			psLeaving = conn.prepareStatement(queryLeaving);
 
-			while (rs.next()) {
-				LocalDate date = rs.getDate("reportDate").toLocalDate();
-				int avgArrival = rs.getInt("avgArrival");
-				int avgLeaving = rs.getInt("avgLeaving");
+			LocalDate current = report.getStartDay();
+			LocalDate end = report.getEndDay();
 
-				// Populates the TimeReport object using the method from your class
-				report.addRow(date, avgArrival, avgLeaving);
+			// Loop through every day in the range
+			while (!current.isAfter(end)) {
+				int avgArrival = 0;
+				int avgLeaving = 0;
+
+				// 1. Calculate Avg Arrival
+				psArrival.setDate(1, java.sql.Date.valueOf(current));
+				rs = psArrival.executeQuery();
+				if (rs.next()) {
+					// getInt returns 0 if value is SQL NULL, which is what we want for empty days
+					avgArrival = rs.getInt(1);
+				}
+				rs.close();
+
+				// 2. Calculate Avg Leaving
+				psLeaving.setDate(1, java.sql.Date.valueOf(current));
+				rs = psLeaving.executeQuery();
+				if (rs.next()) {
+					avgLeaving = rs.getInt(1);
+				}
+				rs.close();
+
+				// Add the row to the report
+				report.addRow(current, avgArrival, avgLeaving);
+
+				// Move to next day
+				current = current.plusDays(1);
 			}
 
 			return true;
@@ -557,8 +578,9 @@ public class DataBaseController {
 		} catch (SQLException e) {
 			e.printStackTrace();
 		} finally {
-			closeResources(ps, rs);
-			releaseConnection(pConn); // Release back to pool
+			closeResources(psArrival, null);
+			closeResources(psLeaving, rs);
+			releaseConnection(pConn);
 		}
 
 		return false;
@@ -746,45 +768,61 @@ public class DataBaseController {
 	}
 
 	/**
-	 * Retrieves the subscriber report data for a specific date range. Joins
-	 * report_manager and subscriber_report tables.
-	 * 
-	 * @param report The SubscriberReport object containing startDay and endDay.
+	 * Retrieves the subscriber report data for a specific date range by counting
+	 * directly from table_reservations and waiting_list.
+	 * * @param report The SubscriberReport object containing startDay and endDay.
 	 * @return true if the query executed successfully, false otherwise.
 	 */
 	public boolean getSubscriberReportByRangeDateQuery(SubscriberReport report) {
-		// 1. Get connection from the pool
 		PooledConnection pConn = this.getConnection();
 
-		// Safety check
 		if (pConn == null) {
 			return false;
 		}
 
 		Connection conn = pConn.getConnection();
-		PreparedStatement ps = null;
+		PreparedStatement psReservations = null;
+		PreparedStatement psWaiting = null;
 		ResultSet rs = null;
 
 		try {
-			// JOIN query to find the correct report ID based on dates, then get the data
-			String query = "SELECT s.reportDate, s.totalReservations, s.totalWaiting " + "FROM subscriber_report s "
-					+ "JOIN report_manager m ON s.reportId = m.reportId "
-					+ "WHERE m.startDay = ? AND m.endDay = ? AND m.reportType = 'subscriber' "
-					+ "ORDER BY s.reportDate ASC";
+			// Pre-compile the queries
+			String queryRes = "SELECT COUNT(*) FROM table_reservations WHERE DATE(reservationDate) = ? AND status = 'completed'";
+			// Note: Using 'entryTimeToList' as the date reference for waiting list
+			String queryWait = "SELECT COUNT(*) FROM waiting_list WHERE DATE(entryTimeToList) = ? AND status = 'seated'";
 
-			ps = conn.prepareStatement(query);
-			ps.setDate(1, java.sql.Date.valueOf(report.getStartDay()));
-			ps.setDate(2, java.sql.Date.valueOf(report.getEndDay()));
+			psReservations = conn.prepareStatement(queryRes);
+			psWaiting = conn.prepareStatement(queryWait);
 
-			rs = ps.executeQuery();
+			LocalDate current = report.getStartDay();
+			LocalDate end = report.getEndDay();
 
-			while (rs.next()) {
-				LocalDate date = rs.getDate("reportDate").toLocalDate();
-				int totalRes = rs.getInt("totalReservations");
-				int totalWait = rs.getInt("totalWaiting");
+			// Loop through every day in the range
+			while (!current.isAfter(end)) {
+				int totalRes = 0;
+				int totalWait = 0;
 
-				// Matches your class method exactly:
-				report.addRow(date, totalRes, totalWait);
+				// 1. Count Reservations
+				psReservations.setDate(1, java.sql.Date.valueOf(current));
+				rs = psReservations.executeQuery();
+				if (rs.next()) {
+					totalRes = rs.getInt(1);
+				}
+				rs.close();
+
+				// 2. Count Waiting Seated
+				psWaiting.setDate(1, java.sql.Date.valueOf(current));
+				rs = psWaiting.executeQuery();
+				if (rs.next()) {
+					totalWait = rs.getInt(1);
+				}
+				rs.close();
+
+				// Add the row to the report
+				report.addRow(current, totalRes, totalWait);
+
+				// Move to next day
+				current = current.plusDays(1);
 			}
 
 			return true;
@@ -792,8 +830,9 @@ public class DataBaseController {
 		} catch (SQLException e) {
 			e.printStackTrace();
 		} finally {
-			closeResources(ps, rs);
-			releaseConnection(pConn); // Release back to pool
+			closeResources(psReservations, null);
+			closeResources(psWaiting, rs);
+			releaseConnection(pConn);
 		}
 
 		return false;
