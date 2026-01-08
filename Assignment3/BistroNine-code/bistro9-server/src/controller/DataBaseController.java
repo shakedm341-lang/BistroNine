@@ -244,52 +244,61 @@ public class DataBaseController {
 	 * @return true if the update was successful, false otherwise.
 	 */
 	public boolean payBillQuery(Bill bill) {
-		// 1. Get connection from the pool
-		PooledConnection pConn = this.getConnection();
+	    PooledConnection pConn = this.getConnection();
+	    if (pConn == null) return false;
+	    Connection conn = pConn.getConnection();
+	    PreparedStatement ps = null;
 
-		// Safety check
-		if (pConn == null) {
-			return false;
-		}
+	    try {
+	       
+	        String query = "UPDATE bills SET isPaid = ?, paymentMethod = ? WHERE billId = ?";
 
-		Connection conn = pConn.getConnection();
-		PreparedStatement ps = null;
+	        ps = conn.prepareStatement(query);
 
-		try {
-			// Update all relevant fields calculated during the payment process
-			String query = "UPDATE bills SET totalAmount = ?, totalAmountAfterDiscount = ?, "
-					+ "discountPercentage = ?, isPaid = ?, discountType = ?, paymentMethod = ? "
-					+ "WHERE billId = ?";
+	        ps.setBoolean(1, bill.isPaid());       // true
+	        ps.setString(2, bill.getPaymentMethod()); // "credit"
+	        ps.setInt(3, bill.getBillId());        // WHERE clause
 
-			ps = conn.prepareStatement(query);
+	        int rowsAffected = ps.executeUpdate();
+	        return rowsAffected > 0;
 
-			ps.setDouble(1, bill.getTotalAmount());
-			ps.setDouble(2, bill.getTotalAmountAfterDiscount());
-			
-			// CHANGED: Use setDouble instead of setFloat
-			ps.setDouble(3, bill.getDiscountSize());
-			
-			ps.setBoolean(4, bill.isPaid());
-			ps.setString(5, bill.getDiscountType()); 
-			ps.setString(6, bill.getPaymentMethod()); 
-			
-			// WHERE clause
-			ps.setInt(7, bill.getBillId());
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    } finally {
+	        closeResources(ps, null);
+	        releaseConnection(pConn);
+	    }
+	    return false;
+	}
+	
+	
+	public boolean updateBillAmountsQuery(Bill bill) {
+	    PooledConnection pConn = this.getConnection();
+	    if (pConn == null) return false;
+	    Connection conn = pConn.getConnection();
+	    PreparedStatement ps = null;
 
-			int rowsAffected = ps.executeUpdate();
+	    try {
+	        String query = "UPDATE bills SET totalAmount = ?, totalAmountAfterDiscount = ?, "
+	                + "discountPercentage = ?, discountType = ? WHERE billId = ?";
 
-			if (rowsAffected > 0) {
-				return true;
-			}
+	        ps = conn.prepareStatement(query);
+	        ps.setDouble(1, bill.getTotalAmount());
+	        ps.setDouble(2, bill.getTotalAmountAfterDiscount());
+	        ps.setDouble(3, bill.getDiscountSize());
+	        ps.setString(4, bill.getDiscountType());
+	        ps.setInt(5, bill.getBillId());
 
-		} catch (SQLException e) {
-			e.printStackTrace();
-		} finally {
-			closeResources(ps, null);
-			releaseConnection(pConn); // Release back to pool
-		}
+	        int rowsAffected = ps.executeUpdate();
+	        return rowsAffected > 0;
 
-		return false;
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    } finally {
+	        closeResources(ps, null);
+	        releaseConnection(pConn);
+	    }
+	    return false;
 	}
 	
 	//53

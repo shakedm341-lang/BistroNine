@@ -61,6 +61,7 @@ public class BillController
 	 */
 	private static void sendBillMessage(TableReservation res) 
 	{
+
 		Bill bill=new Bill(); 
 		bill.setReservationId(res.getReservationId());
 
@@ -69,6 +70,8 @@ public class BillController
 			System.out.println("Error: No bill found for reservation ID " + res.getReservationId());
 			return;
 		}
+		
+		calcBill(bill,res);// calculate the bill details
 		
 		Subscriber sub = new Subscriber();
 		sub.setCustomerId( res.getCustomerId());
@@ -124,47 +127,16 @@ public class BillController
 	}
 
 	 
-	public static boolean payBillProcess(Bill bill)
+	public static boolean payBillProcess(Bill bill) 
+	
 	{
 
-		//bill id allready set in the bill object
-		
-		int reservationId = DBC.getReservationIdByBillIdQuery(bill);//get bill id from bill object  and return the reservation id
-		if (reservationId == 0) 
-		{
-			return false;
-		}
-
-		//set reservation id in the bill object
-		bill.setReservationId(reservationId);
-		
-		// random price generation for demonstration purposes
-        double randomPrice = Math.random() * 500;
-        bill.setTotalAmount(Math.round(randomPrice * 100.0) / 100.0);
-        
-        // get customer type
-        
-        TableReservation res = new TableReservation();
-        res.setReservationId(reservationId);
-        if (!DBC.getReservationByReservationId(res))//update the reservation object with the details from the DB and return true if found else false
-		{
-			return false;
-		}
-        String type = CustomerController.getCustomerType(res.getCustomerId());
-        bill.setDiscountType(type);
-        
-        // get discount size based on customer type
-        bill.setDiscountSize(DBC.getDiscountQuery(type));
-        
-        // calculate final amount after discount
-        bill.setTotalAmountAfterDiscount(calcFinalAmount(bill.getDiscountSize(), bill.getTotalAmount()));
-		
         bill.setPaid(true);// set bill as paid
         
-        bill.setPaymentMethod("credit");// set payment method
+        // payment method  allready set in the bill object
         
         
-        //update the bill details in the DB return true if updated successfully else false
+        //update the bill details(isPaid,PaymentMethod) in the DB return true if updated successfully else false
 		return	DBC.payBillQuery(bill);
 	}
 	
@@ -204,6 +176,54 @@ public class BillController
         return Math.round(calculatedFinal * 100.0) / 100.0;
     }
 	
+	// מעדכנת את הפרטים בתוך החשבון מחשבת את סכום החשבון
+	private static boolean calcBill(Bill bill, TableReservation res) 
+	{
+		//bill id allready set in the bill object
+		
+		//reservation id allready set in the bill object
+
+		
+		// random price generation for demonstration purposes
+        double randomPrice = Math.random() * 500;
+        bill.setTotalAmount(Math.round(randomPrice * 100.0) / 100.0);
+        
+        
+        String type = CustomerController.getCustomerType(res.getCustomerId());
+
+        if (type != null )
+        {
+        	if (type.equals("subscriber") || type.equals("restaurant representative") || type.equals("restaurant manager")) 
+        	{
+        		type="subscriber";
+        		
+        	} else {
+        		type="customer";
+        	}
+        }
+        
+        bill.setDiscountType(type); 
+        
+        // get discount size based on customer type
+        bill.setDiscountSize(DBC.getDiscountQuery(type));
+        
+        // calculate final amount after discount
+        bill.setTotalAmountAfterDiscount(calcFinalAmount(bill.getDiscountSize(), bill.getTotalAmount()));
+        
+        
+        //update the bill amounts(TotalAmount,TotalAmountAfterDiscount,DiscountSize,DiscountType) in the DB return true if updated successfully else false
+        if (!DBC.updateBillAmountsQuery(bill))
+		{
+			return false;
+		}
+        	
+        
+        //is paid false by default
+        
+        //payment method null by default
+        
+        return true;
+	}
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////Logic methods//////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -244,7 +264,8 @@ public class BillController
             return null;
         }
         
-        // get bill by reservation ID
+      
+     // get bill by reservation ID
         bill.setReservationId(res.getReservationId());
         
         if (!DBC.getBillByReservationId(bill)) //update the bill object with the details from the DB and return true if found else false
@@ -252,6 +273,18 @@ public class BillController
             System.out.println("Error: No bill found for reservation ID " + res.getReservationId());
             return null;
         }
+     
+        Timestamp twoHoursAgo = new Timestamp(System.currentTimeMillis() - (2 * 60 * 60 * 1000));
+
+        //check if customer has been arrived before 2 hours 
+        if (res.getArrivalTime().before(twoHoursAgo))
+		{
+	        return bill;
+		}
+		
+		//else ,customer has not been seated for 2 hours yet , calculate the bill 
+        
+        calcBill(bill,res);// calculate the bill details
         
         return bill;
     }
@@ -261,7 +294,7 @@ public class BillController
 	 *!!!!!!call to this method after the method showBill
 	 * @param msg The message containing the bill ID. The content of the message is
 	 *            expected to be an ArrayList<Object> with the following order:
-	 *            [Location 0 :bill ID (int)]
+	 *            [Location 0 :bill ID (int), Location 1: payment method (String)]
 	 * @return true if the bill was paid successfully, false otherwise.
 	 */
 	private boolean payBill(Message msg)
@@ -282,7 +315,15 @@ public class BillController
 			System.out.println("Error: Index 0 is not a Integer!");
 			return false;
 		}
-
+		
+        //Set payment method in the Bill object
+		if (list.get(1) instanceof String) 
+		{
+			bill.setPaymentMethod((String) list.get(1));
+		} else {
+			System.out.println("Error: Index 1 is not a String!");
+			return false;
+		}
 
 		
 		if (!payBillProcess(bill))
@@ -290,8 +331,7 @@ public class BillController
             return false;
         }
 		
-		
-		int reservationId = bill.getReservationId();
+		int reservationId=DBC.getReservationIdByBillIdQuery(bill);//get reservation id by bill id
 		if (reservationId == 0) 
 		{
 			return false;
@@ -362,6 +402,8 @@ public class BillController
 
 	}
 	
+	
+	
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////Automated tasks//////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -398,12 +440,21 @@ public class BillController
 
 				//calculate the duration since arrival
 				long minutesSeated = java.time.Duration.between(arrivalTime, nowTime).toMinutes();
-
-				//check if the duration is 2 hours for sending the bill
-				if (minutesSeated == 119 ) 
+				
+				if (minutesSeated >= 119) 
 				{
-
-					sendBillMessage(res);//send the bill message to the customer
+					
+					
+					//check if the duration is 2 hours for sending the bill
+					Bill checkBill = new Bill();
+					checkBill.setReservationId(res.getReservationId());
+					if (DBC.getBillByReservationId(checkBill)) //update the bill object with the details from the DB) 
+					{
+						// if the total amount is 0 , it means the bill has not been calculated yet
+						if (checkBill.getTotalAmount() == 0) {
+							sendBillMessage(res); 
+						}
+					}
 				}
 			}
 		}
