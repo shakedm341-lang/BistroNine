@@ -301,7 +301,7 @@ public class DataBaseController {
 
 		try {
 			// Update status to 'cancelled' where reservationId matches
-			String query = "UPDATE waiting_list SET status = 'cancelled' WHERE reservationId = ?";
+			String query = "UPDATE waiting_list SET status = 'cancelled', exitTimeFromList = CURRENT_TIMESTAMP WHERE reservationId = ?";
 
 			ps = conn.prepareStatement(query);
 			ps.setInt(1, reservationId);
@@ -2966,7 +2966,7 @@ public class DataBaseController {
 
 		try {
 			// We use logical deletion (changing status) rather than DELETE FROM
-			String query = "UPDATE waiting_list SET status = 'cancelled' WHERE waitingId = ?";
+			String query = "UPDATE waiting_list SET status = 'cancelled', exitTimeFromList = CURRENT_TIMESTAMP WHERE waitingId = ?";
 
 			ps = conn.prepareStatement(query);
 			ps.setInt(1, waiter.getWaitingId());
