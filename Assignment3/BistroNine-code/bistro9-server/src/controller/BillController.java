@@ -123,6 +123,52 @@ public class BillController
 		}
 	}
 
+	 
+	public static boolean payBillProcess(Bill bill)
+	{
+
+		//bill id allready set in the bill object
+		
+		int reservationId = DBC.getReservationIdByBillIdQuery(bill);//get bill id from bill object  and return the reservation id
+		if (reservationId == 0) 
+		{
+			return false;
+		}
+
+		//set reservation id in the bill object
+		bill.setReservationId(reservationId);
+		
+		// random price generation for demonstration purposes
+        double randomPrice = Math.random() * 500;
+        bill.setTotalAmount(Math.round(randomPrice * 100.0) / 100.0);
+        
+        // get customer type
+        
+        TableReservation res = new TableReservation();
+        res.setReservationId(reservationId);
+        if (!DBC.getReservationByReservationId(res))//update the reservation object with the details from the DB and return true if found else false
+		{
+			return false;
+		}
+        String type = CustomerController.getCustomerType(res.getCustomerId());
+        bill.setDiscountType(type);
+        
+        // get discount size based on customer type
+        bill.setDiscountSize(DBC.getDiscountQuery(type));
+        
+        // calculate final amount after discount
+        bill.setTotalAmountAfterDiscount(calcFinalAmount(bill.getDiscountSize(), bill.getTotalAmount()));
+		
+        bill.setPaid(true);// set bill as paid
+        
+        bill.setPaymentMethod("credit");// set payment method
+        
+        
+        //update the bill details in the DB return true if updated successfully else false
+		return	DBC.payBillQuery(bill);
+	}
+	
+	
 	/**
 	 * Creates a new bill for a given table reservation in DB.
 	 *
@@ -137,24 +183,7 @@ public class BillController
 		
         bill.setReservationId(res.getReservationId());    
         
-        // random price generation for demonstration purposes
-        double randomPrice = Math.random() * 500;
-        bill.setTotalAmount(Math.round(randomPrice * 100.0) / 100.0);
-        
-        // 
-        String type = CustomerController.getCustomerType(res.getCustomerId());
-        bill.setDiscountType(type);
-        
-        // 
-        bill.setDiscountSize(DBC.getDiscountQuery(type));
-        
-        // י
-        bill.setTotalAmountAfterDiscount(calcFinalAmount(bill.getDiscountSize(), bill.getTotalAmount()));
-        
-        //paymentMethod defaind in the payBill method when the customer pays the bill
-        
-        //isPaid  DEFAULT FALSE in the DB
-        
+
         return DBC.createNewBillQuery(bill); //create the new bill in the DB return to server true if created successfully else false
     
 	}
@@ -240,12 +269,13 @@ public class BillController
 		@SuppressWarnings("unchecked") 
 		ArrayList<Object> list = (ArrayList<Object>) msg.content;//get bill Id from the message
 
-		int billId = 0;
+		Bill bill = new Bill();
+		
 
 		//Set bill Id in the Bill object
 		if (list.get(0) instanceof Integer) 
 		{
-			billId=(int) list.get(0);
+			bill.setBillId((int) list.get(0));
 		} 
 		else 
 		{
@@ -254,11 +284,19 @@ public class BillController
 		}
 
 
-		int reservationId = DBC.payBill(billId,true,"credit");//return reservation Id if the bill is paid successfully (chancg to isPaid=true,paymentMethod=Credit ) in the DB else return 0
-		if (reservationId == 0) {
+		
+		if (!payBillProcess(bill))
+        {
+            return false;
+        }
+		
+		
+		int reservationId = bill.getReservationId();
+		if (reservationId == 0) 
+		{
 			return false;
 		}
-
+		
 
 		//update reservation status to "completed" and set leaving time to now after payment is successful
 
@@ -283,6 +321,7 @@ public class BillController
 			return false;
 		}
 		
+
 		
 		//find match in the waiting list for the freed table
 		WaitList waiter = WaitListController.findMatchInWaitingList(freeTable);
@@ -299,7 +338,7 @@ public class BillController
 				return false;
 			}
 			
-			ReservationControler.updateReservation(waiterRes, "reservationDate", LocalDate.now());// set reservation date to now
+			ReservationControler.updateReservation(waiterRes, "reservationDate", new Timestamp(System.currentTimeMillis()));// set reservation date to now
 	
 			
 			Subscriber sub = new Subscriber();
@@ -318,10 +357,7 @@ public class BillController
 					+ "Looking forward to seeing you at the entrance!");
 			return true;
 		}
-		else //no match in the waiting list found, set table status to available
-		{
-			TableController.updateTable(res.getTableId(), "status", "available");
-		}
+		
 		return true;
 
 	}
