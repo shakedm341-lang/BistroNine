@@ -513,8 +513,8 @@ public class DataBaseController {
 
 	
 	/**
-	 * Retrieves the time report data for a specific date range by calculating it
-	 * directly from the table_reservations table.
+	 * Retrieves the time report data for a specific date range by fetching
+	 * pre-saved data directly from the time_report table.
 	 * * @param report The TimeReport object containing startDay and endDay.
 	 * @return true if the query executed successfully, false otherwise.
 	 */
@@ -526,51 +526,29 @@ public class DataBaseController {
 		}
 
 		Connection conn = pConn.getConnection();
-		PreparedStatement psArrival = null;
-		PreparedStatement psLeaving = null;
+		PreparedStatement ps = null;
 		ResultSet rs = null;
 
 		try {
-			// Pre-compile the queries to reuse them in the loop (Efficiency)
-			String queryArrival = "SELECT ROUND(AVG(TIMESTAMPDIFF(MINUTE, reservationDate, arrivalTime))) "
-					+ "FROM table_reservations WHERE DATE(reservationDate) = ? AND status = 'completed'";
+			// SIMPLIFIED QUERY: Direct access to time_report without JOIN
+			String query = "SELECT reportDate, avgArrival, avgLeaving " 
+					     + "FROM time_report "
+					     + "WHERE reportDate BETWEEN ? AND ? " 
+					     + "ORDER BY reportDate ASC";
 
-			String queryLeaving = "SELECT ROUND(AVG(TIMESTAMPDIFF(MINUTE, DATE_ADD(arrivalTime, INTERVAL 2 HOUR), leavingTime))) "
-					+ "FROM table_reservations WHERE DATE(reservationDate) = ? AND status = 'completed'";
+			ps = conn.prepareStatement(query);
+			ps.setDate(1, java.sql.Date.valueOf(report.getStartDay()));
+			ps.setDate(2, java.sql.Date.valueOf(report.getEndDay()));
 
-			psArrival = conn.prepareStatement(queryArrival);
-			psLeaving = conn.prepareStatement(queryLeaving);
+			rs = ps.executeQuery();
 
-			LocalDate current = report.getStartDay();
-			LocalDate end = report.getEndDay();
+			while (rs.next()) {
+				LocalDate date = rs.getDate("reportDate").toLocalDate();
+				int avgArrival = rs.getInt("avgArrival");
+				int avgLeaving = rs.getInt("avgLeaving");
 
-			// Loop through every day in the range
-			while (!current.isAfter(end)) {
-				int avgArrival = 0;
-				int avgLeaving = 0;
-
-				// 1. Calculate Avg Arrival
-				psArrival.setDate(1, java.sql.Date.valueOf(current));
-				rs = psArrival.executeQuery();
-				if (rs.next()) {
-					// getInt returns 0 if value is SQL NULL, which is what we want for empty days
-					avgArrival = rs.getInt(1);
-				}
-				rs.close();
-
-				// 2. Calculate Avg Leaving
-				psLeaving.setDate(1, java.sql.Date.valueOf(current));
-				rs = psLeaving.executeQuery();
-				if (rs.next()) {
-					avgLeaving = rs.getInt(1);
-				}
-				rs.close();
-
-				// Add the row to the report
-				report.addRow(current, avgArrival, avgLeaving);
-
-				// Move to next day
-				current = current.plusDays(1);
+				// Add the pre-calculated row to the report object
+				report.addRow(date, avgArrival, avgLeaving);
 			}
 
 			return true;
@@ -578,8 +556,7 @@ public class DataBaseController {
 		} catch (SQLException e) {
 			e.printStackTrace();
 		} finally {
-			closeResources(psArrival, null);
-			closeResources(psLeaving, rs);
+			closeResources(ps, rs);
 			releaseConnection(pConn);
 		}
 
@@ -768,8 +745,8 @@ public class DataBaseController {
 	}
 
 	/**
-	 * Retrieves the subscriber report data for a specific date range by counting
-	 * directly from table_reservations and waiting_list.
+	 * Retrieves the subscriber report data for a specific date range by fetching
+	 * pre-saved data directly from the subscriber_report table.
 	 * * @param report The SubscriberReport object containing startDay and endDay.
 	 * @return true if the query executed successfully, false otherwise.
 	 */
@@ -781,48 +758,29 @@ public class DataBaseController {
 		}
 
 		Connection conn = pConn.getConnection();
-		PreparedStatement psReservations = null;
-		PreparedStatement psWaiting = null;
+		PreparedStatement ps = null;
 		ResultSet rs = null;
 
 		try {
-			// Pre-compile the queries
-			String queryRes = "SELECT COUNT(*) FROM table_reservations WHERE DATE(reservationDate) = ? AND status = 'completed'";
-			// Note: Using 'entryTimeToList' as the date reference for waiting list
-			String queryWait = "SELECT COUNT(*) FROM waiting_list WHERE DATE(entryTimeToList) = ? AND status = 'seated'";
+			// SIMPLIFIED QUERY: Direct access to subscriber_report without JOIN
+			String query = "SELECT reportDate, totalReservations, totalWaiting " 
+					     + "FROM subscriber_report "
+					     + "WHERE reportDate BETWEEN ? AND ? " 
+					     + "ORDER BY reportDate ASC";
 
-			psReservations = conn.prepareStatement(queryRes);
-			psWaiting = conn.prepareStatement(queryWait);
+			ps = conn.prepareStatement(query);
+			ps.setDate(1, java.sql.Date.valueOf(report.getStartDay()));
+			ps.setDate(2, java.sql.Date.valueOf(report.getEndDay()));
 
-			LocalDate current = report.getStartDay();
-			LocalDate end = report.getEndDay();
+			rs = ps.executeQuery();
 
-			// Loop through every day in the range
-			while (!current.isAfter(end)) {
-				int totalRes = 0;
-				int totalWait = 0;
+			while (rs.next()) {
+				LocalDate date = rs.getDate("reportDate").toLocalDate();
+				int totalRes = rs.getInt("totalReservations");
+				int totalWait = rs.getInt("totalWaiting");
 
-				// 1. Count Reservations
-				psReservations.setDate(1, java.sql.Date.valueOf(current));
-				rs = psReservations.executeQuery();
-				if (rs.next()) {
-					totalRes = rs.getInt(1);
-				}
-				rs.close();
-
-				// 2. Count Waiting Seated
-				psWaiting.setDate(1, java.sql.Date.valueOf(current));
-				rs = psWaiting.executeQuery();
-				if (rs.next()) {
-					totalWait = rs.getInt(1);
-				}
-				rs.close();
-
-				// Add the row to the report
-				report.addRow(current, totalRes, totalWait);
-
-				// Move to next day
-				current = current.plusDays(1);
+				// Add the pre-calculated row to the report object
+				report.addRow(date, totalRes, totalWait);
 			}
 
 			return true;
@@ -830,8 +788,7 @@ public class DataBaseController {
 		} catch (SQLException e) {
 			e.printStackTrace();
 		} finally {
-			closeResources(psReservations, null);
-			closeResources(psWaiting, rs);
+			closeResources(ps, rs);
 			releaseConnection(pConn);
 		}
 
