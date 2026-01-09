@@ -88,6 +88,9 @@ public class DataBaseController {
 	// 52. updateReservationDateQuery(int, Timestamp) : boolean
 	// 53. getReservationIdByBillIdQuery(Bill) : int
 	// 54. payBillQuery(Bill) : boolean
+	// 55. updateOpeningTimeQuery(OpeningHours) : boolean
+	// 56. deleteOpeningTimeQuery(OpeningHours) : boolean
+	// 57. deleteSpecialOpeningTimeQuery(OpeningHoursPerDay) : boolean
 	// .
 	// END OF API.
 
@@ -233,76 +236,297 @@ public class DataBaseController {
 	 * /////////////////////////////////////////////////////////////////////////////
 	 * ///////////////////////////////////
 	 */
-	
-	//54
-	
-	
+
 	/**
-	 * Updates an existing bill record with payment details, amounts, and discount info.
+	 * Deletes specific special opening hours for a specific date. Implements STRICT
+	 * "All-or-Nothing" logic: If even ONE slot is not found, it stops, rolls back,
+	 * and returns false. * @param openingHours The OpeningHoursPerDay object
+	 * containing the LocalDate and list of slots.
+	 * 
+	 * @return true if ALL slots were successfully deleted, false otherwise.
+	 */
+	public boolean deleteSpecialOpeningTimeQuery(OpeningHoursPerDay openingHours) {
+		PooledConnection pConn = this.getConnection();
+
+		if (pConn == null) {
+			return false;
+		}
+
+		Connection conn = pConn.getConnection();
+		PreparedStatement ps = null;
+		boolean success = false;
+
+		try {
+			conn.setAutoCommit(false); // Start Transaction
+
+			String query = "DELETE FROM special_hours WHERE specificDate = ? AND openingTime = ? AND closingTime = ?";
+			ps = conn.prepareStatement(query);
+
+			for (TimeSlot slot : openingHours.getSlots()) {
+				// 1. Set Date (Converted from LocalDate to sql.Date)
+				ps.setDate(1, java.sql.Date.valueOf(openingHours.getDay()));
+
+				// 2. Set Opening Time
+				ps.setTime(2, java.sql.Time.valueOf(slot.getOpen()));
+
+				// 3. Set Closing Time
+				ps.setTime(3, java.sql.Time.valueOf(slot.getClose()));
+
+				int rowsAffected = ps.executeUpdate();
+
+				// OPTIMIZATION: Early Exit
+				// If the row doesn't exist, we stop immediately and undo everything.
+				if (rowsAffected == 0) {
+					System.out.println("Error: Special Slot " + openingHours.getDay() + " " + slot.getOpen()
+							+ " not found. Rolling back.");
+					conn.rollback();
+					return false;
+				}
+			}
+
+			// If we reached here, ALL deletions were successful
+			conn.commit();
+			success = true;
+
+		} catch (SQLException e) {
+			System.out.println("Error deleting special hours: " + e.getMessage());
+			e.printStackTrace();
+			try {
+				if (conn != null)
+					conn.rollback();
+			} catch (SQLException ex) {
+				ex.printStackTrace();
+			}
+			return false;
+		} finally {
+			// Always restore AutoCommit and release connection
+			try {
+				if (conn != null)
+					conn.setAutoCommit(true);
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+			closeResources(ps, null);
+			releaseConnection(pConn);
+		}
+
+		return success;
+	}
+
+	/**
+	 * Deletes specific weekly opening hours. Implements STRICT "All-or-Nothing"
+	 * logic: If even ONE slot is not found (rowsAffected == 0), it immediately
+	 * stops, rolls back, and returns false. * @param openingHours The OpeningHours
+	 * object containing the day string and list of slots to delete.
+	 * 
+	 * @return true if ALL slots were successfully deleted, false otherwise.
+	 */
+	public boolean deleteOpeningTimeQuery(OpeningHours openingHours) {
+		PooledConnection pConn = this.getConnection();
+
+		if (pConn == null) {
+			return false;
+		}
+
+		Connection conn = pConn.getConnection();
+		PreparedStatement ps = null;
+		boolean success = false;
+
+		try {
+			conn.setAutoCommit(false); // Start Transaction
+
+			String query = "DELETE FROM weekly_hours WHERE dayOfWeek = ? AND openingTime = ? AND closingTime = ?";
+			ps = conn.prepareStatement(query);
+
+			for (TimeSlot slot : openingHours.getSlots()) {
+				ps.setString(1, openingHours.getDay());
+				ps.setTime(2, java.sql.Time.valueOf(slot.getOpen()));
+				ps.setTime(3, java.sql.Time.valueOf(slot.getClose()));
+
+				int rowsAffected = ps.executeUpdate();
+
+				// OPTIMIZATION: Early Exit
+				// Even though we return here, the 'finally' block WILL run first.
+				if (rowsAffected == 0) {
+					System.out.println(
+							"Error: Slot " + slot.getOpen() + "-" + slot.getClose() + " not found. Rolling back.");
+					conn.rollback();
+					return false;
+				}
+			}
+
+			// If we reached here, it means ALL updates returned 1 (success)
+			conn.commit();
+			success = true;
+
+		} catch (SQLException e) {
+			System.out.println("Error deleting weekly hours: " + e.getMessage());
+			e.printStackTrace();
+			try {
+				if (conn != null)
+					conn.rollback();
+			} catch (SQLException ex) {
+				ex.printStackTrace();
+			}
+			return false;
+		} finally {
+			// This block ALWAYS runs, even after 'return false' above.
+			try {
+				if (conn != null)
+					conn.setAutoCommit(true);
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+			closeResources(ps, null);
+			releaseConnection(pConn);
+		}
+
+		return success;
+	}
+
+	/**
+	 * Adds new weekly opening hours for a specific day of the week. This method
+	 * inserts new slots without deleting existing ones. * @param openingHours The
+	 * OpeningHours object containing the day string and list of slots.
+	 * 
+	 * @return true if the insertion was successful, false otherwise.
+	 */
+	public boolean updateOpeningTimeQuery(OpeningHours openingHours) {
+		// 1. Get connection from the pool
+		PooledConnection pConn = this.getConnection();
+
+		// Safety check
+		if (pConn == null) {
+			return false;
+		}
+
+		Connection conn = pConn.getConnection();
+		PreparedStatement ps = null;
+		boolean success = false;
+
+		try {
+			// START TRANSACTION
+			conn.setAutoCommit(false);
+
+			String query = "INSERT INTO weekly_hours (dayOfWeek, openingTime, closingTime) VALUES (?, ?, ?)";
+			ps = conn.prepareStatement(query);
+
+			// Loop through all slots in the list and queue them for insertion
+			for (TimeSlot slot : openingHours.getSlots()) {
+				// 1. Set Day (String, matching the ENUM 'SUNDAY', 'MONDAY' etc.)
+				ps.setString(1, openingHours.getDay());
+
+				// 2. Set Opening Time
+				ps.setTime(2, java.sql.Time.valueOf(slot.getOpen()));
+
+				// 3. Set Closing Time
+				ps.setTime(3, java.sql.Time.valueOf(slot.getClose()));
+
+				ps.executeUpdate();
+			}
+
+			// COMMIT TRANSACTION (Write changes to DB)
+			conn.commit();
+			success = true;
+
+		} catch (SQLException e) {
+			System.out.println("Error adding weekly hours (Possible duplicate or invalid day): " + e.getMessage());
+			e.printStackTrace();
+			try {
+				// ROLLBACK on error
+				if (conn != null) {
+					conn.rollback();
+				}
+			} catch (SQLException ex) {
+				ex.printStackTrace();
+			}
+		} finally {
+			// Restore AutoCommit
+			try {
+				if (conn != null) {
+					conn.setAutoCommit(true);
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+
+			closeResources(ps, null);
+			releaseConnection(pConn); // Release back to pool
+		}
+
+		return success;
+	}
+
+	// 54
+
+	/**
+	 * Updates an existing bill record with payment details, amounts, and discount
+	 * info.
 	 *
 	 * @param bill The fully populated Bill object.
 	 * @return true if the update was successful, false otherwise.
 	 */
 	public boolean payBillQuery(Bill bill) {
-	    PooledConnection pConn = this.getConnection();
-	    if (pConn == null) return false;
-	    Connection conn = pConn.getConnection();
-	    PreparedStatement ps = null;
+		PooledConnection pConn = this.getConnection();
+		if (pConn == null)
+			return false;
+		Connection conn = pConn.getConnection();
+		PreparedStatement ps = null;
 
-	    try {
-	       
-	        String query = "UPDATE bills SET isPaid = ?, paymentMethod = ? WHERE billId = ?";
+		try {
 
-	        ps = conn.prepareStatement(query);
+			String query = "UPDATE bills SET isPaid = ?, paymentMethod = ? WHERE billId = ?";
 
-	        ps.setBoolean(1, bill.isPaid());       // true
-	        ps.setString(2, bill.getPaymentMethod()); // "credit"
-	        ps.setInt(3, bill.getBillId());        // WHERE clause
+			ps = conn.prepareStatement(query);
 
-	        int rowsAffected = ps.executeUpdate();
-	        return rowsAffected > 0;
+			ps.setBoolean(1, bill.isPaid()); // true
+			ps.setString(2, bill.getPaymentMethod()); // "credit"
+			ps.setInt(3, bill.getBillId()); // WHERE clause
 
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	    } finally {
-	        closeResources(ps, null);
-	        releaseConnection(pConn);
-	    }
-	    return false;
+			int rowsAffected = ps.executeUpdate();
+			return rowsAffected > 0;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			closeResources(ps, null);
+			releaseConnection(pConn);
+		}
+		return false;
 	}
-	
-	
+
 	public boolean updateBillAmountsQuery(Bill bill) {
-	    PooledConnection pConn = this.getConnection();
-	    if (pConn == null) return false;
-	    Connection conn = pConn.getConnection();
-	    PreparedStatement ps = null;
+		PooledConnection pConn = this.getConnection();
+		if (pConn == null)
+			return false;
+		Connection conn = pConn.getConnection();
+		PreparedStatement ps = null;
 
-	    try {
-	        String query = "UPDATE bills SET totalAmount = ?, totalAmountAfterDiscount = ?, "
-	                + "discountPercentage = ?, discountType = ? WHERE billId = ?";
+		try {
+			String query = "UPDATE bills SET totalAmount = ?, totalAmountAfterDiscount = ?, "
+					+ "discountPercentage = ?, discountType = ? WHERE billId = ?";
 
-	        ps = conn.prepareStatement(query);
-	        ps.setDouble(1, bill.getTotalAmount());
-	        ps.setDouble(2, bill.getTotalAmountAfterDiscount());
-	        ps.setDouble(3, bill.getDiscountSize());
-	        ps.setString(4, bill.getDiscountType());
-	        ps.setInt(5, bill.getBillId());
+			ps = conn.prepareStatement(query);
+			ps.setDouble(1, bill.getTotalAmount());
+			ps.setDouble(2, bill.getTotalAmountAfterDiscount());
+			ps.setDouble(3, bill.getDiscountSize());
+			ps.setString(4, bill.getDiscountType());
+			ps.setInt(5, bill.getBillId());
 
-	        int rowsAffected = ps.executeUpdate();
-	        return rowsAffected > 0;
+			int rowsAffected = ps.executeUpdate();
+			return rowsAffected > 0;
 
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	    } finally {
-	        closeResources(ps, null);
-	        releaseConnection(pConn);
-	    }
-	    return false;
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			closeResources(ps, null);
+			releaseConnection(pConn);
+		}
+		return false;
 	}
-	
-	//53
-	
+
+	// 53
+
 	/**
 	 * Retrieves the reservation ID associated with a specific bill ID.
 	 *
@@ -343,10 +567,9 @@ public class DataBaseController {
 
 		return 0;
 	}
-	
-	
-	//52
-	
+
+	// 52
+
 	/**
 	 * Updates the reservation date and time for a specific reservation.
 	 *
@@ -2407,13 +2630,13 @@ public class DataBaseController {
 	}
 
 	/**
-	 * Adds (or updates) special opening hours for a specific date. Deletes any
-	 * existing entries for that date first, then inserts new ones
-	 * (Transaction-based).
+	 * Appends new special opening hours for a specific date to the existing ones.
+	 * This method does NOT delete existing entries; it only adds new rows. * @param
+	 * openingHours The OpeningHoursPerDay object containing the date and list of
+	 * slots to add.
 	 * 
-	 * @param openingHours The OpeningHoursPerDay object containing the date and
-	 *                     list of slots.
-	 * @return true if the transaction was successful, false otherwise.
+	 * @return true if the insertion was successful, false otherwise (e.g., database
+	 *         error or duplicate primary key).
 	 */
 	public boolean addNewSpecialOpeningTimeQuery(OpeningHoursPerDay openingHours) {
 		// 1. Get connection from the pool
@@ -2425,7 +2648,6 @@ public class DataBaseController {
 		}
 
 		Connection conn = pConn.getConnection();
-		PreparedStatement psDelete = null;
 		PreparedStatement psInsert = null;
 		boolean success = false;
 
@@ -2433,14 +2655,7 @@ public class DataBaseController {
 			// START TRANSACTION
 			conn.setAutoCommit(false);
 
-			// Step 1: Delete all existing special hours for this specific date
-			String deleteQuery = "DELETE FROM special_hours WHERE specificDate = ?";
-			psDelete = conn.prepareStatement(deleteQuery);
-			// Convert LocalDate to java.sql.Date
-			psDelete.setDate(1, java.sql.Date.valueOf(openingHours.getDay()));
-			psDelete.executeUpdate();
-
-			// Step 2: Insert the new time slots
+			// Step 1: Insert the new time slots (No Deletion happens here)
 			String insertQuery = "INSERT INTO special_hours (specificDate, openingTime, closingTime) VALUES (?, ?, ?)";
 			psInsert = conn.prepareStatement(insertQuery);
 
@@ -2457,6 +2672,7 @@ public class DataBaseController {
 			success = true;
 
 		} catch (SQLException e) {
+			System.out.println("Error adding special hours (Possible duplicate entry or DB error): " + e.getMessage());
 			e.printStackTrace();
 			try {
 				// ROLLBACK if something went wrong
@@ -2476,7 +2692,6 @@ public class DataBaseController {
 				e.printStackTrace();
 			}
 
-			closeResources(psDelete, null);
 			closeResources(psInsert, null);
 			releaseConnection(pConn); // Release back to pool
 		}
