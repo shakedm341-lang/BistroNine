@@ -42,11 +42,15 @@ public class PayBillController extends BaseTerminalController implements Initial
     @FXML
     private VBox billDetailsSection;
     @FXML
+    private Label lblBillId;
+    @FXML
     private Label lblReservationId;
     @FXML
     private Label lblOriginalAmount;
     @FXML
     private Label lblDiscount;
+    @FXML
+    private Label lblDiscountType;
     @FXML
     private Label lblTotalAmount;
     @FXML
@@ -152,12 +156,14 @@ public class PayBillController extends BaseTerminalController implements Initial
                 return;
             }
 
+            lblBillId.setText(String.valueOf(bill.getBillId()));
             lblReservationId.setText(String.valueOf(bill.getReservationId()));
-            lblOriginalAmount.setText(String.format("%.2f NIS", bill.getTotalAmount()));
-            lblDiscount.setText(String.format("%.0f%% (-%.2f NIS)", 
+            lblOriginalAmount.setText(String.format("%.2f ₪", bill.getTotalAmount()));
+            lblDiscountType.setText(bill.getDiscountType() != null ? bill.getDiscountType() : "Standard");
+            lblDiscount.setText(String.format("%.0f%% (-%.2f ₪)", 
                 bill.getDiscountSize(), 
                 bill.getTotalAmount() - bill.getTotalAmountAfterDiscount()));
-            lblTotalAmount.setText(String.format("%.2f NIS", bill.getTotalAmountAfterDiscount()));
+            lblTotalAmount.setText(String.format("%.2f ₪", bill.getTotalAmountAfterDiscount()));
 
             searchSection.setVisible(false);
             searchSection.setManaged(false);
@@ -234,8 +240,11 @@ public class PayBillController extends BaseTerminalController implements Initial
     private void processPayment(String method) {
         ArrayList<Object> params = new ArrayList<>();
         params.add(currentBill.getBillId());
-        // Note: The server-side payBill currently defaults to "credit" and doesn't take the method as an arg in msg.content
-        // but we'll send the ID as required by the server implementation.
+        
+        // Convert to lowercase to match server-side expectations (e.g., "credit", "cash", "app")
+        String formattedMethod = (method != null) ? method.trim().toLowerCase() : "credit";
+        params.add(formattedMethod);
+
         if (client != null) {   
             client.handleMessageFromBoundary(TypeMessage.BILL, params, Command.PAY_BILL);
         } else {
@@ -284,10 +293,12 @@ public class PayBillController extends BaseTerminalController implements Initial
         btnBackOnly.setManaged(dashboardController == null);
         
         txtConfCode.clear();
+        lblBillId.setText("-");
         lblReservationId.setText("-");
-        lblOriginalAmount.setText("0.00 NIS");
-        lblDiscount.setText("0% (-0.00 NIS)");
-        lblTotalAmount.setText("0.00 NIS");
+        lblOriginalAmount.setText("0.00 ₪");
+        lblDiscountType.setText("-");
+        lblDiscount.setText("0% (-0.00 ₪)");
+        lblTotalAmount.setText("0.00 ₪");
         currentBill = null;
     }
 

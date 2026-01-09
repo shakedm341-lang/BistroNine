@@ -65,8 +65,32 @@ public class ProfileController {
 
 	@FXML
 	void handleUpdateProfile(ActionEvent event) {
-		String newEmail = emailField.getText();
-		String newPhone = phoneField.getText();
+		String newEmail = emailField.getText().trim();
+		String newPhone = phoneField.getText().trim();
+
+		// Validate that email is not empty
+		if (newEmail.isEmpty()) {
+			showAlert("Validation Error", "Email field cannot be empty. Please enter a valid email address.", AlertType.ERROR);
+			return;
+		}
+
+		// Validate that phone is not empty
+		if (newPhone.isEmpty()) {
+			showAlert("Validation Error", "Phone field cannot be empty. Please enter a valid phone number.", AlertType.ERROR);
+			return;
+		}
+
+		// Validate email format
+		if (!isValidEmail(newEmail)) {
+			showAlert("Invalid Email", "Email must contain '@' and a domain with a dot (e.g., .com, .org, .net).", AlertType.ERROR);
+			return;
+		}
+
+		// Validate phone format
+		if (!isValidPhone(newPhone)) {
+			showAlert("Invalid Phone", "Phone number must be exactly 10 digits.", AlertType.ERROR);
+			return;
+		}
 
 		boolean emailChanged = !newEmail.equals(originalEmail);
 		boolean phoneChanged = !newPhone.equals(originalPhone);
@@ -163,6 +187,34 @@ public class ProfileController {
 
 		System.out.println("Sending payload to server: " + updateDetails);
 
+	}
+
+	/**
+	 * Validates email format: must contain "@" and a dot followed by domain (e.g., .com, .org)
+	 * @param email The email string to validate
+	 * @return true if email is valid, false otherwise
+	 */
+	private boolean isValidEmail(String email) {
+		if (email == null || email.isEmpty()) {
+			return false;
+		}
+		// Check if email contains "@" and has a dot followed by at least one character
+		return email.contains("@") && email.matches(".*@.*\\.[^.]+");
+	}
+
+	/**
+	 * Validates phone format: must be exactly 10 digits
+	 * @param phone The phone string to validate
+	 * @return true if phone is valid (exactly 10 digits), false otherwise
+	 */
+	private boolean isValidPhone(String phone) {
+		if (phone == null || phone.isEmpty()) {
+			return false;
+		}
+		// Remove any spaces, dashes, or parentheses that might be in the phone number
+		String digitsOnly = phone.replaceAll("[^0-9]", "");
+		// Check if it's exactly 10 digits
+		return digitsOnly.length() == 10;
 	}
 
 	

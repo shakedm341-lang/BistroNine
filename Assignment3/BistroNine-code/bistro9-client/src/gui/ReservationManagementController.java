@@ -180,6 +180,11 @@ public class ReservationManagementController implements Initializable, IReservat
 
 			alert.setHeaderText(null);
 			alert.showAndWait();
+			
+			// Refresh the table after successful deletion
+			if (isDeleted && !customerIdField.getText().isEmpty()) {
+				handleSearchByCustomer();
+			}
 		});
 	}
 

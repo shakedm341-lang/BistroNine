@@ -53,7 +53,7 @@
                      </children>
                   </HBox>
                   
-                  <TableView fx:id="standardHoursTable" prefHeight="200.0" prefWidth="200.0" style="-fx-border-color: #e0e0e0; -fx-border-radius: 5;" VBox.vgrow="ALWAYS">
+                  <TableView fx:id="standardHoursTable" prefHeight="160.0" prefWidth="200.0" style="-fx-border-color: #e0e0e0; -fx-border-radius: 5;">
                     <columns>
                       <TableColumn fx:id="standardOpenCol" prefWidth="150.0" text="Open Time" />
                       <TableColumn fx:id="standardCloseCol" prefWidth="150.0" text="Close Time" />
@@ -77,16 +77,6 @@
                         <Button mnemonicParsing="false" onAction="#addStandardSlot" prefHeight="35.0" prefWidth="100.0" style="-fx-background-color: #2196f3; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand;" text="+ Add Slot" />
                      </children>
                   </HBox>
-                  
-                  <HBox alignment="CENTER_RIGHT">
-                     <children>
-                        <Button mnemonicParsing="false" onAction="#saveStandardHours" prefHeight="45.0" prefWidth="180.0" style="-fx-background-color: #28a745; -fx-text-fill: white; -fx-cursor: hand;" text="SAVE ALL DAYS">
-                           <font>
-                              <Font name="System Bold" size="14.0" />
-                           </font>
-                        </Button>
-                     </children>
-                  </HBox>
                </children>
             </VBox>
 
@@ -104,7 +94,7 @@
                      </children>
                   </HBox>
                   
-                  <TableView fx:id="specialHoursTable" prefHeight="200.0" prefWidth="200.0" style="-fx-border-color: #e0e0e0; -fx-border-radius: 5;" VBox.vgrow="ALWAYS">
+                  <TableView fx:id="specialHoursTable" prefHeight="160.0" prefWidth="200.0" style="-fx-border-color: #e0e0e0; -fx-border-radius: 5;">
                     <columns>
                       <TableColumn fx:id="specialOpenCol" prefWidth="150.0" text="Open Time" />
                       <TableColumn fx:id="specialCloseCol" prefWidth="150.0" text="Close Time" />
@@ -126,16 +116,6 @@
                         <Label text="to" textFill="#888888" />
                         <TextField fx:id="specialCloseTxt" prefHeight="35.0" prefWidth="100.0" promptText="23:00" />
                         <Button mnemonicParsing="false" onAction="#addSpecialSlot" prefHeight="35.0" prefWidth="100.0" style="-fx-background-color: #2196f3; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand;" text="+ Add Slot" />
-                     </children>
-                  </HBox>
-                  
-                  <HBox alignment="CENTER_RIGHT">
-                     <children>
-                        <Button mnemonicParsing="false" onAction="#saveSpecialDate" prefHeight="45.0" prefWidth="180.0" style="-fx-background-color: #28a745; -fx-text-fill: white; -fx-cursor: hand;" text="APPLY TO DATE">
-                           <font>
-                              <Font name="System Bold" size="14.0" />
-                           </font>
-                        </Button>
                      </children>
                   </HBox>
                </children>

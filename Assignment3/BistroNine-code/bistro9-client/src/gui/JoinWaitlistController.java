@@ -1,6 +1,7 @@
 package gui;
 
 import data.Command;
+import data.TableReservation;
 import data.TypeMessage;
 import java.util.ArrayList;
 
@@ -13,7 +14,6 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.Button;
-import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
 
 public class JoinWaitlistController extends BaseTerminalController {
@@ -129,6 +129,26 @@ public class JoinWaitlistController extends BaseTerminalController {
         Platform.runLater(() -> {
             if (response == null) {
                 TerminalUtils.showError("Error", "Could not join the waitlist. Please try again.");
+            } else if (response instanceof TableReservation) {
+                TableReservation res = (TableReservation) response;
+                int tableId = res.getTableId();
+                int confCode = res.getConfirmationCode();
+
+                if (tableId > 0) {
+                    // Immediate seating: positive table ID
+                    TerminalUtils.showSuccess("Table Ready!", 
+                        "A table is available immediately!\n" +
+                        "Please proceed to Table No. " + tableId + "\n" +
+                        "Your confirmation code is: " + confCode);
+                    handleBack(new ActionEvent(btnJoin, null)); // Return to menu
+                } else {
+                    // Waitlist: confirmation code
+                    TerminalUtils.showSuccess("Waitlist Joined", 
+                        "You have been added to the waitlist.\n" +
+                        "Your confirmation code is: " + confCode + "\n" +
+                        "You will receive a notification when your table is ready.");
+                    handleBack(new ActionEvent(btnJoin, null)); // Return to menu
+                }
             } else if (response instanceof Integer) {
                 int val = (Integer) response;
                 if (val < 0) {

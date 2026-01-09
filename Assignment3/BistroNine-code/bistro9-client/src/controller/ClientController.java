@@ -226,7 +226,10 @@ public class ClientController extends AbstractClient {
                 break;
                 
             case UPDATE_OPENING_TIME:
+            case ADD_NEW_OPENING_TIME:
             case ADD_NEW_SPECIAL_OPENING_TIME:
+            case DELETE_OPENING_TIME:
+            case DELETE_SPECIAL_OPENING_TIME:
                 handleSaveOpeningHoursResponse(message);
                 break;
                 

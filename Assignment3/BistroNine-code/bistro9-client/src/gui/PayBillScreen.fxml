@@ -63,56 +63,78 @@
                 <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
                 <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
                 <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                  <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
                   <RowConstraints minHeight="10.0" prefHeight="40.0" vgrow="SOMETIMES" />
               </rowConstraints>
                <children>
-                  <Label text="Reservation ID:" GridPane.halignment="RIGHT">
+                  <Label text="Bill ID:" GridPane.halignment="RIGHT">
                      <font>
                         <Font size="16.0" />
                      </font>
                   </Label>
-                  <Label fx:id="lblReservationId" text="-" GridPane.columnIndex="1">
+                  <Label fx:id="lblBillId" text="-" GridPane.columnIndex="1">
                      <font>
                         <Font name="System Bold" size="16.0" />
                      </font>
                   </Label>
-                  <Label text="Original Amount:" GridPane.halignment="RIGHT" GridPane.rowIndex="1">
+                  <Label text="Reservation ID:" GridPane.halignment="RIGHT" GridPane.rowIndex="1">
                      <font>
                         <Font size="16.0" />
                      </font>
                   </Label>
-                  <Label fx:id="lblOriginalAmount" text="0.00 NIS" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                  <Label fx:id="lblReservationId" text="-" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                     <font>
+                        <Font name="System Bold" size="16.0" />
+                     </font>
+                  </Label>
+                  <Label text="Original Amount:" GridPane.halignment="RIGHT" GridPane.rowIndex="2">
                      <font>
                         <Font size="16.0" />
                      </font>
                   </Label>
-                  <Label text="Discount:" GridPane.halignment="RIGHT" GridPane.rowIndex="2">
+                  <Label fx:id="lblOriginalAmount" text="0.00 ₪" GridPane.columnIndex="1" GridPane.rowIndex="2">
                      <font>
                         <Font size="16.0" />
                      </font>
                   </Label>
-                  <Label fx:id="lblDiscount" text="0% (-0.00 NIS)" textFill="#2e7d32" GridPane.columnIndex="1" GridPane.rowIndex="2">
+                  <Label text="Discount Type:" GridPane.halignment="RIGHT" GridPane.rowIndex="3">
                      <font>
                         <Font size="16.0" />
                      </font>
                   </Label>
-                  <Label text="Total to Pay:" GridPane.halignment="RIGHT" GridPane.rowIndex="3">
+                  <Label fx:id="lblDiscountType" text="-" GridPane.columnIndex="1" GridPane.rowIndex="3">
+                     <font>
+                        <Font size="16.0" />
+                     </font>
+                  </Label>
+                  <Label text="Discount %:" GridPane.halignment="RIGHT" GridPane.rowIndex="4">
+                     <font>
+                        <Font size="16.0" />
+                     </font>
+                  </Label>
+                  <Label fx:id="lblDiscount" text="0% (-0.00 ₪)" textFill="#2e7d32" GridPane.columnIndex="1" GridPane.rowIndex="4">
+                     <font>
+                        <Font size="16.0" />
+                     </font>
+                  </Label>
+                  <Label text="Total to Pay:" GridPane.halignment="RIGHT" GridPane.rowIndex="5">
                      <font>
                         <Font name="System Bold" size="18.0" />
                      </font>
                   </Label>
-                  <Label fx:id="lblTotalAmount" text="0.00 NIS" textFill="#c62828" GridPane.columnIndex="1" GridPane.rowIndex="3">
+                  <Label fx:id="lblTotalAmount" text="0.00 ₪" textFill="#c62828" GridPane.columnIndex="1" GridPane.rowIndex="5">
                      <font>
                         <Font name="System Bold" size="20.0" />
                      </font>
                   </Label>
-                  <Label text="Payment Method:" GridPane.halignment="RIGHT" GridPane.rowIndex="4">
+                  <Label text="Payment Method:" GridPane.halignment="RIGHT" GridPane.rowIndex="6">
                      <font>
                         <Font size="16.0" />
                      </font>
                   </Label>
-                  <ComboBox fx:id="comboPaymentMethod" prefHeight="35.0" prefWidth="200.0" promptText="Select Method" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+                  <ComboBox fx:id="comboPaymentMethod" prefHeight="35.0" prefWidth="200.0" promptText="Select Method" GridPane.columnIndex="1" GridPane.rowIndex="6" />
                </children>
                <VBox.margin>
                   <Insets left="50.0" right="50.0" />

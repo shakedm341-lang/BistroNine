@@ -29,7 +29,9 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Text;
 import javafx.util.Callback;
 
 public class SettingsController {
@@ -64,6 +66,10 @@ public class SettingsController {
     // Server data storage
     private ArrayList<OpeningHours> allWeeklyHours = new ArrayList<>();
     private ArrayList<OpeningHoursPerDay> allSpecialHours = new ArrayList<>();
+    
+    // Temporary storage for pending delete operations
+    private TimeSlot pendingDeleteSlot = null;
+    private ObservableList<TimeSlot> pendingDeleteList = null;
 
     @FXML
     public void initialize() {
@@ -76,13 +82,32 @@ public class SettingsController {
         ));
 
         // Setup Standard Table Columns
-        setupTableColumns(standardHoursTable, standardOpenCol, standardCloseCol, standardActionCol, standardSlots);
+        setupTableColumns(standardHoursTable, standardOpenCol, standardCloseCol, standardActionCol, standardSlots, true);
 
         // Setup Special Table Columns
-        setupTableColumns(specialHoursTable, specialOpenCol, specialCloseCol, specialActionCol, specialSlots);
+        setupTableColumns(specialHoursTable, specialOpenCol, specialCloseCol, specialActionCol, specialSlots, false);
+
+        // Setup placeholders for empty tables
+        setupTablePlaceholders();
 
         // Setup Special Dates Highlighting
         setupDatePickerHighlighting();
+    }
+
+    private void setupTablePlaceholders() {
+        // Create placeholder for standard hours table
+        StackPane standardPlaceholder = new StackPane();
+        Text standardPlaceholderText = new Text("the restaurant closes");
+        standardPlaceholderText.setStyle("-fx-font-size: 14px; -fx-fill: #666666;");
+        standardPlaceholder.getChildren().add(standardPlaceholderText);
+        standardHoursTable.setPlaceholder(standardPlaceholder);
+        
+        // Create placeholder for special hours table
+        StackPane specialPlaceholder = new StackPane();
+        Text specialPlaceholderText = new Text("the restaurant closes");
+        specialPlaceholderText.setStyle("-fx-font-size: 14px; -fx-fill: #666666;");
+        specialPlaceholder.getChildren().add(specialPlaceholderText);
+        specialHoursTable.setPlaceholder(specialPlaceholder);
     }
 
     private void setupDatePickerHighlighting() {
@@ -111,7 +136,8 @@ public class SettingsController {
                                    TableColumn<TimeSlot, String> openCol, 
                                    TableColumn<TimeSlot, String> closeCol, 
                                    TableColumn<TimeSlot, Void> actionCol, 
-                                   ObservableList<TimeSlot> dataList) {
+                                   ObservableList<TimeSlot> dataList,
+                                   boolean isStandard) {
         
         openCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getOpen().toString()));
         closeCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getClose().toString()));
@@ -124,7 +150,12 @@ public class SettingsController {
                     {
                         btn.setOnAction((ActionEvent event) -> {
                             TimeSlot slot = getTableView().getItems().get(getIndex());
-                            dataList.remove(slot);
+                            // Send delete command to server first, removal from list happens on success
+                            if (isStandard) {
+                                deleteStandardSlot(slot, dataList);
+                            } else {
+                                deleteSpecialSlot(slot, dataList);
+                            }
                         });
                     }
                     @Override
@@ -200,24 +231,28 @@ public class SettingsController {
         standardSlots.clear();
         for (OpeningHours oh : allWeeklyHours) {
             if (oh.getDay().equals(day)) {
-                if (oh.getSlots() != null) {
+                if (oh.getSlots() != null && !oh.getSlots().isEmpty()) {
                     standardSlots.addAll(oh.getSlots());
                 }
+                // If slots is null or empty, the table will show the placeholder
                 break;
             }
         }
+        // If day not found or has no slots, table will show placeholder
     }
 
     private void loadSpecialHours(LocalDate date) {
         specialSlots.clear();
         for (OpeningHoursPerDay ohpd : allSpecialHours) {
             if (ohpd.getDay().equals(date)) {
-                if (ohpd.getSlots() != null) {
+                if (ohpd.getSlots() != null && !ohpd.getSlots().isEmpty()) {
                     specialSlots.addAll(ohpd.getSlots());
                 }
+                // If slots is null or empty, the table will show the placeholder
                 break;
             }
         }
+        // If date not found or has no slots, table will show placeholder
     }
 
     // --- Server Callbacks ---
@@ -263,26 +298,34 @@ public class SettingsController {
     public void onSaveResponse(boolean success) {
         Platform.runLater(() -> {
             if (success) {
-                showAlert(AlertType.INFORMATION, "Save Successful", "Changes have been saved successfully.");
-                // Refresh data
+                // If there was a pending delete, remove it from the local list now
+                if (pendingDeleteSlot != null && pendingDeleteList != null) {
+                    pendingDeleteList.remove(pendingDeleteSlot);
+                    pendingDeleteSlot = null;
+                    pendingDeleteList = null;
+                }
+                // Refresh data from server to ensure UI is in sync
                 requestOpeningHoursFromServer();
             } else {
-                showAlert(AlertType.ERROR, "Save Failed", "Could not save changes to the server.");
+                // Clear pending delete on failure
+                pendingDeleteSlot = null;
+                pendingDeleteList = null;
+                showAlert(AlertType.ERROR, "Operation Failed", "Could not update opening hours on the server.");
             }
         });
     }
 
     @FXML
     void addStandardSlot(ActionEvent event) {
-        addSlotToList(standardOpenTxt, standardCloseTxt, standardSlots);
+        addSlotToList(standardOpenTxt, standardCloseTxt, standardSlots, true);
     }
 
     @FXML
     void addSpecialSlot(ActionEvent event) {
-        addSlotToList(specialOpenTxt, specialCloseTxt, specialSlots);
+        addSlotToList(specialOpenTxt, specialCloseTxt, specialSlots, false);
     }
 
-    private void addSlotToList(TextField openTxt, TextField closeTxt, ObservableList<TimeSlot> list) {
+    private void addSlotToList(TextField openTxt, TextField closeTxt, ObservableList<TimeSlot> list, boolean isStandard) {
         try {
             LocalTime open = LocalTime.parse(openTxt.getText());
             LocalTime close = LocalTime.parse(closeTxt.getText());
@@ -292,45 +335,46 @@ public class SettingsController {
                 return;
             }
 
-            list.add(new TimeSlot(open, close));
+            TimeSlot newSlot = new TimeSlot(open, close);
+            list.add(newSlot);
             openTxt.clear();
             closeTxt.clear();
+
+            // Immediately send add command to server
+            if (isStandard) {
+                addStandardSlotToServer(newSlot);
+            } else {
+                addSpecialSlotToServer(newSlot);
+            }
 
         } catch (DateTimeParseException e) {
             showAlert(AlertType.ERROR, "Invalid Format", "Please use HH:mm format (e.g., 08:00).");
         }
     }
 
-    @FXML
-    void saveStandardHours(ActionEvent event) {
+    private void addStandardSlotToServer(TimeSlot slot) {
         String day = dayComboBox.getValue();
         if (day == null) {
             showAlert(AlertType.WARNING, "Missing Data", "Please select a day first.");
             return;
         }
 
-        // Prepare content for Command.UPDATE_OPENING_TIME
-        // Format: [String day, ArrayList<LocalTime> times]
+        // Prepare content for Command.ADD_NEW_OPENING_TIME
+        // Format: [String day, LocalTime open, LocalTime close]
         ArrayList<Object> content = new ArrayList<>();
         content.add(day);
-        
-        ArrayList<LocalTime> times = new ArrayList<>();
-        for (TimeSlot slot : standardSlots) {
-            times.add(slot.getOpen());
-            times.add(slot.getClose());
-        }
-        content.add(times);
+        content.add(slot.getOpen());
+        content.add(slot.getClose());
 
-        System.out.println("DEBUG: Sending UPDATE_OPENING_TIME to server for " + day);
+        System.out.println("DEBUG: Sending ADD_NEW_OPENING_TIME to server for " + day);
         if (client != null) {
             client.handleMessageFromBoundary(TypeMessage.OPENING_TIME, 
                                                 content, 
-                                                Command.UPDATE_OPENING_TIME);
+                                                Command.ADD_NEW_OPENING_TIME);
         }
     }
 
-    @FXML
-    void saveSpecialDate(ActionEvent event) {
+    private void addSpecialSlotToServer(TimeSlot slot) {
         LocalDate date = specialDatePicker.getValue();
         if (date == null) {
             showAlert(AlertType.WARNING, "Missing Data", "Please select a date first.");
@@ -338,16 +382,11 @@ public class SettingsController {
         }
 
         // Prepare content for Command.ADD_NEW_SPECIAL_OPENING_TIME
-        // Format: [LocalDate date, ArrayList<LocalTime> times]
+        // Format: [LocalDate date, LocalTime open, LocalTime close]
         ArrayList<Object> content = new ArrayList<>();
         content.add(date);
-        
-        ArrayList<LocalTime> times = new ArrayList<>();
-        for (TimeSlot slot : specialSlots) {
-            times.add(slot.getOpen());
-            times.add(slot.getClose());
-        }
-        content.add(times);
+        content.add(slot.getOpen());
+        content.add(slot.getClose());
 
         System.out.println("DEBUG: Sending ADD_NEW_SPECIAL_OPENING_TIME to server for " + date);
         if (client != null) {
@@ -356,7 +395,55 @@ public class SettingsController {
                                                 Command.ADD_NEW_SPECIAL_OPENING_TIME);
         }
     }
-    
+
+    private void deleteStandardSlot(TimeSlot slot, ObservableList<TimeSlot> dataList) {
+        String day = dayComboBox.getValue();
+        if (day == null) {
+            return; // Should not happen, but safe guard
+        }
+
+        // Prepare content for Command.DELETE_OPENING_TIME
+        // Format: [String day, LocalTime open, LocalTime close]
+        ArrayList<Object> content = new ArrayList<>();
+        content.add(day);
+        content.add(slot.getOpen());
+        content.add(slot.getClose());
+
+        System.out.println("DEBUG: Sending DELETE_OPENING_TIME to server for " + day + " slot: " + slot.getOpen() + "-" + slot.getClose());
+        if (client != null) {
+            // Store the slot and list for removal on success
+            pendingDeleteSlot = slot;
+            pendingDeleteList = dataList;
+            client.handleMessageFromBoundary(TypeMessage.OPENING_TIME, 
+                                                content, 
+                                                Command.DELETE_OPENING_TIME);
+        }
+    }
+
+    private void deleteSpecialSlot(TimeSlot slot, ObservableList<TimeSlot> dataList) {
+        LocalDate date = specialDatePicker.getValue();
+        if (date == null) {
+            return; // Should not happen, but safe guard
+        }
+
+        // Prepare content for Command.DELETE_SPECIAL_OPENING_TIME
+        // Format: [LocalDate date, LocalTime open, LocalTime close]
+        ArrayList<Object> content = new ArrayList<>();
+        content.add(date);
+        content.add(slot.getOpen());
+        content.add(slot.getClose());
+
+        System.out.println("DEBUG: Sending DELETE_SPECIAL_OPENING_TIME to server for " + date + " slot: " + slot.getOpen() + "-" + slot.getClose());
+        if (client != null) {
+            // Store the slot and list for removal on success
+            pendingDeleteSlot = slot;
+            pendingDeleteList = dataList;
+            client.handleMessageFromBoundary(TypeMessage.OPENING_TIME, 
+                                                content, 
+                                                Command.DELETE_SPECIAL_OPENING_TIME);
+        }
+    }
+
 
     private void showAlert(AlertType type, String title, String message) {
         Alert alert = new Alert(type);
