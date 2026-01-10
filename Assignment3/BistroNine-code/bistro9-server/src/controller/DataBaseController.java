@@ -30,9 +30,10 @@ import data.WaitList;
 public class DataBaseController {
 
 	// START OF API:
-
-	// this are the public methods that the
-	// controllers can call to get OR set data.
+	//.
+	// The following public methods
+	// allow controllers to retrieve
+	// or modify data.
 	// .
 	// 1. getAllReservationsQueryByCustomerId(int) : ArrayList<ArrayList<Object>>
 	// 2. getAllReservationsQueryByDay(LocalDate) : ArrayList<ArrayList<Object>>
@@ -94,7 +95,7 @@ public class DataBaseController {
 	// 58. updateBillAmountsQuery(Bill) : boolean
 	// 59. closeRestaurantOnSpecialDayQuery(OpeningHoursPerDay) : boolean
 	// 60. updateSpecialOpeningTimeQuery(OpeningHoursPerDay, OpeningHoursPerDay) : boolean
-	// 61. updateOpeningTimeQuery(OpeningHours, OpeningHours) : boolean	
+	// 61. updateOpeningTimeQuery(OpeningHours, OpeningHours) : boolean
 	// .
 	// END OF API.
 
