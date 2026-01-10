@@ -96,7 +96,7 @@ public class DataBaseController {
 	// 59. closeRestaurantOnSpecialDayQuery(OpeningHoursPerDay) : boolean
 	// 60. updateSpecialOpeningTimeQuery(OpeningHoursPerDay, OpeningHoursPerDay) : boolean
 	// 61. updateOpeningTimeQuery(OpeningHours, OpeningHours) : boolean
-	// ..
+	// .
 	// END OF API.
 
 	private static DataBaseController instance;
