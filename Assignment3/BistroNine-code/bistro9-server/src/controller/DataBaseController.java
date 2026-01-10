@@ -111,7 +111,6 @@ public class DataBaseController {
 													// being used
 	private static final long CHECK_INTERVAL = 2;// How often does the "pool cleaner" run and delete unused connections
 													// in the "connection pool"?
-	private final int NO_TABLE_FOUND = -1;// When no suitable table is found in the database.
 
 	private BlockingQueue<PooledConnection> connectionPool;// The "connection pool"
 	private ScheduledExecutorService cleanerService;// The "Pool Cleaner"
