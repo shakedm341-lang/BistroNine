@@ -30,7 +30,7 @@ import data.WaitList;
 public class DataBaseController {
 
 	// START OF API:
-	//.
+	// .
 	// The following public methods
 	// allow controllers to retrieve
 	// or modify data.
