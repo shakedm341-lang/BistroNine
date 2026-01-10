@@ -24,14 +24,21 @@ public class ServerController extends AbstractServer {
 	private OpeningTimeController openingTimeController;
 	private TimeReportController timeReportController;
 	private SubscriberReportController subscriberReportController;
-	
+
 	private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 	private ServerDashboardController serverUI;
 
+	/**
+	 * * Constructor for ServerController.
+	 *
+	 * @param port       The port number to listen on.
+	 * @param dbPassword The password for the database connection.
+	 * @param serverUI   The server dashboard controller for UI updates.
+	 */
 	public ServerController(int port, String dbPassword, ServerDashboardController serverUI) {
 		super(port);
 		this.serverUI = serverUI;
-		
+
 		DataBaseController.initiateDBC(dbPassword);
 		this.reservationsController = new ReservationControler();
 		this.customerController = new CustomerController();
@@ -41,7 +48,7 @@ public class ServerController extends AbstractServer {
 		this.openingTimeController = new OpeningTimeController();
 		this.timeReportController = new TimeReportController();
 		this.subscriberReportController = new SubscriberReportController();
-		
+
 		startAutoTasks();
 	}
 
@@ -49,6 +56,8 @@ public class ServerController extends AbstractServer {
 	/**
 	 * Updates the server reference to the new Dashboard controller and updates the DB password.
 	 * Also repopulates the table with existing clients.
+	 * @param newUI        The new ServerDashboardController instance.
+	 * @param newDbPassword The new database password.
 	 */
 	public void updateServerDetails(ServerDashboardController newUI, String newDbPassword) {
 		this.serverUI = newUI;
@@ -94,7 +103,13 @@ public class ServerController extends AbstractServer {
 			}
 		}
 	}
-	
+
+	/**
+	 * Handles incoming messages from clients.
+	 *
+	 * @param msg    The message received from the client.
+	 * @param client The connection to the client that sent the message.
+	 */
 	@Override
 	public void handleMessageFromClient(Object msg, ConnectionToClient client) {
 		if (msg instanceof byte[]) {
@@ -134,6 +149,12 @@ public class ServerController extends AbstractServer {
 		}
 	}
 
+	/**
+	 * * Handles reservation-related requests from clients.
+	 *
+	 * @param message The message containing the reservation request.
+	 * @param client  The connection to the client that sent the request.
+	 */
 	private void handleReservationRequest(Message message, ConnectionToClient client) {
 		Object response = reservationsController.handleMessageFromServer(message);
 		message.content = response;
@@ -145,6 +166,12 @@ public class ServerController extends AbstractServer {
 		}
 	}
 
+	/**
+	 *  Handles reservation-related requests from clients.
+	 *
+	 * @param message The message containing the reservation request.
+	 * @param client  The connection to the client that sent the request.
+	 */
 	private void handleCustomerRequest(Message message, ConnectionToClient client) {
 		Object response = customerController.handleMessageFromServer(message);
 		message.content = response;
@@ -156,6 +183,12 @@ public class ServerController extends AbstractServer {
 		}
 	}
 
+	/**
+	 *  Handles table-related requests from clients.
+	 *
+	 * @param message The message containing the table request.
+	 * @param client  The connection to the client that sent the request.
+	 */
 	private void handleTableRequest(Message message, ConnectionToClient client) {
 		Object response = tableController.handleMessageFromServer(message);
 		message.content = response;
@@ -167,6 +200,12 @@ public class ServerController extends AbstractServer {
 		}
 	}
 
+	/**
+	 *  Handles bill-related requests from clients.
+	 *
+	 * @param message The message containing the bill request.
+	 * @param client  The connection to the client that sent the request.
+	 */
 	private void handleBillRequest(Message message, ConnectionToClient client) {
 		Object response = billController.handleMessageFromServer(message);
 		message.content = response;
@@ -178,6 +217,12 @@ public class ServerController extends AbstractServer {
 		}
 	}
 
+	/**
+	 *  Handles waitlist-related requests from clients.
+	 *
+	 * @param message The message containing the waitlist request.
+	 * @param client  The connection to the client that sent the request.
+	 */
 	private void handleWaitListRequest(Message message, ConnectionToClient client) {
 		Object response = waitListController.handleMessageFromServer(message);
 		message.content = response;
@@ -189,6 +234,12 @@ public class ServerController extends AbstractServer {
 		}
 	}
 
+	/**
+	 *  Handles opening time-related requests from clients.
+	 *
+	 * @param message The message containing the opening time request.
+	 * @param client  The connection to the client that sent the request.
+	 */
 	private void handleOpeningTimeRequest(Message message, ConnectionToClient client) {
 		Object response = openingTimeController.handleMessageFromServer(message);
 		message.content = response;
@@ -200,6 +251,12 @@ public class ServerController extends AbstractServer {
 		}
 	}
 
+	/**
+	 *  Handles time report-related requests from clients.
+	 *
+	 * @param message The message containing the time report request.
+	 * @param client  The connection to the client that sent the request.
+	 */
 	private void handleTimeReportRequest(Message message, ConnectionToClient client) {
 		Object response = timeReportController.handleMessageFromServer(message);
 		message.content = response;
@@ -211,6 +268,12 @@ public class ServerController extends AbstractServer {
 		}
 	}
 
+	/**
+	 *  Handles subscriber report-related requests from clients.
+	 *
+	 * @param message The message containing the subscriber report request.
+	 * @param client  The connection to the client that sent the request.
+	 */
 	private void handleSubscriberReportRequest(Message message, ConnectionToClient client) {
 		Object response = subscriberReportController.handleMessageFromServer(message);
 		message.content = response;
@@ -222,6 +285,9 @@ public class ServerController extends AbstractServer {
 		}
 	}
 
+	/**
+	 * * Starts scheduled tasks for automatic cleanup and report generation.
+	 */
 	private void startAutoTasks() {
 		scheduler.scheduleAtFixedRate(() -> {
 			try {
@@ -243,11 +309,17 @@ public class ServerController extends AbstractServer {
 		}, 0, 24, TimeUnit.HOURS);
 	}
 
+	/**
+	 * * Overrides the serverStarted method to log when the server starts.
+	 */
 	@Override
 	protected void serverStarted() {
 		System.out.println("Server listening for connections on port " + getPort());
 	}
 
+	/**
+	 * * Overrides the serverStopped method to log when the server stops.
+	 */
 	@Override
 	protected void serverStopped() {
 		scheduler.shutdown();
@@ -255,6 +327,11 @@ public class ServerController extends AbstractServer {
 		System.out.println("Server has stopped listening for connections.");
 	}
 
+	/**
+	 * * Overrides the clientConnected method to handle new client connections.
+	 *
+	 * @param client The connection to the newly connected client.
+	 */
 	@Override
 	protected void clientConnected(ConnectionToClient client) {
 		super.clientConnected(client);
@@ -281,6 +358,11 @@ public class ServerController extends AbstractServer {
 		}
 	}
 
+	/**
+	 * * Overrides the clientDisconnected method to handle client disconnections.
+	 *
+	 * @param client The connection to the disconnected client.
+	 */
 	@Override
 	synchronized protected void clientDisconnected(ConnectionToClient client) {
 		String clientIp = (String) client.getInfo("IP");
@@ -295,6 +377,12 @@ public class ServerController extends AbstractServer {
 		}
 	}
 
+	/**
+	 * * Overrides the clientException method to handle exceptions from clients.
+	 *
+	 * @param client    The connection to the client that caused the exception.
+	 * @param exception The exception thrown by the client.
+	 */
 	@Override
 	synchronized protected void clientException(ConnectionToClient client, Throwable exception) {
 		String clientIp = (String) client.getInfo("IP");
@@ -307,6 +395,13 @@ public class ServerController extends AbstractServer {
 		}
 	}
 
+	/**
+	 * Uses reflection to access the private clientSocket field and retrieve the
+	 * port number.
+	 *
+	 * @param client The ConnectionToClient instance.
+	 * @return The port number as a String, or "Unknown" if it cannot be retrieved.
+	 */
 	private String getClientPortUsingReflection(ConnectionToClient client) {
 		try {
 			Field field = client.getClass().getDeclaredField("clientSocket");

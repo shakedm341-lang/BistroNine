@@ -17,18 +17,28 @@ import data.TimeSlot;
 
 public class OpeningTimeController 
 {
-	
-	private static DataBaseController DBC=DataBaseController.getInstance();//Interfacing with the DB Controller
 
+	private static DataBaseController DBC=DataBaseController.getInstance();//Interfacing with the DB Controller
+	/**
+	 * Default constructor
+	 */
 	public OpeningTimeController() 
 	{
-		
+
 	}
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////managing messages //////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	//////////////////////////managing messages //////////////////////////////////////////////////////////////////
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
+	/**
+	 * Handles messages received from the server and performs corresponding actions
+	 * related to opening times.
+	 *
+	 * @param msg The message received from the server containing the command and
+	 *            content.
+	 * @return The result of the action performed, which can vary based on the
+	 *         command.
+	 */
 	public Object handleMessageFromServer(Message msg) 
 	{
 
@@ -42,19 +52,19 @@ public class OpeningTimeController
 			return updateSpecialOpeningTime(msg);
 		case ADD_NEW_OPENING_TIME:
 			return addNewOpeningTime(msg);
-			
+
 		case ADD_NEW_SPECIAL_OPENING_TIME:
 			return addNewSpecialOpeningTime(msg);
-			
+
 		case DELETE_OPENING_TIME:
 			return deleteOpeningTime(msg);
-			
+
 		case DELETE_SPECIAL_OPENING_TIME:
 			return deleteSpecialOpeningTime(msg);
-			
+
 		case GET_WEEKLY_OPENING_TIME:
 			return getWeeklyOpeningTime(msg);
-			
+
 		case GET_SPECIAL_OPENING_TIME:
 			return getSpecialOpeningTime(msg);
 		default:
@@ -62,10 +72,10 @@ public class OpeningTimeController
 			return null;
 		}
 	}
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////Helper methods//////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////	
-	
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	////////////////////////////////Helper methods//////////////////////////////////////////////////////////////////
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////	
+
 
 	/**
 	 * Retrieves the opening time slots for a specific date from the database.Special Hours or Weekly Hours
@@ -77,13 +87,13 @@ public class OpeningTimeController
 	public static ArrayList<TimeSlot> getOpeningTime(LocalDate day)
 	{
 		OpeningHoursPerDay openingHours = new OpeningHoursPerDay(day);
-		
+
 		DBC.getOpeningHoursByDate(openingHours);//update opening hours for the specific date from the DB in the OpeningHoursPerDay object else put null in the slots list
-		
+
 		return openingHours.getSlots();
 	}
-	
-	
+
+
 	/**
 	 * Retrieves a list of table reservations that conflict with the specified special opening hours for a specific date.
 	 *
@@ -101,7 +111,7 @@ public class OpeningTimeController
 		{
 			return new ArrayList<TableReservation>(); 
 		}
-		
+
 		ArrayList<TableReservation> conflictedReservations = new ArrayList<>();
 
 		for (TableReservation res : reservations) 
@@ -114,7 +124,7 @@ public class OpeningTimeController
 
 			// Convert Timestamp to LocalDateTime
 			LocalDateTime resDateTime = dbTimestamp.toLocalDateTime();
-			
+
 			// Extract the specific LocalDate from the reservation ---
 			LocalDate resDate = resDateTime.toLocalDate();
 
@@ -204,28 +214,28 @@ public class OpeningTimeController
 				//check if the reservation time falls within any of the opening time slots
 				if (openingHours.getSlots() != null && !openingHours.getSlots().isEmpty()) 
 				{
-						TimeSlot slot = openingHours.getSlots().get(0); //assuming only one time slot per day for simplicity;
-					
-						// Check if reservation starts before slot closes and ends after slot opens
-						boolean startsBeforeSlotCloses = resStartTime.isBefore(slot.getClose());
+					TimeSlot slot = openingHours.getSlots().get(0); //assuming only one time slot per day for simplicity;
 
-						// Does the order end after the slot (that we want to delete) starts?
-						boolean endsAfterSlotOpens = endsNextDay || resEndTime.isAfter(slot.getOpen());
+					// Check if reservation starts before slot closes and ends after slot opens
+					boolean startsBeforeSlotCloses = resStartTime.isBefore(slot.getClose());
 
-						if (startsBeforeSlotCloses && endsAfterSlotOpens) //the reservation time conflicts with the opening time slot
-						{
-							conflictedReservations.add(res);
-						}
+					// Does the order end after the slot (that we want to delete) starts?
+					boolean endsAfterSlotOpens = endsNextDay || resEndTime.isAfter(slot.getOpen());
+
+					if (startsBeforeSlotCloses && endsAfterSlotOpens) //the reservation time conflicts with the opening time slot
+					{
+						conflictedReservations.add(res);
+					}
 				}
 			}
 		}
 
 		return conflictedReservations;//return the list of conflicting reservations 
 	}
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////Logic methods//////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	///////////////////////////////Logic methods//////////////////////////////////////////////////////////////////////
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 	/**
 	 * Closes the restaurant on a specific date.
 	 * If active reservations exist on that date, it returns the list of subscribers with
@@ -241,80 +251,80 @@ public class OpeningTimeController
 	 */
 	private ArrayList<Subscriber> closeRestaurantOnSpecialDay(Message msg)
 	{
-	    @SuppressWarnings("unchecked") 
-	    ArrayList<Object> list = (ArrayList<Object>) msg.content;
+		@SuppressWarnings("unchecked") 
+		ArrayList<Object> list = (ArrayList<Object>) msg.content;
 
-	    
-	    if (list == null || list.isEmpty()) {
-	        System.out.println("Error: Invalid message content.");
-	        return null;
-	    }
 
-	    LocalDate dateToClose;
+		if (list == null || list.isEmpty()) {
+			System.out.println("Error: Invalid message content.");
+			return null;
+		}
 
-	    // Setting dateToClose from the list
-	    if (list.get(0) instanceof LocalDate) {
-	        dateToClose = (LocalDate) list.get(0);
-	    } 
-	    else 
-	    {
-	        System.out.println("Error: Index 0 is not a LocalDate!");
-	        return null;
-	    }   
+		LocalDate dateToClose;
 
-	    
-	    ArrayList<TableReservation> allReservations = ReservationControler.getAllReservationsActive();
-	    ArrayList<TableReservation> conflicts = new ArrayList<>();
+		// Setting dateToClose from the list
+		if (list.get(0) instanceof LocalDate) {
+			dateToClose = (LocalDate) list.get(0);
+		} 
+		else 
+		{
+			System.out.println("Error: Index 0 is not a LocalDate!");
+			return null;
+		}   
 
-	    if (allReservations != null) 
-	    {
-	        for (TableReservation res : allReservations) 
-	        {
-	            if (res.getReservationDate() != null) 
-	            {
-	                // Check if the reservation falls on the requested date
-	                LocalDate resDate = res.getReservationDate().toLocalDateTime().toLocalDate();
-	                
-	                if (resDate.equals(dateToClose)) 
-	                {
-	                    conflicts.add(res);
-	                }
-	            }
-	        }
-	    }
 
-	    //  If conflicts found, return Subscribers of the list of conflicting reservations
-	    if (!conflicts.isEmpty()) 
-	    {
-	        System.out.println("\n====== Close Restaurant Failed: Conflicts Found on " + dateToClose + " ===");
-	        for (TableReservation res : conflicts) {
-	             System.out.println(" -> Reservation ID: " + res.getReservationId() + " is preventing closure.");
-	        }
-	        return CustomerController.getSubscribersFromReservations(conflicts);
-	    }
+		ArrayList<TableReservation> allReservations = ReservationControler.getAllReservationsActive();
+		ArrayList<TableReservation> conflicts = new ArrayList<>();
 
-	    //  No conflicts - Set hours to 00:00 - 00:00 (Closed) 
-	    OpeningHoursPerDay closedHours = new OpeningHoursPerDay(dateToClose);
-	    ArrayList<TimeSlot> closedSlotList = new ArrayList<>();
-	    
-	   
-	    closedSlotList.add(new TimeSlot(LocalTime.MIDNIGHT, LocalTime.MIDNIGHT));  // 00:00 to 00:00 implies "Closed"
-	    closedHours.setSlots(closedSlotList);
+		if (allReservations != null) 
+		{
+			for (TableReservation res : allReservations) 
+			{
+				if (res.getReservationDate() != null) 
+				{
+					// Check if the reservation falls on the requested date
+					LocalDate resDate = res.getReservationDate().toLocalDateTime().toLocalDate();
 
-	 
-	    // If a record exists for this date , delete it and insert the closed hours.
-	    // If no record exists , Insert a new one.
-	    // return true if successful , else false
-	    if (DBC.closeRestaurantOnSpecialDayQuery(closedHours)) 
-	    {
-	        System.out.println("Restaurant closed successfully on " + dateToClose);
-	        return new ArrayList<Subscriber>(); // Success
-	    }
+					if (resDate.equals(dateToClose)) 
+					{
+						conflicts.add(res);
+					}
+				}
+			}
+		}
 
-	    System.out.println("Error: Database operation failed.");
-	    return null;// Database Error
+		//  If conflicts found, return Subscribers of the list of conflicting reservations
+		if (!conflicts.isEmpty()) 
+		{
+			System.out.println("\n====== Close Restaurant Failed: Conflicts Found on " + dateToClose + " ===");
+			for (TableReservation res : conflicts) {
+				System.out.println(" -> Reservation ID: " + res.getReservationId() + " is preventing closure.");
+			}
+			return CustomerController.getSubscribersFromReservations(conflicts);
+		}
+
+		//  No conflicts - Set hours to 00:00 - 00:00 (Closed) 
+		OpeningHoursPerDay closedHours = new OpeningHoursPerDay(dateToClose);
+		ArrayList<TimeSlot> closedSlotList = new ArrayList<>();
+
+
+		closedSlotList.add(new TimeSlot(LocalTime.MIDNIGHT, LocalTime.MIDNIGHT));  // 00:00 to 00:00 implies "Closed"
+		closedHours.setSlots(closedSlotList);
+
+
+		// If a record exists for this date , delete it and insert the closed hours.
+		// If no record exists , Insert a new one.
+		// return true if successful , else false
+		if (DBC.closeRestaurantOnSpecialDayQuery(closedHours)) 
+		{
+			System.out.println("Restaurant closed successfully on " + dateToClose);
+			return new ArrayList<Subscriber>(); // Success
+		}
+
+		System.out.println("Error: Database operation failed.");
+		return null;// Database Error
 	}
-	
+
 	/**
 	 * Updates the special opening time for a specific date.changes old opening time
 	 * to the new one. if the new opening time is later than the old opening time or
@@ -341,12 +351,12 @@ public class OpeningTimeController
 		@SuppressWarnings("unchecked") 
 		ArrayList<Object> list = (ArrayList<Object>) msg.content;
 
-		
-	    if (list == null || list.size() < 5) {
-	        System.out.println("Error: Invalid message content size.");
-	        return null;
-	    }
-		
+
+		if (list == null || list.size() < 5) {
+			System.out.println("Error: Invalid message content size.");
+			return null;
+		}
+
 		LocalDate day; 
 		LocalTime oldOpen ;
 		LocalTime oldClose ;
@@ -363,7 +373,7 @@ public class OpeningTimeController
 			System.out.println("Error: Index 0 is not a LocalDate!");
 			return null;
 		}	
-		
+
 		// Setting Old opening time 
 		if (list.get(1) instanceof LocalTime) {
 			oldOpen=(LocalTime) list.get(1) ;
@@ -400,68 +410,68 @@ public class OpeningTimeController
 			return null;
 		}
 
-		
-	    ArrayList<TimeSlot> slotsToCheck = new ArrayList<>();
 
-	   
-	    
-	    // Check if we are opening later (cutting morning hours)
-	    if (newOpen.isAfter(oldOpen)) {
-	        slotsToCheck.add(new TimeSlot(oldOpen, newOpen));
-	    }
-
-	    // Check if we are closing earlier (cutting evening hours)
-	    if (newClose.isBefore(oldClose)) {
-	        slotsToCheck.add(new TimeSlot(newClose, oldClose));
-	    }
+		ArrayList<TimeSlot> slotsToCheck = new ArrayList<>();
 
 
-	    // Check for conflicts in the lost hours 
-	    if (!slotsToCheck.isEmpty()) 
-	    {
-	        
-	        OpeningHoursPerDay lostHoursToCheck = new OpeningHoursPerDay(day);
-	        lostHoursToCheck.setSlots(slotsToCheck);
 
-	        
-	        ArrayList<TableReservation> conflicts = getConflictingReservationsForSpecialOpeningTime(lostHoursToCheck);
+		// Check if we are opening later (cutting morning hours)
+		if (newOpen.isAfter(oldOpen)) {
+			slotsToCheck.add(new TimeSlot(oldOpen, newOpen));
+		}
 
-	        if (!conflicts.isEmpty()) 
-	        {
-	            System.out.println("\n====== Update Special Opening Time Failed: Conflicts Found ===");
-	            for (TableReservation res : conflicts) {
-	                 System.out.println(" -> Conflict in removed range: Reservation ID: " + res.getReservationId());
-	            }
-	            // Return the list of subscribers who are disturbed
-	            return CustomerController.getSubscribersFromReservations(conflicts);
-	        }
-	    }
+		// Check if we are closing earlier (cutting evening hours)
+		if (newClose.isBefore(oldClose)) {
+			slotsToCheck.add(new TimeSlot(newClose, oldClose));
+		}
 
-	    // No conflicts or hours were extended - proceed with the update
-	    
-	    
-	    OpeningHoursPerDay newHours = new OpeningHoursPerDay(day);
-	    ArrayList<TimeSlot> newSlots = new ArrayList<>();
-	    newSlots.add(new TimeSlot(newOpen, newClose));
-	    newHours.setSlots(newSlots);
-	    
-	    OpeningHoursPerDay oldHours = new OpeningHoursPerDay(day);
-	    ArrayList<TimeSlot> oldSlots = new ArrayList<>();
-	    oldSlots.add(new TimeSlot(oldOpen, oldClose));
-	    oldHours.setSlots(oldSlots);
-	    
-	    // get old hours and change to new hours in the DB return true if successful 	else false
-	    if (DBC.updateSpecialOpeningTimeQuery(oldHours, newHours)) 
-	    {
-	        System.out.println("Special Opening Time for " + day + " updated successfully.");
-	        return new ArrayList<Subscriber>(); // Success 
-	    }
 
-	    System.out.println("Error: Database update failed.");
-	    return null;// Database Error
+		// Check for conflicts in the lost hours 
+		if (!slotsToCheck.isEmpty()) 
+		{
+
+			OpeningHoursPerDay lostHoursToCheck = new OpeningHoursPerDay(day);
+			lostHoursToCheck.setSlots(slotsToCheck);
+
+
+			ArrayList<TableReservation> conflicts = getConflictingReservationsForSpecialOpeningTime(lostHoursToCheck);
+
+			if (!conflicts.isEmpty()) 
+			{
+				System.out.println("\n====== Update Special Opening Time Failed: Conflicts Found ===");
+				for (TableReservation res : conflicts) {
+					System.out.println(" -> Conflict in removed range: Reservation ID: " + res.getReservationId());
+				}
+				// Return the list of subscribers who are disturbed
+				return CustomerController.getSubscribersFromReservations(conflicts);
+			}
+		}
+
+		// No conflicts or hours were extended - proceed with the update
+
+
+		OpeningHoursPerDay newHours = new OpeningHoursPerDay(day);
+		ArrayList<TimeSlot> newSlots = new ArrayList<>();
+		newSlots.add(new TimeSlot(newOpen, newClose));
+		newHours.setSlots(newSlots);
+
+		OpeningHoursPerDay oldHours = new OpeningHoursPerDay(day);
+		ArrayList<TimeSlot> oldSlots = new ArrayList<>();
+		oldSlots.add(new TimeSlot(oldOpen, oldClose));
+		oldHours.setSlots(oldSlots);
+
+		// get old hours and change to new hours in the DB return true if successful 	else false
+		if (DBC.updateSpecialOpeningTimeQuery(oldHours, newHours)) 
+		{
+			System.out.println("Special Opening Time for " + day + " updated successfully.");
+			return new ArrayList<Subscriber>(); // Success 
+		}
+
+		System.out.println("Error: Database update failed.");
+		return null;// Database Error
 	}
-	
-	
+
+
 	/**
 	 * Updates the opening time for a  day of the week.changes old opening time to the new one.
 	 * if the new opening time is later than the old opening time or the new closing time is earlier than the old closing time
@@ -487,12 +497,12 @@ public class OpeningTimeController
 		@SuppressWarnings("unchecked") 
 		ArrayList<Object> list = (ArrayList<Object>) msg.content;//get the customer id from the message content
 
-		
-	    if (list == null || list.size() < 5) {
-	        System.out.println("Error: Invalid message content size.");
-	        return null;
-	    }
-		
+
+		if (list == null || list.size() < 5) {
+			System.out.println("Error: Invalid message content size.");
+			return null;
+		}
+
 		String day;
 		LocalTime oldOpen ;
 		LocalTime oldClose ;
@@ -509,7 +519,7 @@ public class OpeningTimeController
 			System.out.println("Error: Index 0 is not a String!");
 			return null;
 		}	
-		
+
 		// Setting opening time from the list we got from the message content
 		if (list.get(1) instanceof LocalTime) {
 			oldOpen=(LocalTime) list.get(1) ;
@@ -546,75 +556,75 @@ public class OpeningTimeController
 			return null;
 		}
 
-		
-		
-	    ArrayList<TimeSlot> slotsToCheck = new ArrayList<>();
-
-	    // Check if we are opening later (cutting morning hours)
-	    if (newOpen.isAfter(oldOpen)) {
-	        slotsToCheck.add(new TimeSlot(oldOpen, newOpen));
-	    }
-
-	    // Check if we are closing earlier (cutting evening hours)
-	    if (newClose.isBefore(oldClose)) {
-	        slotsToCheck.add(new TimeSlot(newClose, oldClose));
-	    }
 
 
-	    //Check for conflicts reservtions in the lost hours 
-	    if (!slotsToCheck.isEmpty()) 
-	    {
-	        // Create a temporary object just for the check
-	        OpeningHours lostHoursToCheck = new OpeningHours(day);
-	        lostHoursToCheck.setSlots(slotsToCheck);
+		ArrayList<TimeSlot> slotsToCheck = new ArrayList<>();
 
-	        ArrayList<TableReservation> conflicts = getConflictingReservationsForOpeningTime(lostHoursToCheck);
+		// Check if we are opening later (cutting morning hours)
+		if (newOpen.isAfter(oldOpen)) {
+			slotsToCheck.add(new TimeSlot(oldOpen, newOpen));
+		}
 
-	        if (!conflicts.isEmpty()) 
-	        {
-	            System.out.println("\n====== Update Opening Time Failed: Conflicts Found ===");
-	            for (TableReservation res : conflicts) {
-	                 System.out.println(" -> Conflict in removed range: Reservation ID: " + res.getReservationId());
-	            }
-	            // Return the list of subscribers who are disturbed
-	            return CustomerController.getSubscribersFromReservations(conflicts);
-	        }
-	    }
+		// Check if we are closing earlier (cutting evening hours)
+		if (newClose.isBefore(oldClose)) {
+			slotsToCheck.add(new TimeSlot(newClose, oldClose));
+		}
 
-	    //  No conflicts or hours were extended - proceed with the update
-	    OpeningHours newHours = new OpeningHours(day);
-	    ArrayList<TimeSlot> newSlots = new ArrayList<>();
-	    newSlots.add(new TimeSlot(newOpen, newClose));
-	    newHours.setSlots(newSlots);
-	    
-	    OpeningHours oldHours = new OpeningHours(day);
-	    ArrayList<TimeSlot> oldSlots = new ArrayList<>();
-	    oldSlots.add(new TimeSlot(oldOpen, oldClose));
-	    oldHours.setSlots(oldSlots);
-	    
-	    // get old hours and change to new hours in the DB return true if successful 	else false
-	    if (DBC.updateOpeningTimeQuery(oldHours,newHours)) 
-	    {
-	        System.out.println("Opening Time for " + day + " updated successfully.");
-	        return new ArrayList<Subscriber>(); // Success 
-	    }
 
-	    System.out.println("Error: Database update failed.");
-	    return null;// Database Error
+		//Check for conflicts reservtions in the lost hours 
+		if (!slotsToCheck.isEmpty()) 
+		{
+			// Create a temporary object just for the check
+			OpeningHours lostHoursToCheck = new OpeningHours(day);
+			lostHoursToCheck.setSlots(slotsToCheck);
+
+			ArrayList<TableReservation> conflicts = getConflictingReservationsForOpeningTime(lostHoursToCheck);
+
+			if (!conflicts.isEmpty()) 
+			{
+				System.out.println("\n====== Update Opening Time Failed: Conflicts Found ===");
+				for (TableReservation res : conflicts) {
+					System.out.println(" -> Conflict in removed range: Reservation ID: " + res.getReservationId());
+				}
+				// Return the list of subscribers who are disturbed
+				return CustomerController.getSubscribersFromReservations(conflicts);
+			}
+		}
+
+		//  No conflicts or hours were extended - proceed with the update
+		OpeningHours newHours = new OpeningHours(day);
+		ArrayList<TimeSlot> newSlots = new ArrayList<>();
+		newSlots.add(new TimeSlot(newOpen, newClose));
+		newHours.setSlots(newSlots);
+
+		OpeningHours oldHours = new OpeningHours(day);
+		ArrayList<TimeSlot> oldSlots = new ArrayList<>();
+		oldSlots.add(new TimeSlot(oldOpen, oldClose));
+		oldHours.setSlots(oldSlots);
+
+		// get old hours and change to new hours in the DB return true if successful 	else false
+		if (DBC.updateOpeningTimeQuery(oldHours,newHours)) 
+		{
+			System.out.println("Opening Time for " + day + " updated successfully.");
+			return new ArrayList<Subscriber>(); // Success 
+		}
+
+		System.out.println("Error: Database update failed.");
+		return null;// Database Error
 
 	}
-	
-	
+
+
 	/**
-     * Updates the opening time for a specific day of the week.deletes old opening time and insert the new one.
-     *
-     * @param msg The message containing the reservation details. The content of the
+	 * Updates the opening time for a specific day of the week.deletes old opening time and insert the new one.
+	 *
+	 * @param msg The message containing the reservation details. The content of the
 	 *            message is expected to be an ArrayList<Object> with the following
 	 *            order:[Location 0 :  String ('SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'),
 	 *             Location 1 : LocalTime (opening time), 
 	 *             Location 2 : LocalTime (closing time)]
-     * @return true if the update was successful, false otherwise.
-     */
+	 * @return true if the update was successful, false otherwise.
+	 */
 	private boolean addNewOpeningTime(Message msg)
 	{
 		@SuppressWarnings("unchecked") 
@@ -623,10 +633,10 @@ public class OpeningTimeController
 		String day;
 		LocalTime openingTimeFromMsg ;
 		LocalTime closingTimeFromMsg ;
-		
+
 
 		ArrayList<TimeSlot> timeSlotList = new ArrayList<>();
-		
+
 		// Setting day from the list we got from the message content
 		if (list.get(0) instanceof String) {
 			day = (String) list.get(0);
@@ -637,7 +647,7 @@ public class OpeningTimeController
 			return false;
 		}	
 		OpeningHours openingHours = new OpeningHours(day);//create OpeningHours object for the specific date
-		
+
 		// Setting opening time from the list we got from the message content
 		if (list.get(1) instanceof LocalTime) {
 			openingTimeFromMsg=(LocalTime) list.get(1) ;
@@ -647,7 +657,7 @@ public class OpeningTimeController
 			System.out.println("Error: Index 1 is not a LocalTime!");
 			return false;
 		}	
-		
+
 		// Setting closing time from the list we got from the message content
 		if (list.get(2) instanceof LocalTime) {
 			closingTimeFromMsg = (LocalTime) list.get(2);
@@ -658,15 +668,15 @@ public class OpeningTimeController
 		TimeSlot timeSlot=new TimeSlot(openingTimeFromMsg,closingTimeFromMsg);
 
 		timeSlotList.add(timeSlot);//add the time slot to the list
-		
+
 		openingHours.setSlots(timeSlotList);//set the time slot list to the opening hours object
 
-		
+
 
 		//updateOpeningTimeQuery insert the new one
 		return DBC.updateOpeningTimeQuery(openingHours);//return to server true if the update was successful, false otherwise
 	}
-	
+
 	/**
 	 * Adds new special opening time for a specific date.delete old special opening time if exists in this date.
 	 *
@@ -685,11 +695,11 @@ public class OpeningTimeController
 		LocalDate day;
 		LocalTime openingTimeFromMsg ;
 		LocalTime closingTimeFromMsg ;
-		
-		
-		
+
+
+
 		ArrayList<TimeSlot> timeSlotList = new ArrayList<>();
-		
+
 		// Setting day from the list we got from the message content
 		if (list.get(0) instanceof LocalDate) {
 			day = (LocalDate) list.get(0);
@@ -709,7 +719,7 @@ public class OpeningTimeController
 			System.out.println("Error: Index 1 is not a LocalTime!");
 			return false;
 		}	
-		
+
 		// Setting closing time from the list we got from the message content
 		if (list.get(2) instanceof LocalTime) {
 			closingTimeFromMsg = (LocalTime) list.get(2);
@@ -720,14 +730,14 @@ public class OpeningTimeController
 		TimeSlot timeSlot=new TimeSlot(openingTimeFromMsg,closingTimeFromMsg);
 
 		timeSlotList.add(timeSlot);//add the time slot to the list
-		
+
 		openingHours.setSlots(timeSlotList);//set the time slot list to the opening hours object
 
-		
+
 		//updateOpeningTimeQuery insert the new one
 		return DBC.addNewSpecialOpeningTimeQuery(openingHours);//return to server true if the update was successful, false otherwise
 	}
-	
+
 	/**
 	 * Deletes the special opening time for a specific date.deletes only if there are no conflicting reservations.
 	 *
@@ -798,7 +808,7 @@ public class OpeningTimeController
 			for (TableReservation res : conflicts) {
 				System.out.println(
 						" -> Reservation ID: " + res.getReservationId() + " | Date: " + res.getReservationDate()
-								+ " | Diners: " + res.getNumberOfDiners() + " | Customer ID: " + res.getCustomerId());
+						+ " | Diners: " + res.getNumberOfDiners() + " | Customer ID: " + res.getCustomerId());
 			}
 			System.out.println("====================================================\n");
 
@@ -840,10 +850,10 @@ public class OpeningTimeController
 		String day;
 		LocalTime openingTimeFromMsg ;
 		LocalTime closingTimeFromMsg ;
-		
+
 
 		ArrayList<TimeSlot> timeSlotList = new ArrayList<>();
-		
+
 		// Setting day from the list we got from the message content
 		if (list.get(0) instanceof String) {
 			day = (String) list.get(0);
@@ -854,7 +864,7 @@ public class OpeningTimeController
 			return null;
 		}	
 		OpeningHours openingHours = new OpeningHours(day);//create OpeningHours object for the specific date
-		
+
 		// Setting opening time from the list we got from the message content
 		if (list.get(1) instanceof LocalTime) {
 			openingTimeFromMsg=(LocalTime) list.get(1) ;
@@ -864,7 +874,7 @@ public class OpeningTimeController
 			System.out.println("Error: Index 1 is not a LocalTime!");
 			return null;
 		}	
-		
+
 		// Setting closing time from the list we got from the message content
 		if (list.get(2) instanceof LocalTime) {
 			closingTimeFromMsg = (LocalTime) list.get(2);
@@ -875,7 +885,7 @@ public class OpeningTimeController
 		TimeSlot timeSlot=new TimeSlot(openingTimeFromMsg,closingTimeFromMsg);
 
 		timeSlotList.add(timeSlot);//add the time slot to the list
-		
+
 		openingHours.setSlots(timeSlotList);//set the time slot list to the opening hours object
 
 
@@ -889,7 +899,7 @@ public class OpeningTimeController
 			for (TableReservation res : conflicts) {
 				System.out.println(
 						" -> Reservation ID: " + res.getReservationId() + " | Date: " + res.getReservationDate()
-								+ " | Diners: " + res.getNumberOfDiners() + " | Customer ID: " + res.getCustomerId());
+						+ " | Diners: " + res.getNumberOfDiners() + " | Customer ID: " + res.getCustomerId());
 			}
 			System.out.println("====================================================\n");
 
@@ -908,12 +918,12 @@ public class OpeningTimeController
 		//Database Error
 		System.out.println("Error: Could not delete Opening Time for day " + day + ".");
 		return null; 
-		
-		
-		
-		
+
+
+
+
 	}
-	
+
 	/**
 	 * Retrieves the special opening time for all special days from the database.
 	 *
@@ -925,13 +935,13 @@ public class OpeningTimeController
 	private ArrayList<OpeningHoursPerDay> getSpecialOpeningTime(Message msg)
 	{
 		ArrayList<LocalDate> datesList = new  ArrayList<>();
-		
+
 		ArrayList<OpeningHoursPerDay> specialOpeningHoursAsList = new ArrayList<>();
-		
+
 		if (!DBC.getAllSpecialDaysQuery(datesList))// update datesList with all the special opening days without hours from the DB, return false not successful
 		{
-            return null;//
-        }
+			return null;//
+		}
 		if (datesList.isEmpty()) 
 		{
 			return null;// return null to server that there are no special opening days in the DB
@@ -944,11 +954,11 @@ public class OpeningTimeController
 			openingHoursForSpecificDate.setSlots(getOpeningTime(day));
 
 			specialOpeningHoursAsList.add(openingHoursForSpecificDate);
-			
+
 		}
 		return specialOpeningHoursAsList;
 	}
-	
+
 	/**
 	 * Retrieves the weekly opening time for all days of the week from the database.
 	 *
@@ -960,52 +970,52 @@ public class OpeningTimeController
 	private ArrayList<OpeningHours> getWeeklyOpeningTime(Message msg) 
 	{
 		ArrayList<OpeningHours> allHoursOfTheWeekAsList= new ArrayList<>();
-		
+
 		OpeningHours openingHoursForSunday = new OpeningHours("SUNDAY");
-		
+
 		if (!DBC.getWeeklyOpeningTimeForSpecificDayQuery(openingHoursForSunday))//update opening hours for Sunday from the DB in the OpeningHours object(if day closes all day put empty slots list) return true if successful, false otherwise
 		{
-            return null;//return to server that there are no opening hours in the DB
-        }
+			return null;//return to server that there are no opening hours in the DB
+		}
 		allHoursOfTheWeekAsList.add(openingHoursForSunday);
-		
+
 		OpeningHours openingHoursForMonday = new OpeningHours("MONDAY");
 		if (!DBC.getWeeklyOpeningTimeForSpecificDayQuery(openingHoursForMonday))
 		{
 			return null;// return to server that there are no opening hours in the DB
 		}
 		allHoursOfTheWeekAsList.add(openingHoursForMonday);
-		
+
 		OpeningHours openingHoursForTuesday = new OpeningHours("TUESDAY");
 		if (!DBC.getWeeklyOpeningTimeForSpecificDayQuery(openingHoursForTuesday)) {
 			return null;// return to server that there are no opening hours in the DB
 		}
 		allHoursOfTheWeekAsList.add(openingHoursForTuesday);
-		
+
 		OpeningHours openingHoursForWednesday = new OpeningHours("WEDNESDAY");
 		if (!DBC.getWeeklyOpeningTimeForSpecificDayQuery(openingHoursForWednesday)) {
 			return null;// return to server that there are no opening hours in the DB
 		}
 		allHoursOfTheWeekAsList.add(openingHoursForWednesday);
-		
+
 		OpeningHours openingHoursForThursday = new OpeningHours("THURSDAY");
 		if (!DBC.getWeeklyOpeningTimeForSpecificDayQuery(openingHoursForThursday)) {
 			return null;// return to server that there are no opening hours in the DB
 		}
 		allHoursOfTheWeekAsList.add(openingHoursForThursday);
-		
+
 		OpeningHours openingHoursForFriday = new OpeningHours("FRIDAY");
 		if (!DBC.getWeeklyOpeningTimeForSpecificDayQuery(openingHoursForFriday)) {
 			return null;// return to server that there are no opening hours in the DB
 		}
 		allHoursOfTheWeekAsList.add(openingHoursForFriday);
-		
+
 		OpeningHours openingHoursForSaturday = new OpeningHours("SATURDAY");
 		if (!DBC.getWeeklyOpeningTimeForSpecificDayQuery(openingHoursForSaturday)) {
 			return null;// return to server that there are no opening hours in the DB
 		}
 		allHoursOfTheWeekAsList.add(openingHoursForSaturday);
-			
+
 		return allHoursOfTheWeekAsList;	
 
 	}

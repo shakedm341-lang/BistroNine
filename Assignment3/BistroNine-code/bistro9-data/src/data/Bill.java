@@ -10,12 +10,12 @@ public class Bill
 	private boolean isPaid  ;//DEFAULT FALSE//FALSE,true//
 	private String discountType;//subscriber,customer //
 	private String paymentMethod ;//Cash, Credit, App
-
+	
 	public Bill() 
 	{
 		
 	}
-
+	
 	public int getBillId() {
 		return billId;
 	}

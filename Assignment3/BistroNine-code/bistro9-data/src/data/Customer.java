@@ -33,7 +33,10 @@ public class Customer
 		return customerId;
 	}
 
-
+	/**
+	 * sets the customerId
+	 * @param customerId the customerId to set
+	 */
 	public void setCustomerId(int customerId) {
 		this.customerId = customerId;
 	}

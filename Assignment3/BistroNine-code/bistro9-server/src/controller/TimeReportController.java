@@ -11,7 +11,10 @@ import data.TimeReport;
 public class TimeReportController 
 {
 	private static DataBaseController DBC=DataBaseController.getInstance();//Interfacing with the DB Controller
-	
+
+	/**
+	 * Default constructor
+	 */
 	public TimeReportController() 
 	{
 
@@ -57,28 +60,28 @@ public class TimeReportController
 	private TimeReport getTimeReportByRangeDate(Message msg)
 	{	
 		@SuppressWarnings("unchecked") 
-        ArrayList<Object> list = (ArrayList<Object>) msg.content; 
+		ArrayList<Object> list = (ArrayList<Object>) msg.content; 
 
 		TimeReport report = new TimeReport();
-		
-        // Set start Day in report object
-        if (list.get(0) instanceof LocalDate) 
-        {
-        		report.setStartDay((LocalDate) list.get(0));
-        } else {
-            System.out.println("Error: Index 0 is not a LocalDate!");
-            return null;
-        }
-		
+
+		// Set start Day in report object
+		if (list.get(0) instanceof LocalDate) 
+		{
+			report.setStartDay((LocalDate) list.get(0));
+		} else {
+			System.out.println("Error: Index 0 is not a LocalDate!");
+			return null;
+		}
+
 		// Set end Day in report object
-        if (list.get(1) instanceof LocalDate) 
-        {
-        		report.setEndDay((LocalDate) list.get(1));
-        } else {
-            System.out.println("Error: Index 1 is not a LocalDate!");
-            return null;
-        }
-		
+		if (list.get(1) instanceof LocalDate) 
+		{
+			report.setEndDay((LocalDate) list.get(1));
+		} else {
+			System.out.println("Error: Index 1 is not a LocalDate!");
+			return null;
+		}
+
 		if (!DBC.getTimeReportByRangeDateQuery(report)) // updating the report object with the data from the DB return false if an error occurred or true if success
 		{
 			System.out.println("Error retrieving time report from the database.");
@@ -88,14 +91,14 @@ public class TimeReportController
 		{
 			return report;
 		}
-        
-        
-        
-        
+
+
+
+
 	}
-	
-	
-	
+
+
+
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////Automated tasks//////////////////////////////////////////////////////////////////////
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -118,14 +121,14 @@ public class TimeReportController
 
 		LocalDate startOfMonth = lastMonth.withDayOfMonth(1);//first day in the month (1)
 		LocalDate endOfMonth = lastMonth.withDayOfMonth(daysInMonth); // last day in the month (28/29/30/31)
-		
-		
+
+
 		// Check if a report for this specific range and type already exists in the database.
 		// return true if yes else false
 		if (DBC.checkReportExistsQuery(startOfMonth, endOfMonth, "time")) 
 		{
-	        return;
-	    }
+			return;
+		}
 
 		report.setStartDay(startOfMonth);
 		report.setEndDay(endOfMonth);
@@ -145,7 +148,7 @@ public class TimeReportController
 
 			if (avgArrival == null) {
 				System.out.println("Error retrieving average arrival time for date: " + currentDate);
-				
+
 			}
 
 			Integer avgLeaving = DBC.getDailyAvgLeavingQuery(currentDate);//return the average leaving time(Customer leaving time - (Customer arrival time+  2 Hours)) for the day else -1 if an error occurred if bistro close return 0
@@ -153,7 +156,7 @@ public class TimeReportController
 			if (avgLeaving == null) 
 			{
 				System.out.println("Error retrieving average leaving time for date: " + currentDate);
-				
+
 			}
 
 			report.addRow(currentDate, avgArrival, avgLeaving);

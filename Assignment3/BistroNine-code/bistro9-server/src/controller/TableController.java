@@ -15,49 +15,50 @@ import data.WaitList;
 public class TableController 
 {
 	private static DataBaseController DBC=DataBaseController.getInstance();//Interfacing with the DB Controller
-	
+
 	/**
 	 * constructor for the TableController class
 	 */
 	public  TableController()
 	{
-		
+
 	}
-	
-	
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////managing messages //////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	//////////////////////////managing messages //////////////////////////////////////////////////////////////////
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	/**
 	 * Handles messages from the server related to table operations.
+	 * @param msg The message received from the server.
 	 */
 	public Object handleMessageFromServer(Message msg) 
 	{
-		
+
 		switch (msg.command) //Checking the type of message sent from the server (what action should be performed in the DB Controller)
 		{
-	    case RECEIVE_TABLE_ID:
-	    	return receiveTableIdByConfCode(msg);
-	    case ADD_TABLE: 
+		case RECEIVE_TABLE_ID:
+			return receiveTableIdByConfCode(msg);
+		case ADD_TABLE: 
 			return addTable(msg);
-			
+
 		case DELETE_TABLE: 
 			return deleteTable(msg);
-			
+
 		case UPDATE_TABLE_SEATS: 
 			return updateTableSeatsNumber(msg);
-			
+
 		case GET_ALL_AVAILABLE_TABLES:
 			return getAllAvailableTables();
-	    default:
-	        System.out.println("Unknown task received.");
-	        return null;
+		default:
+			System.out.println("Unknown task received.");
+			return null;
 		}
 	}
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////Helper methods//////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	////////////////////////////////Helper methods//////////////////////////////////////////////////////////////////
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	/**
 	 * Identifies reservations that conflict with a proposed update to a table's seat count.
 	 * Simulates the restaurant state with the updated seat count to verify if all existing reservations 
@@ -67,7 +68,7 @@ public class TableController
 	 * @param newSeats The proposed new number of seats for the table.
 	 * @return ArrayList<TableReservation> A list of reservations that would cause overbooking if the update is applied.
 	 */
-	
+
 	private ArrayList<TableReservation> getConflictingReservationsForUpdate(int tableId, int newSeats) 
 	{
 		// ---------------------------------------------------------
@@ -76,7 +77,7 @@ public class TableController
 		// Fetch all currently active reservations and the current  tables 
 		ArrayList<TableReservation> allReservations = ReservationControler.getAllReservationsActive();
 		ArrayList<Table> allTables = TableController.getTableInRestaurant();
-		
+
 		ArrayList<TableReservation> conflicts = new ArrayList<>();
 		ArrayList<Integer> addedReservationIds = new ArrayList<>(); // Helper to avoid duplicates
 
@@ -109,18 +110,18 @@ public class TableController
 			{
 				Table copy = new Table();
 				copy.setTableId(t.getTableId());
-				
+
 				// Critical Step: Apply the proposed change to the simulation
 				if (t.getTableId() == tableId) {
 					copy.setSeatsNumber(newSeats); // Use the new requested size
 				} else {
 					copy.setSeatsNumber(t.getSeatsNumber()); // Keep original size for others
 				}
-				
+
 				simulatedTables.add(copy);
 			}
 		}
-		
+
 		// Sort the remaining tables by seat count (Ascending).
 		// This is crucial for the "Best Fit" algorithm to try assigning small groups to small tables first.
 		sortTablesBySeatsAscending(simulatedTables);
@@ -140,7 +141,7 @@ public class TableController
 		// ---------------------------------------------------------
 		// Collect all unique time points (start times) to check for overlaps.
 		ArrayList<LocalDateTime> timePointsToCheck = new ArrayList<>();
-		
+
 		for (TableReservation res : futureRes) 
 		{
 			LocalDateTime time = res.getReservationDate().toLocalDateTime();
@@ -163,7 +164,7 @@ public class TableController
 			{
 				LocalDateTime start = res.getReservationDate().toLocalDateTime();
 				LocalDateTime end = start.plusHours(2); // Assuming 2 hours duration
-				
+
 				if ((start.isBefore(timePoint) || start.equals(timePoint)) && end.isAfter(timePoint)) 
 				{
 					activeAtMoment.add(res);
@@ -187,8 +188,8 @@ public class TableController
 
 		return conflicts;
 	}
-	
-	
+
+
 	/**
 	 * Identifies reservations that conflict with the proposed deletion of a specific table.
 	 * Simulates the restaurant state without the specified table to verify if remaining tables 
@@ -205,7 +206,7 @@ public class TableController
 		// Fetch all currently active reservations and the current  tables.
 		ArrayList<TableReservation> allReservations = ReservationControler.getAllReservationsActive();
 		ArrayList<Table> allTables = TableController.getTableInRestaurant();
-		
+
 		ArrayList<TableReservation> conflicts = new ArrayList<>();
 		ArrayList<Integer> addedReservationIds = new ArrayList<>(); // Helper set to prevent duplicate entries in the conflict list
 
@@ -243,7 +244,7 @@ public class TableController
 				simulatedTables.add(copy);
 			}
 		}
-		
+
 		// Sort the remaining tables by seat count (Ascending).
 		// This is crucial for the "Best Fit" algorithm to try assigning small groups to small tables first.
 		sortTablesBySeatsAscending(simulatedTables);
@@ -265,7 +266,7 @@ public class TableController
 		// we collect critical "Time Points" (reservation start times).
 		// If an overbooking happens, it will start at one of these moments.
 		ArrayList<LocalDateTime> timePointsToCheck = new ArrayList<>();
-		
+
 		for (TableReservation res : futureRes) 
 		{
 			LocalDateTime time = res.getReservationDate().toLocalDateTime();
@@ -289,7 +290,7 @@ public class TableController
 			{
 				LocalDateTime start = res.getReservationDate().toLocalDateTime();
 				LocalDateTime end = start.plusHours(2); // Assuming fixed duration of 2 hours per booking
-				
+
 				if ((start.isBefore(timePoint) || start.equals(timePoint)) && end.isAfter(timePoint)) 
 				{
 					activeAtMoment.add(res);
@@ -317,7 +318,7 @@ public class TableController
 
 		return conflicts;
 	}
-	
+
 	/**
 	 * "Finds the smallest available table for immediate seating that does not conflict with 
 	 * incoming reservations for the next 2 hours
@@ -328,72 +329,72 @@ public class TableController
 	 */
 	public static Table findBestTableForNow(int requiredSeats) 
 	{
-	    ArrayList<Table> allTables = TableController.getTableInRestaurant();//get all tables in the restaurant
-	    ArrayList<TableReservation> futureReservations = ReservationControler.getAllReservationsActive();//get all active,arrived future reservations
+		ArrayList<Table> allTables = TableController.getTableInRestaurant();//get all tables in the restaurant
+		ArrayList<TableReservation> futureReservations = ReservationControler.getAllReservationsActive();//get all active,arrived future reservations
 
-	    Table bestTable = null;
-	    LocalDateTime nowTime = LocalDateTime.now();
-	    LocalDateTime safetyTimeLimit = nowTime.plusHours(2);//safety time limit is 2 hours from now
+		Table bestTable = null;
+		LocalDateTime nowTime = LocalDateTime.now();
+		LocalDateTime safetyTimeLimit = nowTime.plusHours(2);//safety time limit is 2 hours from now
 
-	    if (allTables == null) return null;
+		if (allTables == null) return null;
 
-	    ///////////fins best table available now and for the next 2 hours for immediate seating/////////////////
-	    
-	    
-	    for (Table t : allTables) 
-	    {
-	        // Check if the table is available and meets the required seats 
-	        if (t.getStatus().equalsIgnoreCase("available") && t.getSeatsNumber() >= requiredSeats) 
-	        {
-	        		// loop that ran again on all tables
-	            int availableTablesCount = 0;
-	            for (Table otherT : allTables) 
-	            {
-		            	//Counting the tables that are both vacant and the same size (or larger) than the current table (t)
-			        	//This gives us the total "stock" we have to offer for reservations
-	                if (otherT.getStatus().equals("available") && otherT.getSeatsNumber() >= t.getSeatsNumber()) {
-	                    availableTablesCount++;
-	                }
-	            }
+		///////////fins best table available now and for the next 2 hours for immediate seating/////////////////
 
-	            // counting "threatening" reservations that may need this table (t)
-	            int imminentReservationsCount = 0;//Variable for counting "threatening" orders
-	            if (futureReservations != null) 
-	            {
-	                for (TableReservation res : futureReservations) 
-	                {
-	                    // check only active or arrived reservations for counting the reservations that may need this table (t)
-	                    if (res.getStatus().equals("active")) {
-	                        
-	                        // check if the reservation can fit on this table (t)
-	                        if (res.getNumberOfDiners() <= t.getSeatsNumber()) {
-	                            
-	                          // check if the reservation time is within the next 2 hours and after now minus 15 minutes(laters)
-	                            LocalDateTime resTime = res.getReservationDate().toLocalDateTime();
-	                            if (resTime.isBefore(safetyTimeLimit) && resTime.isAfter(nowTime.minusMinutes(15))) 
-	                            {
-	                                imminentReservationsCount++;
-	                            }
-	                        }
-	                    }
-	                }
-	            }
 
-	          
-	            //check if there are more available tables than imminent reservations that may need this table (t)
-	            if (availableTablesCount > imminentReservationsCount) 
-	            {
-	                if (bestTable == null || t.getSeatsNumber() < bestTable.getSeatsNumber()) {
-	                    bestTable = t;
-	                }
-	            }
-	            //else, this table (t) is not suitable as it may be needed for imminent reservations
-	        }
-	    }
-	    
-	    return bestTable;//return the best table found or null if none found
+		for (Table t : allTables) 
+		{
+			// Check if the table is available and meets the required seats 
+			if (t.getStatus().equalsIgnoreCase("available") && t.getSeatsNumber() >= requiredSeats) 
+			{
+				// loop that ran again on all tables
+				int availableTablesCount = 0;
+				for (Table otherT : allTables) 
+				{
+					//Counting the tables that are both vacant and the same size (or larger) than the current table (t)
+					//This gives us the total "stock" we have to offer for reservations
+					if (otherT.getStatus().equals("available") && otherT.getSeatsNumber() >= t.getSeatsNumber()) {
+						availableTablesCount++;
+					}
+				}
+
+				// counting "threatening" reservations that may need this table (t)
+				int imminentReservationsCount = 0;//Variable for counting "threatening" orders
+				if (futureReservations != null) 
+				{
+					for (TableReservation res : futureReservations) 
+					{
+						// check only active or arrived reservations for counting the reservations that may need this table (t)
+						if (res.getStatus().equals("active")) {
+
+							// check if the reservation can fit on this table (t)
+							if (res.getNumberOfDiners() <= t.getSeatsNumber()) {
+
+								// check if the reservation time is within the next 2 hours and after now minus 15 minutes(laters)
+								LocalDateTime resTime = res.getReservationDate().toLocalDateTime();
+								if (resTime.isBefore(safetyTimeLimit) && resTime.isAfter(nowTime.minusMinutes(15))) 
+								{
+									imminentReservationsCount++;
+								}
+							}
+						}
+					}
+				}
+
+
+				//check if there are more available tables than imminent reservations that may need this table (t)
+				if (availableTablesCount > imminentReservationsCount) 
+				{
+					if (bestTable == null || t.getSeatsNumber() < bestTable.getSeatsNumber()) {
+						bestTable = t;
+					}
+				}
+				//else, this table (t) is not suitable as it may be needed for imminent reservations
+			}
+		}
+
+		return bestTable;//return the best table found or null if none found
 	}
-	
+
 	/**
 	 * Retrieves all tables in the restaurant from the database.
 	 *
@@ -403,7 +404,7 @@ public class TableController
 	public static ArrayList<Table> getTableInRestaurant()
 	{
 		ArrayList<ArrayList<Object>> allTables = new ArrayList<>();// List to hold all tables from the DB as a list of
-																	// lists of objects
+		// lists of objects
 		ArrayList<Table> tablesListAsTable = new ArrayList<>();// List to hold all tables as Table objects
 		//b3
 		allTables = DBC.getAllTablesInRestaurant();//return all tables  from the DB as a list of lists of objects else return null
@@ -441,7 +442,7 @@ public class TableController
 				System.out.println("Error: Index 3 is not a String!");
 				return null;
 			}
-			
+
 			tablesListAsTable.add(table);// Add the table to the list of tables as Table objects
 		}
 
@@ -462,32 +463,32 @@ public class TableController
 		{
 			if (newValue instanceof String) 
 			{
-                return DBC.updateTableStatus(tableId, (String) newValue);
-            } 
-            else 
-            {
-                System.out.println("Error: newValue is not a String!");
-                return false;
-            }
+				return DBC.updateTableStatus(tableId, (String) newValue);
+			} 
+			else 
+			{
+				System.out.println("Error: newValue is not a String!");
+				return false;
+			}
 		}
-		
+
 		if (columnName.equals("seatsNumber")) 
 		{
 			if (newValue instanceof Integer) 
-            {
-                return DBC.updateTableSeatsNumber(tableId, (Integer) newValue);
-            } 
-            else 
-            {
-                System.out.println("Error: newValue is not an Integer!");
-                return false;
-            }
+			{
+				return DBC.updateTableSeatsNumber(tableId, (Integer) newValue);
+			} 
+			else 
+			{
+				System.out.println("Error: newValue is not an Integer!");
+				return false;
+			}
 		}
 		return false;
-		
-		
-    }
-	
+
+
+	}
+
 	/**
 	 * Sorts a list of Table objects from the smallest to the largest number of on their Seats Number
 	 * 
@@ -496,33 +497,33 @@ public class TableController
 	 */
 	private void sortTablesBySeatsAscending(ArrayList<Table> tables) 
 	{
-	    if (tables == null || tables.size() <= 1) 
-	    {
-	        return; // No need to sort if empty or 1 element
-	    }
+		if (tables == null || tables.size() <= 1) 
+		{
+			return; // No need to sort if empty or 1 element
+		}
 
-	    int n = tables.size();
-	    
-	    // Bubble Sort Loop
-	    for (int i = 0; i < n - 1; i++) 
-	    {
-	        for (int j = 0; j < n - i - 1; j++) 
-	        {
-	            // Compare current table with the next one based on seat number
-	            Table t1 = tables.get(j);
-	            Table t2 = tables.get(j + 1);
+		int n = tables.size();
 
-	            if (t1.getSeatsNumber() > t2.getSeatsNumber()) 
-	            {
-	                // Swap elements
-	                tables.set(j, t2);
-	                tables.set(j + 1, t1);
-	            }
-	        }
-	    }
+		// Bubble Sort Loop
+		for (int i = 0; i < n - 1; i++) 
+		{
+			for (int j = 0; j < n - i - 1; j++) 
+			{
+				// Compare current table with the next one based on seat number
+				Table t1 = tables.get(j);
+				Table t2 = tables.get(j + 1);
+
+				if (t1.getSeatsNumber() > t2.getSeatsNumber()) 
+				{
+					// Swap elements
+					tables.set(j, t2);
+					tables.set(j + 1, t1);
+				}
+			}
+		}
 	}
-	
-	
+
+
 
 	/**
 	 * Checks if a list of reservations can fit optimally into a list of available
@@ -546,11 +547,11 @@ public class TableController
 		}
 
 		sortTablesBySeatsAscending(tempTables);
-		
+
 		//sort reservations by number of diners from largest to smallest
 		ArrayList<TableReservation> sortedRes = new ArrayList<>(reservations);
 		ReservationControler.sortReservationsByDinersDescending(sortedRes);
-		
+
 
 		//find optimal fit for each reservation
 		for (TableReservation res : sortedRes) 
@@ -560,7 +561,7 @@ public class TableController
 			for (int i = 0; i < tempTables.size(); i++) //loop through available tables
 			{
 				Table t = tempTables.get(i);
-				
+
 				if (t.getSeatsNumber() >= res.getNumberOfDiners()) //if the table can accommodate the reservation
 				{
 					//assign the table to the reservation and remove it from available tables
@@ -580,12 +581,12 @@ public class TableController
 		//all reservations fitted successfully to available tables
 		return true; 
 	}
-	
-	
-	
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////Logic methods//////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	///////////////////////////////Logic methods//////////////////////////////////////////////////////////////////////
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	/**
 	 * Retrieves all available/occupied tables in the restaurant from the database.
 	 *
@@ -596,21 +597,21 @@ public class TableController
 	{
 		ArrayList<Table> tables = getTableInRestaurant();//get all tables in the restaurant today available/occupied/deleted
 		if (tables == null) {
-	        return new ArrayList<Table>(); 
-	    }
-		
+			return new ArrayList<Table>(); 
+		}
+
 		ArrayList<Table> activeTables = new ArrayList<>();
 
-	    for (Table table : tables) 
-	    {
-	        
-	        if (!table.getStatus().equalsIgnoreCase("cancelled")) 
-	        {
-	            activeTables.add(table);
-	        }
-	    }
-	    
-	    return activeTables; //return the list of available/occupied tables to server
+		for (Table table : tables) 
+		{
+
+			if (!table.getStatus().equalsIgnoreCase("cancelled")) 
+			{
+				activeTables.add(table);
+			}
+		}
+
+		return activeTables; //return the list of available/occupied tables to server
 	}
 	/**
 	 * Receives a table ID based on the provided conference code in the message."check in" process and create a bill for the reservation.
@@ -623,11 +624,11 @@ public class TableController
 	 */
 	private TableReservation receiveTableIdByConfCode(Message msg)
 	{
-	
+
 		@SuppressWarnings("unchecked") 
 		ArrayList<Object> list = (ArrayList<Object>) msg.content;//get the reservation details from the message content
 		int conferenceCode=0;
-		
+
 		// Setting conference Code from the list we got from the message content
 		if (list.get(0) instanceof Integer) 
 		{
@@ -638,89 +639,89 @@ public class TableController
 			System.out.println("Error: Index 0 is not a Integer!");
 			return null;
 		}
-		
+
 		TableReservation checkInRes =new TableReservation();
 		checkInRes.setConfirmationCode(conferenceCode);//set the conference code in the reservation object
-		
+
 		//return the reservation details from the DB in the table reservation object or null if not found
 		if (!DBC.getReservationsByConferenceCodeQuery(checkInRes))
 		{
 			System.out.println("Reservation not found.");
 			return null;//reservation not found
 		}
-		
-		
+
+
 		//else , check if the customer is late
 		if (checkInRes.getStatus().equals("cancelled"))// if the customer is late by more than 15 minutes 
 		{
-			    System.out.println("Customer is late by " + (System.currentTimeMillis() - checkInRes.getReservationDate().getTime()) / 60000 );
-			    return null; //reservation is canceled
+			System.out.println("Customer is late by " + (System.currentTimeMillis() - checkInRes.getReservationDate().getTime()) / 60000 );
+			return null; //reservation is canceled
 		}
 
-			
+
 		//else, update the reservation as arrived and get table id
 		checkInRes.setArrivalTime(new Timestamp(System.currentTimeMillis()));//set the arrival time to now
 		checkInRes.setStatus("arrived");//set the status to arrived
-			
+
 
 		ArrayList<Table> tables=getTableInRestaurant();//get all tables in the restaurant today
 		if (tables == null) {
-		    System.out.println("Error fetching tables from DB.");
-		    return null;
+			System.out.println("Error fetching tables from DB.");
+			return null;
 		}
 		Table bestTable = null;
-		
+
 		//find the best suitable table for the reservation that available
 		for (Table table : tables) 
 		{     
-		    // if the table can accommodate the number of diners in the check In reservation
-		    if (table.getSeatsNumber() >= checkInRes.getNumberOfDiners()) 
-		    {
-		         //if the table is available
-		        if (table.getStatus().equals("available"))
-		        {
-		        		//if no best table found yet or the current table has less seats than the best table found so far
-		        		if (bestTable == null || table.getSeatsNumber() < bestTable.getSeatsNumber()) 
-		        		{
-	                    bestTable = table;
-		        		}
-		        	}
-		    }
-		 }
-		
-		 
-		 if (bestTable != null)//if a suitable table is found 
-		 {
+			// if the table can accommodate the number of diners in the check In reservation
+			if (table.getSeatsNumber() >= checkInRes.getNumberOfDiners()) 
+			{
+				//if the table is available
+				if (table.getStatus().equals("available"))
+				{
+					//if no best table found yet or the current table has less seats than the best table found so far
+					if (bestTable == null || table.getSeatsNumber() < bestTable.getSeatsNumber()) 
+					{
+						bestTable = table;
+					}
+				}
+			}
+		}
 
-			
+
+		if (bestTable != null)//if a suitable table is found 
+		{
+
+
 			//update the table data in the DB returning true if successful or false if failed
-			
+
 			if (!updateTable(bestTable.getTableId(), "status", "occupied")) 
 			{
-					System.out.println("Failed to update table status.");
-					return null; // failed to update table status
+				System.out.println("Failed to update table status.");
+				return null; // failed to update table status
 			}
-			
+
 			//update the reservation data in the DB return true if successful or false if failed
 			checkInRes.setTableId(bestTable.getTableId());
-			
-			
+
+
 			if (!DBC.updateReservation(checkInRes)) 
 			{
 				System.out.println("Failed to update reservation.");
 				TableController.updateTable(bestTable.getTableId(), "status", "available");
 				return null; // failed to update reservation
 			}
-			
+
 			//create a new bill for the reservation 
 			if (!BillController.createNewBill(checkInRes))
-		    {
-		         System.out.println("Warning: Reservation completed but Bill creation failed.");
-		         return null; // Bill creation failed
-		    }
-			
+			{
+				System.out.println("Warning: Reservation completed but Bill creation failed.");
+				return null; // Bill creation failed
+			}
+
 			ArrayList<WaitList> allWaiter = WaitListController.getAllWaitingAsWaitList(DBC.getWaitingListQuery());
-			
+
 			if (allWaiter != null) 
 			{
 				for (WaitList waiter : allWaiter) 
@@ -739,40 +740,40 @@ public class TableController
 					}
 				}
 			}
-			
-		 } 
-		 else //no suitable table found get in to the waitlist
-		 {
-				System.out.println("No suitable table available for immediate seating. Adding to waitlist.");
 
-				WaitList waitListEntry = new WaitList();
-				
-				waitListEntry.setReservationId(checkInRes.getReservationId());
-				waitListEntry.setEntryTimeToList(new Timestamp(System.currentTimeMillis()));
-				waitListEntry.setStatus("waiting");
-				waitListEntry.setType("check_in");
-				
-				
-				if (!DBC.addToWaitList(waitListEntry)) 
-				{
-					System.out.println("Failed to add to waitlist.");
-					return null; // failed to add to waitlist
-				}
+		} 
+		else //no suitable table found get in to the waitlist
+		{
+			System.out.println("No suitable table available for immediate seating. Adding to waitlist.");
 
-				// update the reservation status to waiting in the DB return true if successful
-				// or false if failed
-				checkInRes.setStatus("waiting");
-				if (!DBC.updateReservation(checkInRes)) 
-				{
-					System.out.println("Failed to update reservation to waiting.");
-					return null; // failed to update reservation
-				}
-				
-				
-				
-		 }
-		
-		 return checkInRes;
+			WaitList waitListEntry = new WaitList();
+
+			waitListEntry.setReservationId(checkInRes.getReservationId());
+			waitListEntry.setEntryTimeToList(new Timestamp(System.currentTimeMillis()));
+			waitListEntry.setStatus("waiting");
+			waitListEntry.setType("check_in");
+
+
+			if (!DBC.addToWaitList(waitListEntry)) 
+			{
+				System.out.println("Failed to add to waitlist.");
+				return null; // failed to add to waitlist
+			}
+
+			// update the reservation status to waiting in the DB return true if successful
+			// or false if failed
+			checkInRes.setStatus("waiting");
+			if (!DBC.updateReservation(checkInRes)) 
+			{
+				System.out.println("Failed to update reservation to waiting.");
+				return null; // failed to update reservation
+			}
+
+
+
+		}
+
+		return checkInRes;
 	}
 
 	/**
@@ -789,11 +790,11 @@ public class TableController
 	{
 		@SuppressWarnings("unchecked") 
 		ArrayList<Object> list = (ArrayList<Object>) msg.content;//get the reservation details from the message content
-		
+
 		Table table =new Table();
-		
+
 		//tableId  give by DB auto increment
-		
+
 		// Setting seats Number from the list we got from the message content
 		if (list.get(0) instanceof Integer) 
 		{
@@ -804,7 +805,7 @@ public class TableController
 			System.out.println("Error: Index 0 is not a Integer!");
 			return null;
 		}
-		
+
 		// Setting location from the list we got from the message content
 		if (list.get(1) instanceof String) 
 		{
@@ -815,10 +816,10 @@ public class TableController
 			System.out.println("Error: Index 1 is not a String!");
 			return null;
 		}
-		
+
 		table.setStatus("available");
-		
-		
+
+
 		return DBC.addTableQuery(table);//return the table added to the DB (with tableId given by the DB) or null if failed
 
 	}
@@ -857,22 +858,22 @@ public class TableController
 		// If the list is NOT empty, we have conflicts. 
 		if (!conflicts.isEmpty()) 
 		{
-			
+
 			System.out.println("\n====== Delete Table Failed: Conflicts Found ===");
 			System.out.println("Cannot delete Table ID: " + tableId + " because of the following reservations:");
-			
+
 			for (TableReservation res : conflicts) 
 			{
 				System.out.println(" -> Reservation ID: " + res.getReservationId() + 
-								   " | Date: " + res.getReservationDate() + 
-								   " | Diners: " + res.getNumberOfDiners() + 
-								   " | Customer ID: " + res.getCustomerId());
+						" | Date: " + res.getReservationDate() + 
+						" | Diners: " + res.getNumberOfDiners() + 
+						" | Customer ID: " + res.getCustomerId());
 			}
 			System.out.println("====================================================\n");
 
 
 			ArrayList<Subscriber> conflictingSubscribers = CustomerController.getSubscribersFromReservations(conflicts);
-			
+
 			return conflictingSubscribers; 
 		}
 
@@ -882,12 +883,12 @@ public class TableController
 			System.out.println("Table ID: " + tableId + " deleted successfully.");
 			return new ArrayList<Subscriber>();
 		}
-		
+
 		//Database Error
 		System.out.println("Failed to delete table ID: " + tableId + " (DB Error).");
 		return null; 
 	}
-	
+
 	/**
 	 * Updates the number of seats for a table. 
 	 * Returns a list of subscribers associated with conflicting reservations if the update is not possible.
@@ -905,17 +906,17 @@ public class TableController
 	{
 		@SuppressWarnings("unchecked")
 		ArrayList<Object> list = (ArrayList<Object>) msg.content;
-		
+
 		int tableId = 0;
 		int seatsNumber = 0;
-		
+
 		// Parse Input
 		if (list.get(0) instanceof Integer) {
 			tableId = (int) list.get(0);
 		} else {
 			return null;
 		}
-		
+
 		if (list.get(1) instanceof Integer) {
 			seatsNumber = (int) list.get(1);
 		} else {
@@ -929,19 +930,19 @@ public class TableController
 		if (!conflicts.isEmpty()) 
 		{
 			System.out.println("\n===  Update Table Failed: Conflicts Found ===");
-			
-			
+
+
 			System.out.println("Cannot update Table ID: " + tableId + " to " + seatsNumber + " seats because of:");
 			for (TableReservation res : conflicts) 
 			{
 				System.out.println(" -> Reservation ID: " + res.getReservationId() + 
-								   " | Diners: " + res.getNumberOfDiners() + 
-								   " | Date: " + res.getReservationDate());
+						" | Diners: " + res.getNumberOfDiners() + 
+						" | Date: " + res.getReservationDate());
 			}
 			System.out.println("====================================================\n");
-			
+
 			ArrayList<data.Subscriber> conflictingSubscribers = CustomerController.getSubscribersFromReservations(conflicts);
-			
+
 			return conflictingSubscribers;
 		}
 
@@ -951,7 +952,7 @@ public class TableController
 			System.out.println(" Table ID: " + tableId + " updated to " + seatsNumber + " seats successfully.");
 			return new ArrayList<Subscriber>(); // Success
 		}
-		
+
 		return null; // DB Error
 	}
 }

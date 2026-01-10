@@ -11,7 +11,9 @@ import data.TimeReport;
 public class SubscriberReportController 
 {
 	private static DataBaseController DBC=DataBaseController.getInstance();//Interfacing with the DB Controller
-	
+	/**
+	 * Default constructor
+	 */
 	public SubscriberReportController() 
 	{
 
@@ -36,7 +38,7 @@ public class SubscriberReportController
 		{
 		case GET_SUBSCRIBER_REPORT_BY_RANGE_DATE:
 			return getSubscriberReportByRangeDate( msg);
-			
+
 		default:
 			System.out.println("Unknown task received.");
 			return null;
@@ -58,28 +60,28 @@ public class SubscriberReportController
 	private SubscriberReport getSubscriberReportByRangeDate(Message msg)
 	{	
 		@SuppressWarnings("unchecked") 
-        ArrayList<Object> list = (ArrayList<Object>) msg.content; 
+		ArrayList<Object> list = (ArrayList<Object>) msg.content; 
 
 		SubscriberReport report = new SubscriberReport();
-		
-        // Set start Day in report object
-        if (list.get(0) instanceof LocalDate) 
-        {
-        		report.setStartDay((LocalDate) list.get(0));
-        } else {
-            System.out.println("Error: Index 0 is not a LocalDate!");
-            return null;
-        }
-		
+
+		// Set start Day in report object
+		if (list.get(0) instanceof LocalDate) 
+		{
+			report.setStartDay((LocalDate) list.get(0));
+		} else {
+			System.out.println("Error: Index 0 is not a LocalDate!");
+			return null;
+		}
+
 		// Set end Day in report object
-        if (list.get(1) instanceof LocalDate) 
-        {
-        		report.setEndDay((LocalDate) list.get(1));
-        } else {
-            System.out.println("Error: Index 1 is not a LocalDate!");
-            return null;
-        }
-		
+		if (list.get(1) instanceof LocalDate) 
+		{
+			report.setEndDay((LocalDate) list.get(1));
+		} else {
+			System.out.println("Error: Index 1 is not a LocalDate!");
+			return null;
+		}
+
 		if (!DBC.getSubscriberReportByRangeDateQuery(report)) // updating the report object with the data from the DB return false if an error occurred or true if success
 		{
 			System.out.println("Error retrieving time report from the database.");
@@ -89,7 +91,7 @@ public class SubscriberReportController
 		{
 			return report;
 		}
-		
+
 	}
 
 
@@ -121,9 +123,9 @@ public class SubscriberReportController
 	// return true if yes else false
 	if (DBC.checkReportExistsQuery(startOfMonth, endOfMonth, "subscriber")) 
 	{
-        return;
-    }
-	
+		return;
+	}
+
 
 	report.setStartDay(startOfMonth);
 	report.setEndDay(endOfMonth);
@@ -150,7 +152,7 @@ public class SubscriberReportController
 		if (totalWaiting == -1) 
 		{
 			System.out.println("Error retrieving total Waiting for date: " + currentDate);
-			
+
 		}
 
 		report.addRow(currentDate, totalReservations, totalWaiting);
@@ -162,6 +164,6 @@ public class SubscriberReportController
 	} else {
 		System.out.println("subscriber report successfully added to the database.");
 	}
-  
+
 	}
 }

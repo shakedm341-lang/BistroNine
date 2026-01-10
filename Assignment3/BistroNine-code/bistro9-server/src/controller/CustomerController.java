@@ -44,7 +44,7 @@ public class CustomerController
 
 		case CHECK_LOGIN_DETAILSֹֹ_BY_TAG_READER:
 			return checkLoginDetailsByTagReader(msg);
-			
+
 		case ADD_NEW_SUBSCRIBER:
 			return addNewSubscriber(msg);
 
@@ -56,10 +56,10 @@ public class CustomerController
 
 		case LOST_CONF_CODE:
 			return LostConfCode(msg);
-			
+
 		case GET_ALL_CONF_CODE_BY_CUSTOMER_ID:
 			return getConfCodeByCustomerId(msg);
-			
+
 		default:
 			System.out.println("Unknown task received.");
 			return null;
@@ -69,7 +69,7 @@ public class CustomerController
 	////////////////////////////////Helper methods//////////////////////////////////////////////////////////////////
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	
+
 	/**
 	 * Converts a list of reservations into a list of unique Subscribers.
 	 * Iterates through the provided reservations, identifies unique customer IDs, 
@@ -90,13 +90,13 @@ public class CustomerController
 		for (TableReservation res : reservations) 
 		{
 			int customerId = res.getCustomerId();
-			
+
 			// Process only if we haven't already fetched this customer's details
 			if (!addedCustomerIds.contains(customerId)) 
 			{
 				Subscriber sub = new Subscriber();
 				sub.setCustomerId(customerId);
-				
+
 				// Attempt to fetch full customer details from the Database based on ID
 				if (DBC.getCustomerByCustomerId(sub)) 
 				{
@@ -109,16 +109,16 @@ public class CustomerController
 					// Error: The reservation points to a Customer ID that doesn't exist 
 
 					System.out.println(" Critical Data Integrity Issue: Reservation " + 
-									   res.getReservationId() + " belongs to Customer ID " + 
-									   customerId + ", but this customer does not exist in DB!");
+							res.getReservationId() + " belongs to Customer ID " + 
+							customerId + ", but this customer does not exist in DB!");
 					return null; 
 				}
 			}
 		}
-		
+
 		return subscribersList;
 	}
-	
+
 	/**
 	 * Retrieves the customer type based on the provided customer ID.
 	 *
@@ -148,7 +148,7 @@ public class CustomerController
 		ArrayList<Object> list = (ArrayList<Object>) msg.content;//get username and password from the message
 
 		int subId = -1;
-		
+
 		//Set subscriber Id  in the Subscriber object
 		if (list.get(0) instanceof Integer) {
 			subId = (Integer) list.get(0);
@@ -156,9 +156,9 @@ public class CustomerController
 			System.out.println("Error: Index 0 is not a Integer!");
 			return null;
 		}
-		
+
 		ArrayList<Subscriber> allSub = getAllSubscribers();
-		
+
 		for (Subscriber sub : allSub)
 		{
 			if (sub.getSubscriberId()==subId)
@@ -166,10 +166,10 @@ public class CustomerController
 				return sub;
 			}
 		}
-		
+
 		return null;
 	}
-	
+
 	/**
 	 * Checks the login details of a subscriber.
 	 * 

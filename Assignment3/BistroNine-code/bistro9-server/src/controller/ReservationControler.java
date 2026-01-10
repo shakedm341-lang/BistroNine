@@ -118,11 +118,11 @@ public class ReservationControler
 
 		//ArrivalTime and leavingTime not set at the beginning,changed when the customer get into and leaves the restaurant
 
-		
+
 
 		if (DBC.createNewReservation(newRes))//Return that the reservation was created successfully in the DB
 		{
-			
+
 			if (updateReservation(newRes, "status", "waiting"))//Update the status of the reservation to "waiting" in the DB)
 			{
 				return newRes;//Return the confirmation code of the new reservation
@@ -185,7 +185,7 @@ public class ReservationControler
 
 		if (DBC.createNewReservation(newRes))//Return that the reservation was created successfully in the DB
 		{
-			 
+
 			if (updateReservation(newRes, "status", "arrived"))// Update the status of the reservation to "arrived" in the DB)
 			{
 				if (TableController.updateTable(newRes.getTableId(),"status", "occupied"))//Update the status of the table to "occupied" in the DB
@@ -195,9 +195,9 @@ public class ReservationControler
 					{
 						return newRes;//Return to server the confirmation code of the new reservation);
 					}
-						return null;//Return false if bill was not created successfully in the DB
+					return null;//Return false if bill was not created successfully in the DB
 				}
-					return null;//Return false if table status was not updated successfully in the DB
+				return null;//Return false if table status was not updated successfully in the DB
 			}
 			return null;//Return false if reservation status was not updated successfully in the DB
 		}
@@ -484,7 +484,7 @@ public class ReservationControler
 		else if (columnName.equals("reservationDate")) 
 		{
 			if (newValue instanceof Timestamp) {
-			return DBC.updateReservationDateQuery(res.getReservationId(), (Timestamp) newValue);//Update reservation date in the DB
+				return DBC.updateReservationDateQuery(res.getReservationId(), (Timestamp) newValue);//Update reservation date in the DB
 			} else {
 				System.out.println("Error: newValue is not a Timestamp!");
 				return false;
@@ -862,31 +862,31 @@ public class ReservationControler
 			return null;
 		}
 		ArrayList<Table> tables = TableController.getTableInRestaurant();
-		
+
 		if (tables==null) 
 		{
 			System.out.println("No tables found for " + numberOfDiners + " diners.");
 			return null;
 		}
-		
+
 		ArrayList<Table> activeTables = new ArrayList<>();
 		//remove cancelled tables
 		if (tables != null) 
 		{
-		    
-		    for (Table t : tables) 
-		    {
-		        
-		        if (!t.getStatus().equalsIgnoreCase("cancelled")) 
-		        {
-		            activeTables.add(t);
-		        }
-		    }
-		    
-		    
-		    tables = activeTables;
+
+			for (Table t : tables) 
+			{
+
+				if (!t.getStatus().equalsIgnoreCase("cancelled")) 
+				{
+					activeTables.add(t);
+				}
+			}
+
+
+			tables = activeTables;
 		}
-		
+
 		ArrayList<TimeSlot> OpeningTime = OpeningTimeController .getOpeningTime(reservationDay);
 		if (OpeningTime==null) 
 		{
@@ -1021,7 +1021,7 @@ public class ReservationControler
 	 * if the reservation was in the waitlist it is removed from the waitlist.
 	 * this method is called periodically by schedulere to run every minute at the server.
 	 */
-	
+
 	public 	void  deleteLateReservations()
 	{
 		//get today reservations
@@ -1047,12 +1047,12 @@ public class ReservationControler
 					// Update the reservation status to "canceled" in the DB
 					if (updateReservation(res, "status", "cancelled") == false) {
 						System.out.println("Error: could not update reservation " + res.getConfirmationCode()
-								+ " status to cancelled.");
+						+ " status to cancelled.");
 						continue;
 					}
-					
+
 					System.out.println("Reservation " + res.getConfirmationCode() + " was auto-canceled due to late arrival.");
-					
+
 					Subscriber sub = new Subscriber();
 					sub.setCustomerId( res.getCustomerId());
 					if (!DBC.getCustomerByCustomerId(sub)) 
@@ -1060,23 +1060,23 @@ public class ReservationControler
 						System.out.println("Error: could not find customer for reservation " + res.getConfirmationCode());
 						continue;
 					}
-					
+
 					DBC.deleteFromWaitListByReservationIdQuery(res.getReservationId());//update waitlist if the reservation was in the waitlist changed status to cancelled
 					updateReservation(res, "leavingTime", Timestamp.valueOf(LocalDateTime.now()));//update leaving time to now"
-					
+
 					if (sub.getType()!=null) 
 					{
 
-					EmailSendController.sendEmail(sub.getEmail(), "Your bistro9 reservation has been cancelled", "Hello "+sub.getFirstName()+" "+sub.getLastName()+" ,\r\n"
-							+ "We are contacting you regarding your reservation for "+res.getReservationDate()+".\r\n"
-							+ "Unfortunately, your reservation has been canceled. We are very sorry for the inconvenience caused.\r\n"
-							+ "We look forward to seeing you at our place at another time,\r\n"
-							+ "Hopefully you have a nice day, bistro9");// Send email that the reservation was cancelled
-					SmsSendController.sendSms(sub.getPhoneNumber(), "Your bistro9 reservation has been cancelled", "Hello "+sub.getFirstName()+" "+sub.getLastName()+",\r\n"
-							+ "We are contacting you regarding your reservation for "+res.getReservationDate()+".\r\n"
-							+ "Unfortunately, your reservation has been canceled. We are very sorry for the inconvenience caused.\r\n"
-							+ "We look forward to seeing you at our place at another time,\r\n"
-							+ "Hopefully you have a nice day, bistro9");
+						EmailSendController.sendEmail(sub.getEmail(), "Your bistro9 reservation has been cancelled", "Hello "+sub.getFirstName()+" "+sub.getLastName()+" ,\r\n"
+								+ "We are contacting you regarding your reservation for "+res.getReservationDate()+".\r\n"
+								+ "Unfortunately, your reservation has been canceled. We are very sorry for the inconvenience caused.\r\n"
+								+ "We look forward to seeing you at our place at another time,\r\n"
+								+ "Hopefully you have a nice day, bistro9");// Send email that the reservation was cancelled
+						SmsSendController.sendSms(sub.getPhoneNumber(), "Your bistro9 reservation has been cancelled", "Hello "+sub.getFirstName()+" "+sub.getLastName()+",\r\n"
+								+ "We are contacting you regarding your reservation for "+res.getReservationDate()+".\r\n"
+								+ "Unfortunately, your reservation has been canceled. We are very sorry for the inconvenience caused.\r\n"
+								+ "We look forward to seeing you at our place at another time,\r\n"
+								+ "Hopefully you have a nice day, bistro9");
 					}
 					else
 					{
@@ -1086,13 +1086,13 @@ public class ReservationControler
 								+ "We look forward to seeing you at our place at another time,\r\n"
 								+ "Hopefully you have a nice day, bistro9");// Send email that the reservation was cancelled
 						SmsSendController.sendSms(sub.getPhoneNumber(), "Your bistro9 reservation has been cancelled",
-						        "Hello customer ,\r\n"
-						        + "We are contacting you regarding your reservation for "+res.getReservationDate()+".\r\n"
-						        + "Unfortunately, your reservation has been canceled. We are very sorry for the inconvenience caused.\r\n"
-						        + "We look forward to seeing you at our place at another time,\r\n"
-						        + "Hopefully you have a nice day, bistro9");
+								"Hello customer ,\r\n"
+										+ "We are contacting you regarding your reservation for "+res.getReservationDate()+".\r\n"
+										+ "Unfortunately, your reservation has been canceled. We are very sorry for the inconvenience caused.\r\n"
+										+ "We look forward to seeing you at our place at another time,\r\n"
+										+ "Hopefully you have a nice day, bistro9");
 					}
-					
+
 				}
 			}
 		}

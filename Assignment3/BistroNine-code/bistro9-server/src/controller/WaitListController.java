@@ -18,9 +18,12 @@ public class WaitListController
 
 	private static DataBaseController DBC=DataBaseController.getInstance();//Interfacing with the DB Controller
 
+	/**
+	 * Default constructor
+	 */
 	public WaitListController() 
 	{
-		// TODO Auto-generated constructor stub
+
 	}
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -28,6 +31,7 @@ public class WaitListController
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	/**
 	 * Handles messages from the server related to table operations.
+	 * @param msg The message received from the server.
 	 */
 	public Object handleMessageFromServer(Message msg) 
 	{
@@ -641,7 +645,7 @@ public class WaitListController
 
 			if (DBC.addToWaitList(newWait))//Return that the add to Wait List was created successfully in the DB 
 			{
-				
+
 				System.out.println("Reservation created successfully with confirmation code: " + newRes.getConfirmationCode());
 				System.out.println("table ID: " + newRes.getTableId());//table ID will be null because no table assigned yet
 				return newRes;//Return to server reservation without table and with confirmation code
@@ -651,5 +655,5 @@ public class WaitListController
 		}
 	}
 
-	
+
 }
