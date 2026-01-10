@@ -5,59 +5,77 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
 
 <StackPane prefHeight="600.0" prefWidth="800.0" styleClass="main-background" 
            xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" 
            fx:controller="gui.TerminalMenuController">
     
-    <VBox alignment="TOP_CENTER" maxHeight="-Infinity" maxWidth="-Infinity" styleClass="card" spacing="20.0">
+    <VBox alignment="TOP_CENTER" maxHeight="-Infinity" maxWidth="-Infinity" spacing="25.0" styleClass="card">
         
         <padding>
-            <Insets bottom="40.0" left="40.0" right="40.0" top="40.0" />
+            <Insets bottom="50.0" left="50.0" right="50.0" top="50.0" />
         </padding>
 
         <VBox alignment="CENTER" spacing="5.0">
-            <Label text="Terminal Mode" styleClass="title-text" />
-            <Label fx:id="lblMode" text="Mode: Guest" styleClass="subtitle-text" />
+            <Label text="What would you like to do?" styleClass="title-text" style="-fx-font-size: 26px;" />
+            <Label fx:id="lblWelcome" text="Welcome, Guest" styleClass="subtitle-text" style="-fx-font-size: 16px;" />
         </VBox>
 
-        <GridPane hgap="20.0" vgap="20.0" alignment="CENTER">
+        <GridPane hgap="25.0" vgap="25.0" alignment="CENTER">
             <columnConstraints>
-                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="220.0" />
-                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="220.0" />
+                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="240.0" />
+                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="240.0" />
             </columnConstraints>
             <rowConstraints>
-                <RowConstraints minHeight="10.0" prefHeight="140.0" vgrow="SOMETIMES" />
-                <RowConstraints minHeight="10.0" prefHeight="140.0" vgrow="SOMETIMES" />
+                <RowConstraints minHeight="10.0" prefHeight="160.0" vgrow="SOMETIMES" />
+                <RowConstraints minHeight="10.0" prefHeight="160.0" vgrow="SOMETIMES" />
             </rowConstraints>
             
             <children>
-                <Button fx:id="btnGetTable" mnemonicParsing="false" onAction="#handleGetTable" 
+                <Button fx:id="btnGetTable" contentDisplay="TOP" mnemonicParsing="false" onAction="#handleGetTable" 
                         styleClass="tile-btn, tile-blue" text="Get a Table" 
-                        GridPane.columnIndex="0" GridPane.rowIndex="0" maxWidth="Infinity" maxHeight="Infinity"/>
+                        GridPane.columnIndex="0" GridPane.rowIndex="0" maxWidth="Infinity" maxHeight="Infinity">
+                    <graphic>
+                        <Label text="🍽️" style="-fx-font-size: 40px;"/>
+                    </graphic>
+                </Button>
 
-                <Button fx:id="btnJoinWaitlist" mnemonicParsing="false" onAction="#handleJoinWaitlist" 
+                <Button fx:id="btnJoinWaitlist" contentDisplay="TOP" mnemonicParsing="false" onAction="#handleJoinWaitlist" 
                         styleClass="tile-btn, tile-green" text="Join Waitlist" 
-                        GridPane.columnIndex="1" GridPane.rowIndex="0" maxWidth="Infinity" maxHeight="Infinity"/>
+                        GridPane.columnIndex="1" GridPane.rowIndex="0" maxWidth="Infinity" maxHeight="Infinity">
+                    <graphic>
+                        <Label text="⏳" style="-fx-font-size: 40px;"/>
+                    </graphic>
+                </Button>
 
-                <Button fx:id="btnPayBill" mnemonicParsing="false" onAction="#handlePayBill" 
+                <Button fx:id="btnPayBill" contentDisplay="TOP" mnemonicParsing="false" onAction="#handlePayBill" 
                         styleClass="tile-btn, tile-orange" text="Pay Bill" 
-                        GridPane.columnIndex="0" GridPane.rowIndex="1" maxWidth="Infinity" maxHeight="Infinity"/>
+                        GridPane.columnIndex="0" GridPane.rowIndex="1" maxWidth="Infinity" maxHeight="Infinity">
+                     <graphic>
+                        <Label text="💳" style="-fx-font-size: 40px;"/>
+                    </graphic>
+                </Button>
 
-                <Button mnemonicParsing="false" onAction="#handleLeaveWaitlist" 
+                <Button fx:id="btnLeaveWaitlist" contentDisplay="TOP" mnemonicParsing="false" onAction="#handleLeaveWaitlist" 
                         styleClass="tile-btn, tile-gray" text="Leave Waitlist" 
-                        GridPane.columnIndex="1" GridPane.rowIndex="1" maxWidth="Infinity" maxHeight="Infinity"/>
+                        GridPane.columnIndex="1" GridPane.rowIndex="1" maxWidth="Infinity" maxHeight="Infinity">
+                    <graphic>
+                        <Label text="❌" style="-fx-font-size: 40px;"/>
+                    </graphic>
+                </Button>
             </children>
             <VBox.margin>
-                <Insets top="20.0" bottom="20.0" />
+                <Insets top="10.0" bottom="30.0" />
             </VBox.margin>
         </GridPane>
 
         <Button fx:id="btnExit" mnemonicParsing="false" onAction="#handleExit" 
-                styleClass="btn-danger-outline" text="Exit System" />
+                styleClass="btn-danger-outline" text="Logout" prefWidth="150.0" style="-fx-font-size: 16px;" />
 
     </VBox>
 </StackPane>

@@ -148,6 +148,7 @@ public class SettingsController {
                 return new TableCell<TimeSlot, Void>() {
                     private final Button btn = new Button("Remove");
                     {
+                        btn.getStyleClass().addAll("btn-table-action", "btn-table-delete");
                         btn.setOnAction((ActionEvent event) -> {
                             TimeSlot slot = getTableView().getItems().get(getIndex());
                             // Send delete command to server first, removal from list happens on success

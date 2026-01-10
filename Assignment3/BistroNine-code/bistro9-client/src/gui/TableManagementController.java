@@ -6,6 +6,7 @@ import java.util.ResourceBundle;
 
 import controller.ClientController;
 import data.Command;
+import data.Subscriber;
 import data.Table;
 import data.TypeMessage;
 import javafx.application.Platform;
@@ -14,6 +15,7 @@ import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.layout.Region;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
@@ -84,8 +86,8 @@ public class TableManagementController implements Initializable {
                     private final Button updateBtn = new Button("Update Seats");
 
                     {
-                        deleteBtn.setStyle("-fx-background-color: #f44336; -fx-text-fill: white;");
-                        updateBtn.setStyle("-fx-background-color: #2196f3; -fx-text-fill: white;");
+                        deleteBtn.getStyleClass().addAll("btn-table-action", "btn-table-delete");
+                        updateBtn.getStyleClass().addAll("btn-table-action", "btn-table-update");
 
                         deleteBtn.setOnAction((ActionEvent event) -> {
                             Table table = getTableView().getItems().get(getIndex());
@@ -196,6 +198,32 @@ public class TableManagementController implements Initializable {
             } else if (response instanceof Table) {
                 showAlert(Alert.AlertType.INFORMATION, "Success", "Table added successfully.");
                 fetchTables();
+            } else if (response instanceof ArrayList) {
+                ArrayList<?> list = (ArrayList<?>) response;
+                if (list.isEmpty()) {
+                    showAlert(Alert.AlertType.INFORMATION, "Success", "Operation completed successfully.");
+                    fetchTables();
+                } else {
+                    StringBuilder sb = new StringBuilder("Operation failed due to conflicting reservations for the following customers:\n\n");
+                    for (Object obj : list) {
+                        if (obj instanceof Subscriber) {
+                            Subscriber sub = (Subscriber) obj;
+                            // Handle cases where subscriber names might be null for regular guests
+                            String name = (sub.getFirstName() != null && !sub.getFirstName().isEmpty()) 
+                                        ? sub.getFirstName() 
+                                        : "Guest #" + sub.getCustomerId();
+                            
+                            // Add contact info if available to help staff reach out
+                            String contact = (sub.getPhoneNumber() != null && !sub.getPhoneNumber().isEmpty()) 
+                                           ? " (Phone: " + sub.getPhoneNumber() + ")" 
+                                           : (sub.getEmail() != null ? " (" + sub.getEmail() + ")" : "");
+                            
+                            sb.append("• ").append(name).append(contact).append("\n");
+                        }
+                    }
+                    sb.append("\nPlease contact these customers to reassign their tables before proceeding.");
+                    showAlert(Alert.AlertType.WARNING, "Conflict Found", sb.toString());
+                }
             } else {
                 showAlert(Alert.AlertType.ERROR, "Error", "An unexpected error occurred.");
             }
@@ -207,6 +235,12 @@ public class TableManagementController implements Initializable {
         alert.setTitle(title);
         alert.setHeaderText(null);
         alert.setContentText(content);
+        
+        // Fix for long text being truncated in JavaFX alerts
+        alert.getDialogPane().setMinHeight(Region.USE_PREF_SIZE);
+        alert.getDialogPane().setPrefWidth(500); // Set a reasonable width for the list
+        alert.setResizable(true);
+        
         alert.showAndWait();
     }
 

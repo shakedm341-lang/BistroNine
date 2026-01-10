@@ -69,6 +69,14 @@
     -fx-border-color: -primary-blue;
 }
 
+/* Read-only state for modern fields */
+.text-field-readonly {
+    -fx-background-color: #F7FAFC; /* Light gray background */
+    -fx-text-fill: -text-secondary;
+    -fx-border-color: #EDF2F7;
+    -fx-cursor: default;
+}
+
 /* Buttons (Standard) */
 .btn-primary {
     -fx-background-color: -primary-blue;
@@ -443,4 +451,253 @@
     -fx-background-color: -text-dark; /* Becomes dark on hover */
     -fx-border-color: -text-dark;
     -fx-text-fill: white;
+}
+
+/* --- Modern Tab Pane --- */
+
+/* הסרת הרקע האפור המכוער של אזור הכותרות */
+.modern-tab-pane .tab-header-area .tab-header-background {
+    -fx-background-color: transparent;
+}
+
+/* שינוי: צמצום גובה אזור הכותרות של הטאבים */
+.modern-tab-pane .tab-header-area {
+    -fx-padding: 0; 
+}
+
+/* עיצוב הטאב עצמו (הכפתור) */
+.modern-tab-pane .tab {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-border-color: transparent transparent transparent transparent; /* אין גבולות */
+    -fx-border-width: 0 0 3px 0; /* הכנה לקו תחתון של 3 פיקסלים */
+    -fx-padding: 10 20;
+    -fx-cursor: hand;
+}
+
+/* טקסט בטאב */
+.modern-tab-pane .tab .tab-label {
+    -fx-text-fill: -text-secondary;
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+}
+
+/* --- טאב במעבר עכבר (Hover) --- */
+.modern-tab-pane .tab:hover {
+    -fx-background-color: #F7FAFC; /* רקע עדין מאוד */
+}
+.modern-tab-pane .tab:hover .tab-label {
+    -fx-text-fill: -primary-blue;
+}
+
+/* --- טאב נבחר (Selected) - הקסם קורה כאן --- */
+.modern-tab-pane .tab:selected {
+    -fx-background-color: transparent;
+    /* קו תחתון בצבע הכחול הראשי */
+    -fx-border-color: transparent transparent -primary-blue transparent; 
+}
+
+.modern-tab-pane .tab:selected .tab-label {
+    -fx-text-fill: -primary-blue;
+    -fx-font-size: 16px; /* הגדלה קלה */
+}
+
+/* שינוי: הקטנתי את ה-padding העליון מ-20 ל-5 */
+.modern-tab-pane .tab-content-area {
+    -fx-border-color: transparent;
+    -fx-background-color: transparent;
+    -fx-padding: 5 0 0 0; /* צמצום הרווח בין הטאב לתוכן */
+}
+
+/* כפתור סכנה (קו מתאר בלבד) - למחיקה/ביטול */
+.btn-danger-outline {
+    -fx-background-color: transparent;
+    -fx-border-color: -danger-red;
+    -fx-border-radius: 8px;
+    -fx-text-fill: -danger-red;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+    -fx-padding: 5 15;
+}
+
+.btn-danger-outline:hover {
+    -fx-background-color: #FFF5F5; /* רקע אדמדם בהיר מאוד */
+}
+
+/* --- Modern Spinner Design --- */
+
+.modern-spinner {
+    -fx-background-color: -input-background;
+    -fx-border-color: #CBD5E0;
+    -fx-border-radius: 6px;
+    -fx-border-width: 1px;
+    /* ביטול ה-padding החיצוני כדי שהגבולות יהיו צמודים */
+    -fx-background-insets: 0; 
+}
+
+/* במצב פוקוס - מסגרת כחולה */
+.modern-spinner:focused {
+    -fx-border-color: -primary-blue;
+    -fx-effect: dropshadow(three-pass-box, rgba(66, 153, 225, 0.3), 5, 0, 0, 0);
+}
+
+/* שדה הטקסט בתוך הספינר */
+.modern-spinner .text-field {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-padding: 8 10; /* ריווח פנימי לטקסט */
+    -fx-alignment: CENTER_LEFT;
+    -fx-font-size: 14px;
+}
+
+/* אזור הכפתורים (הימני) */
+.modern-spinner .increment-arrow-button,
+.modern-spinner .decrement-arrow-button {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-padding: 4 8; /* גודל אזור הלחיצה */
+    -fx-cursor: hand;
+}
+
+/* קו מפריד עדין בצד שמאל של הכפתורים */
+.modern-spinner .increment-arrow-button {
+    -fx-border-color: transparent transparent #E2E8F0 #E2E8F0; /* קו למטה ומשמאל */
+    -fx-border-width: 0 0 1 1; 
+}
+
+.modern-spinner .decrement-arrow-button {
+    -fx-border-color: transparent transparent transparent #E2E8F0; /* קו משמאל בלבד */
+    -fx-border-width: 0 0 0 1; 
+}
+
+/* צבע החצים */
+.modern-spinner .increment-arrow,
+.modern-spinner .decrement-arrow {
+    -fx-background-color: -text-secondary; /* אפור כהה */
+    -fx-padding: 2px; /* גודל החץ */
+}
+
+/* אפקט Hover על הכפתורים */
+.modern-spinner .increment-arrow-button:hover,
+.modern-spinner .decrement-arrow-button:hover {
+    -fx-background-color: #EDF2F7; /* אפור בהיר מאוד */
+}
+
+.modern-spinner .increment-arrow-button:hover .increment-arrow,
+.modern-spinner .decrement-arrow-button:hover .decrement-arrow {
+    -fx-background-color: -primary-blue; /* החץ נהיה כחול */
+}
+
+/* --- כפתורי פעולה בתוך טבלה (Compact) --- */
+
+/* הגדרה בסיסית לשני הכפתורים */
+.btn-table-action {
+    -fx-font-size: 11px;       /* פונט קטן יותר */
+    -fx-font-weight: bold;
+    -fx-padding: 3 10;         /* ריפוד הדוק מאוד */
+    -fx-background-radius: 4px;
+    -fx-cursor: hand;
+    -fx-min-height: 24px;      /* גובה מינימלי קבוע וקטן */
+    -fx-max-height: 24px;
+    -fx-alignment: CENTER;
+}
+
+/* כפתור עדכון (כחול) */
+.btn-table-update {
+    -fx-background-color: transparent;
+    -fx-border-color: -primary-blue;
+    -fx-border-radius: 4px;
+    -fx-text-fill: -primary-blue;
+}
+
+.btn-table-update:hover {
+    -fx-background-color: #EBF8FF; /* כחול בהיר מאוד ברקע */
+}
+
+/* כפתור מחיקה (אדום) */
+.btn-table-delete {
+    -fx-background-color: transparent;
+    -fx-border-color: -danger-red;
+    -fx-border-radius: 4px;
+    -fx-text-fill: -danger-red;
+}
+
+.btn-table-delete:hover {
+    -fx-background-color: #FFF5F5; /* אדום בהיר מאוד ברקע */
+}
+
+/* --- עיצוב גרפים (Charts) - גרסה מתוקנת --- */
+
+/* הסרת רקע כללי */
+.chart {
+    -fx-padding: 10px;
+    -fx-background-color: transparent;
+}
+
+/* אזור הציור (הרקע של הקווים) - לבן נקי עם מסגרת */
+.chart-plot-background {
+    -fx-background-color: white;
+    -fx-border-color: #E2E8F0;
+    -fx-border-width: 1px;
+}
+
+/* קווי רשת עדינים */
+.chart-vertical-grid-lines, .chart-horizontal-grid-lines {
+    -fx-stroke: #EDF2F7;
+    -fx-stroke-dash-array: 4 4;
+}
+
+/* הסרת הרקע האפור של המקרא (Legend) */
+.chart-legend {
+    -fx-background-color: transparent;
+    -fx-padding: 10px;
+}
+
+/* --- סדרות הנתונים (צבעים) --- */
+
+/* סדרה 1 (למשל Reservations) - כתום */
+.default-color0.chart-series-line { 
+    -fx-stroke: #ED8936; 
+    -fx-stroke-width: 2.5px; 
+}
+.default-color0.chart-line-symbol { 
+    -fx-background-color: #ED8936; /* צבע מלא - מבטיח שיראו במקרא */
+    -fx-background-radius: 5px;
+    -fx-padding: 5px;
+}
+
+/* סדרה 2 (למשל Waiting) - צהוב/זהב */
+.default-color1.chart-series-line { 
+    -fx-stroke: #ECC94B; 
+    -fx-stroke-width: 2.5px; 
+}
+.default-color1.chart-line-symbol { 
+    -fx-background-color: #ECC94B; /* צבע מלא */
+    -fx-background-radius: 5px;
+    -fx-padding: 5px;
+}
+
+/* צבעי טקסט בצירים */
+.axis-label {
+    -fx-text-fill: -text-secondary;
+    -fx-font-size: 12px;
+}
+.axis {
+    -fx-tick-label-fill: -text-secondary;
+    -fx-font-size: 11px;
+}
+
+/* --- כפתור אורח (Login Screen) --- */
+.btn-guest {
+    -fx-background-color: white;
+    -fx-border-color: -primary-blue;
+    -fx-border-radius: 5px;
+    -fx-text-fill: -primary-blue;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+    -fx-border-width: 1px;
+}
+
+.btn-guest:hover {
+    -fx-background-color: #EBF8FF; /* כחול בהיר מאוד */
 }

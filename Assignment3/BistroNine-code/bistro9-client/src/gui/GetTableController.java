@@ -12,6 +12,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
 /**
@@ -19,6 +20,9 @@ import javafx.scene.layout.VBox;
  * Handles customer check-in via confirmation code or ReaderTag identification.
  */
 public class GetTableController extends BaseTerminalController {
+
+    @FXML
+    private StackPane mainStack;
 
     @FXML
     private TextField confCodeField;
@@ -70,7 +74,7 @@ public class GetTableController extends BaseTerminalController {
         } else {
             // Guest check-in options (default)
             checkInTitle.setText("Enter Confirmation Code");
-            checkInGuidance.setText("Please enter your 6-digit confirmation code below.");
+            checkInGuidance.setText("Please enter your confirmation code below.");
             lostCodeButton.setVisible(true);
             lostCodeButton.setManaged(true);
         }
@@ -95,7 +99,7 @@ public class GetTableController extends BaseTerminalController {
      * Navigates to the 'Lost Code' recovery view.
      */
     @FXML
-    void handleShowRecovery(ActionEvent event) {
+    public void handleShowRecovery(ActionEvent event) {
         checkInView.setVisible(false);
         recoveryView.setVisible(true);
     }
@@ -104,7 +108,7 @@ public class GetTableController extends BaseTerminalController {
      * Navigates back to the main Check-In view.
      */
     @FXML
-    void handleShowCheckIn(ActionEvent event) {
+    public void handleShowCheckIn(ActionEvent event) {
         recoveryView.setVisible(false);
         checkInView.setVisible(true);
     }
@@ -113,10 +117,10 @@ public class GetTableController extends BaseTerminalController {
      * Attempts check-in using the manually entered 6-digit confirmation code.
      */
     @FXML
-    void handleCheckInByCode(ActionEvent event) {
+    public void handleCheckInByCode(ActionEvent event) {
         String codeText = confCodeField.getText().trim();
         if (codeText.isEmpty()) {
-            TerminalUtils.showError("Input Error", "Please enter your 6-digit confirmation code.");
+            TerminalUtils.showError("Input Error", "Please enter your confirmation code.");
             return;
         }
 
@@ -128,12 +132,18 @@ public class GetTableController extends BaseTerminalController {
         }
     }
 
+    @Override
+    @FXML
+    public void handleBack(ActionEvent event) {
+        super.handleBack(event);
+    }
+
     /**
      * Handles the 'Recover Lost Codes' action.
      * Requests the server to send codes via SMS/Email using the provided contact info.
      */
     @FXML
-    void handleRecoverLostCodes(ActionEvent event) {
+    public void handleRecoverLostCodes(ActionEvent event) {
         String phone = recoveryPhoneField.getText().trim();
         String email = recoveryEmailField.getText().trim();
 

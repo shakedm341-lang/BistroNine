@@ -6,73 +6,96 @@
 <?import javafx.scene.control.PasswordField?>
 <?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<VBox alignment="CENTER" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="450.0" prefWidth="350.0" spacing="15.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gui.LoginController">
-   <children>
-      <Label text="BistroNine - Login" textFill="#333333">
-         <font>
-            <Font name="System Bold" size="20.0" />
-         </font>
-         <VBox.margin>
-            <Insets bottom="10.0" />
-         </VBox.margin>
-      </Label>
-      
-      <VBox maxWidth="220.0" spacing="5.0">
-         <children>
-            <Label text="Username:" />
-            <TextField fx:id="usernameTxt" promptText="Enter username" />
-         </children>
-      </VBox>
-      
-      <VBox maxWidth="220.0" spacing="5.0">
-         <children>
-            <Label text="Password:" />
-            <PasswordField fx:id="passwordTxt" promptText="Enter password" />
-         </children>
-      </VBox>
-      
-      <Button mnemonicParsing="false" onAction="#getLoginBtn" prefHeight="35.0" prefWidth="220.0" style="-fx-background-color: #2196F3; -fx-text-fill: white; -fx-cursor: hand;" text="Login">
-         <font>
-            <Font name="System Bold" size="14.0" />
-         </font>
-         <VBox.margin>
-            <Insets top="10.0" />
-         </VBox.margin>
-      </Button>
-      
-      <VBox fx:id="orSeparator" alignment="CENTER" spacing="5.0">
-         <children>
-            <Label text="OR" textFill="#999999">
-               <font>
-                  <Font size="10.0" />
-               </font>
-            </Label>
-            <Separator maxWidth="100.0" />
-         </children>
-      </VBox>
-      
-      <Button fx:id="btnScanTag" managed="false" mnemonicParsing="false" onAction="#handleScanTag" prefHeight="35.0" prefWidth="220.0" style="-fx-background-color: #FF9800; -fx-text-fill: white; -fx-cursor: hand;" text="Scan Tag" visible="false">
-         <font>
-            <Font name="System Bold" size="14.0" />
-         </font>
-      </Button>
-      
-      <Button fx:id="btnGuest" mnemonicParsing="false" onAction="#enterAsGuest" prefHeight="35.0" prefWidth="220.0" style="-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-cursor: hand;" text="Order as Guest">
-         <font>
-            <Font name="System Bold" size="14.0" />
-         </font>
-      </Button>
-      
-      <Button mnemonicParsing="false" onAction="#getBackBtn" prefWidth="220.0" style="-fx-background-color: transparent; -fx-text-fill: #666666; -fx-underline: true; -fx-cursor: hand;" text="Back to Main Menu">
-         <VBox.margin>
-            <Insets top="10.0" />
-         </VBox.margin>
-      </Button>
-   </children>
-   <padding>
-      <Insets bottom="30.0" left="30.0" right="30.0" top="30.0" />
-   </padding>
-</VBox>
+<HBox fx:id="rootPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" 
+      prefHeight="550.0" prefWidth="900.0" 
+      xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" 
+      fx:controller="gui.LoginController">
+
+   <VBox fx:id="sidebar" alignment="CENTER" prefWidth="380.0" style="-fx-background-color: linear-gradient(to bottom right, #2C5282, #2B6CB0);" HBox.hgrow="ALWAYS">
+      <children>
+         <Label text="BistroNine" textFill="WHITE">
+            <font>
+               <Font name="System Bold" size="40.0" />
+            </font>
+         </Label>
+         <Label text="Restaurant Management System" textFill="#EBF8FF">
+            <font>
+               <Font size="16.0" />
+            </font>
+            <VBox.margin>
+               <Insets top="10.0" />
+            </VBox.margin>
+         </Label>
+      </children>
+   </VBox>
+
+   <StackPane prefWidth="520.0" style="-fx-background-color: white;" HBox.hgrow="ALWAYS">
+      <children>
+         
+         <Button mnemonicParsing="false" onAction="#getBackBtn" text="✕" 
+                 StackPane.alignment="TOP_RIGHT"
+                 style="-fx-background-color: transparent; -fx-text-fill: #A0AEC0; -fx-font-size: 18px; -fx-cursor: hand; -fx-padding: 10 15;">
+         </Button>
+
+         <VBox alignment="CENTER_LEFT" maxWidth="320.0" spacing="20.0">
+            <children>
+               
+               <VBox spacing="5.0">
+                  <Label text="Welcome Back" style="-fx-text-fill: -primary-blue;">
+                     <font>
+                        <Font name="System Bold" size="26.0" />
+                     </font>
+                  </Label>
+                  <Label text="Please sign in to continue" style="-fx-text-fill: -text-secondary;" />
+               </VBox>
+
+               <VBox spacing="15.0">
+                  <VBox spacing="5.0">
+                     <Label text="Username" styleClass="input-label"/>
+                     <TextField fx:id="usernameTxt" promptText="Enter username" 
+                                styleClass="text-field-modern" prefHeight="40.0"/>
+                  </VBox>
+
+                  <VBox spacing="5.0">
+                     <Label text="Password" styleClass="input-label"/>
+                     <PasswordField fx:id="passwordTxt" promptText="Enter password" 
+                                    styleClass="text-field-modern" prefHeight="40.0"/>
+                  </VBox>
+               </VBox>
+               
+               <Button mnemonicParsing="false" 
+                       onAction="#getLoginBtn" text="Login" 
+                       maxWidth="Infinity"
+                       styleClass="btn-primary" prefHeight="45.0"
+                       style="-fx-font-size: 14px;"/>
+
+               <HBox fx:id="orSeparator" alignment="CENTER" spacing="10.0">
+                  <Separator HBox.hgrow="ALWAYS" />
+                  <Label text="OR" style="-fx-text-fill: -text-secondary; -fx-font-size: 12px;"/>
+                  <Separator HBox.hgrow="ALWAYS" />
+               </HBox>
+
+               <Button fx:id="btnGuest" mnemonicParsing="false" 
+                       onAction="#enterAsGuest" text="Order as Guest" 
+                       maxWidth="Infinity"
+                       prefHeight="40.0"
+                       styleClass="btn-guest"/>
+
+               <Button fx:id="btnScanTag" managed="false" visible="false"
+                       mnemonicParsing="false" onAction="#handleScanTag" 
+                       text="Scan Employee Tag" 
+                       maxWidth="Infinity"
+                       prefHeight="40.0"
+                       style="-fx-background-color: #ED8936; -fx-text-fill: white; -fx-background-radius: 8; -fx-font-weight: bold; -fx-cursor: hand;"/>
+
+            </children>
+         </VBox>
+      </children>
+   </StackPane>
+
+</HBox>

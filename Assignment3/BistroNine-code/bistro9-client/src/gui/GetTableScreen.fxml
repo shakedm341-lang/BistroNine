@@ -4,20 +4,19 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ListView?>
-<?import javafx.scene.control.RadioButton?>
 <?import javafx.scene.control.TextField?>
-<?import javafx.scene.control.ToggleGroup?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<VBox alignment="TOP_CENTER" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="800.0" spacing="20.0" style="-fx-background-color: #f5f5f5;" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gui.GetTableController">
+<VBox alignment="TOP_CENTER" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="800.0" spacing="20.0" styleClass="main-background" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gui.GetTableController">
    <children>
+      
       <VBox alignment="CENTER" spacing="5.0">
          <children>
-            <Label text="Welcome to BistroNine" textFill="#1976D2">
+            <Label styleClass="title-text" text="Welcome to BistroNine">
                <font>
                   <Font name="System Bold" size="30.0" />
                </font>
@@ -30,19 +29,19 @@
       
       <StackPane fx:id="mainStack" maxWidth="750.0" VBox.vgrow="ALWAYS">
          <children>
-            <!-- Screen 1: Check-In View -->
-            <VBox fx:id="checkInView" alignment="CENTER" style="-fx-background-color: white; -fx-background-radius: 15; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 5); -fx-padding: 30;">
+            
+            <VBox fx:id="checkInView" alignment="CENTER" styleClass="card">
                <children>
-                  <BorderPane VBox.vgrow="ALWAYS">
-                     <top>
-                        <VBox alignment="CENTER" spacing="10.0" BorderPane.alignment="CENTER">
+                  <VBox alignment="TOP_CENTER">
+                     <children>
+                        <VBox alignment="CENTER" spacing="10.0">
                            <children>
-                              <Label fx:id="checkInTitle" text="Reservation Check-In" textFill="#1976D2">
+                              <Label fx:id="checkInTitle" styleClass="title-text" text="Reservation Check-In">
                                  <font>
                                     <Font name="System Bold" size="28.0" />
                                  </font>
                               </Label>
-                              <Label fx:id="checkInGuidance" text="Select an active reservation or enter your code manually." textFill="#555555">
+                              <Label fx:id="checkInGuidance" styleClass="subtitle-text" text="Select an active reservation or enter your code manually.">
                                  <font>
                                     <Font size="16.0" />
                                  </font>
@@ -52,33 +51,36 @@
                               <Insets bottom="30.0" />
                            </padding>
                         </VBox>
-                     </top>
-                     <center>
-                        <HBox alignment="CENTER" spacing="50.0" BorderPane.alignment="CENTER">
+                        <HBox alignment="TOP_CENTER" spacing="50.0">
                            <children>
-                              <!-- Left Side: ListView -->
+                              
                               <VBox fx:id="subscriberCodesBox" alignment="TOP_CENTER" spacing="15.0" HBox.hgrow="ALWAYS">
                                  <children>
-                                    <Label text="Your Active Codes" textFill="#1976D2">
+                                    <Label styleClass="input-label" text="Your Active Codes">
                                        <font>
                                           <Font name="System Bold" size="18.0" />
                                        </font>
                                     </Label>
-                                    <ListView fx:id="codesListView" prefHeight="250.0" prefWidth="280.0" style="-fx-font-size: 16; -fx-background-radius: 5;" />
+                                    <ListView fx:id="codesListView" prefHeight="250.0" prefWidth="280.0" styleClass="modern-list-view" />
                                  </children>
                               </VBox>
                               
-                              <!-- Right Side: Manual Input -->
                               <VBox alignment="CENTER" spacing="20.0" HBox.hgrow="ALWAYS">
                                  <children>
-                                    <Label text="Manual Entry" textFill="#1976D2">
+                                    <Label styleClass="input-label" text="Manual Entry">
                                        <font>
                                           <Font name="System Bold" size="18.0" />
-                                       </font>
-                                    </Label>
-                                    <TextField fx:id="confCodeField" alignment="CENTER" maxWidth="250.0" promptText="######" style="-fx-font-size: 26; -fx-background-radius: 5; -fx-font-weight: bold;" />
-                                    <Button mnemonicParsing="false" onAction="#handleCheckInByCode" prefHeight="55.0" prefWidth="220.0" style="-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand; -fx-font-size: 20;" text="CHECK-IN" />
-                                    <Button fx:id="lostCodeButton" mnemonicParsing="false" onAction="#handleShowRecovery" style="-fx-background-color: transparent; -fx-text-fill: #1976D2; -fx-underline: true; -fx-cursor: hand;" text="I lost my code">
+                                        </font>
+                                     </Label>
+                                    <TextField fx:id="confCodeField" alignment="CENTER" maxWidth="250.0" promptText="Enter code" styleClass="text-field-modern" style="-fx-font-size: 24px; -fx-font-weight: bold;" />
+                                    
+                                    <Button mnemonicParsing="false" onAction="#handleCheckInByCode" prefHeight="55.0" prefWidth="220.0" styleClass="btn-primary" text="CHECK-IN">
+                                        <font>
+                                            <Font size="18.0"/>
+                                        </font>
+                                    </Button>
+                                    
+                                    <Button fx:id="lostCodeButton" mnemonicParsing="false" onAction="#handleShowRecovery" styleClass="link-text" text="I lost my code">
                                        <font>
                                           <Font size="14.0" />
                                        </font>
@@ -87,20 +89,19 @@
                               </VBox>
                            </children>
                         </HBox>
-                     </center>
-                  </BorderPane>
+                     </children>
+                  </VBox>
                </children>
             </VBox>
             
-            <!-- Screen 2: Recovery View (Hidden by default) -->
-            <VBox fx:id="recoveryView" alignment="CENTER" spacing="20.0" style="-fx-background-color: #fcfcfc; -fx-background-radius: 15; -fx-border-color: #e0e0e0; -fx-border-radius: 15; -fx-padding: 30; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 5);" visible="false">
+            <VBox fx:id="recoveryView" alignment="CENTER" spacing="20.0" styleClass="card" visible="false">
                <children>
-                  <Label text="Recover Your Code" textFill="#424242">
+                  <Label styleClass="title-text" text="Recover Your Code">
                      <font>
                         <Font name="System Bold" size="22.0" />
                      </font>
                   </Label>
-                  <Label text="Enter your details to receive your active codes via SMS/Email" textFill="#757575">
+                  <Label styleClass="subtitle-text" text="Enter your details to receive your active codes via SMS/Email">
                      <font>
                         <Font size="14.0" />
                      </font>
@@ -108,15 +109,16 @@
                   
                   <VBox alignment="CENTER" maxWidth="300.0" spacing="15.0">
                      <children>
-                        <TextField fx:id="recoveryPhoneField" alignment="CENTER" prefHeight="40.0" promptText="Phone Number" style="-fx-font-size: 16; -fx-background-radius: 5;" />
-                        <TextField fx:id="recoveryEmailField" alignment="CENTER" prefHeight="40.0" promptText="Email Address" style="-fx-font-size: 16; -fx-background-radius: 5;" />
+                        <TextField fx:id="recoveryPhoneField" alignment="CENTER" prefHeight="45.0" promptText="Phone Number" styleClass="text-field-modern" />
+                        <TextField fx:id="recoveryEmailField" alignment="CENTER" prefHeight="45.0" promptText="Email Address" styleClass="text-field-modern" />
                      </children>
                   </VBox>
                   
                   <VBox alignment="CENTER" spacing="15.0">
                      <children>
-                        <Button mnemonicParsing="false" onAction="#handleRecoverLostCodes" prefHeight="50.0" prefWidth="300.0" style="-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand; -fx-font-size: 18;" text="SEND MY CODES" />
-                        <Button mnemonicParsing="false" onAction="#handleShowCheckIn" style="-fx-background-color: transparent; -fx-text-fill: #757575; -fx-underline: true; -fx-cursor: hand;" text="Return to Check-In">
+                        <Button mnemonicParsing="false" onAction="#handleRecoverLostCodes" prefHeight="50.0" prefWidth="300.0" styleClass="btn-success" text="SEND MY CODES" />
+                        
+                        <Button mnemonicParsing="false" onAction="#handleShowCheckIn" styleClass="link-text" text="Return to Check-In">
                            <font>
                               <Font size="14.0" />
                            </font>
@@ -127,15 +129,13 @@
             </VBox>
          </children>
       </StackPane>
-
-      <Button mnemonicParsing="false" onAction="#handleBack" prefHeight="40.0" prefWidth="120.0" style="-fx-background-color: #757575; -fx-text-fill: white; -fx-cursor: hand;" text="Back">
-         <font>
-            <Font name="System Bold" size="16.0" />
-         </font>
+      
+      <Button mnemonicParsing="false" onAction="#handleBack" prefHeight="40.0" prefWidth="120.0" styleClass="btn-danger-outline" text="Back">
          <VBox.margin>
             <Insets bottom="20.0" top="10.0" />
          </VBox.margin>
       </Button>
+      
    </children>
    <padding>
       <Insets bottom="30.0" left="30.0" right="30.0" top="30.0" />

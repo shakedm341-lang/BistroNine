@@ -18,6 +18,7 @@ import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
@@ -41,10 +42,21 @@ public class LoginController {
     private Button btnScanTag;
 
     @FXML
-    private VBox orSeparator;
+    private HBox orSeparator;
+
+    @FXML
+    private VBox sidebar;
+
+    @FXML
+    private HBox rootPane;
 
     private ClientController client;
     private Mode mode = Mode.REMOTE;
+
+    @FXML
+    public void initialize() {
+        updateUI();
+    }
 
     // Method to set the client reference
     public void setClient(ClientController client) {
@@ -60,18 +72,43 @@ public class LoginController {
 
     private void updateUI() {
         if (mode == Mode.TERMINAL) {
+            if (sidebar != null) {
+                sidebar.setVisible(false);
+                sidebar.setManaged(false);
+            }
+            if (rootPane != null) {
+                rootPane.setPrefWidth(520.0);
+                rootPane.setPrefHeight(500.0);
+            }
             if (btnGuest != null) {
                 btnGuest.setVisible(false);
                 btnGuest.setManaged(false);
             }
+            if (orSeparator != null) {
+                orSeparator.setVisible(true);
+                orSeparator.setManaged(true);
+            }
             if (btnScanTag != null) {
                 btnScanTag.setVisible(true);
                 btnScanTag.setManaged(true);
+                btnScanTag.setText("Scan Subscriber Card");
             }
         } else {
+            if (sidebar != null) {
+                sidebar.setVisible(true);
+                sidebar.setManaged(true);
+            }
+            if (rootPane != null) {
+                rootPane.setPrefWidth(900.0);
+                rootPane.setPrefHeight(550.0);
+            }
             if (btnGuest != null) {
                 btnGuest.setVisible(true);
                 btnGuest.setManaged(true);
+            }
+            if (orSeparator != null) {
+                orSeparator.setVisible(true);
+                orSeparator.setManaged(true);
             }
             if (btnScanTag != null) {
                 btnScanTag.setVisible(false);
@@ -162,27 +199,15 @@ public class LoginController {
     }
 
     private void enterTerminalMenu(Subscriber subscriber) {
-        try {
-            BaseTerminalController.setUserType(BaseTerminalController.UserType.SUBSCRIBER);
-            BaseTerminalController.currentSubscriberId = String.valueOf(subscriber.getCustomerId());
+        // Set the subscriber details in the base controller
+        BaseTerminalController.setUserType(BaseTerminalController.UserType.SUBSCRIBER);
+        BaseTerminalController.currentSubscriberId = String.valueOf(subscriber.getCustomerId());
+        BaseTerminalController.currentSubscriberName = subscriber.getFirstName() + " " + subscriber.getLastName();
 
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/TerminalMenu.fxml"));
-            Parent root = loader.load();
-
-            TerminalMenuController controller = loader.getController();
-            controller.setClient(this.client);
-
-            Stage stage = (Stage) usernameTxt.getScene().getWindow();
-            stage.setTitle("BistroNine - Terminal Mode");
-            Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getResource("/gui/styles.css").toExternalForm());
-            stage.setScene(scene);
-            stage.show();
-            stage.centerOnScreen();
-        } catch (Exception e) {
-            e.printStackTrace();
-            showAlert(AlertType.ERROR, "Error", "Could not load terminal menu.");
-        }
+        // When in TERMINAL mode (modal popup), we just close the stage.
+        // The TerminalIdentificationController will detect the login success and switch the parent scene.
+        Stage stage = (Stage) usernameTxt.getScene().getWindow();
+        stage.close();
     }
 
     private void openDashboard(Subscriber user) {
@@ -190,21 +215,39 @@ public class LoginController {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/UserDashboard.fxml"));
             Parent root = loader.load();
 
-            // Get the controller and pass the client and user data
             UserDashboardController controller = loader.getController();
             controller.setClient(client);
-            
-            controller.loadUserDetails(user); 
+            controller.loadUserDetails(user);
 
-            Stage stage = (Stage) usernameTxt.getScene().getWindow();
-            stage.setTitle("BistroNine Client - User Dashboard");
-            Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getResource("/gui/styles.css").toExternalForm());
-            stage.setScene(scene);
-            stage.setResizable(true);
-            //stage.setMaximized(true);
-            stage.centerOnScreen();
-            stage.show();
+            // Get current stage
+            Stage currentStage = (Stage) usernameTxt.getScene().getWindow();
+            
+            // If this stage has an owner (it's a modal popup from Terminal Mode)
+            Stage ownerStage = (Stage) currentStage.getOwner();
+            
+            if (ownerStage != null) {
+                // Switch the owner (main window) to the Dashboard
+                Scene scene = new Scene(root);
+                scene.getStylesheets().add(getClass().getResource("/gui/styles.css").toExternalForm());
+                ownerStage.setScene(scene);
+                ownerStage.setTitle("BistroNine Client - User Dashboard");
+                ownerStage.setMaximized(true);
+                ownerStage.show();
+                
+                // Close the login popup
+                currentStage.close();
+            } else {
+                // This is a standalone window (Remote Mode)
+                Scene scene = new Scene(root);
+                scene.getStylesheets().add(getClass().getResource("/gui/styles.css").toExternalForm());
+                currentStage.setScene(scene);
+                currentStage.setTitle("BistroNine Client - User Dashboard");
+                
+                // Transition the standalone window to a dashboard layout
+                currentStage.setResizable(true);
+                currentStage.setMaximized(true);
+                currentStage.show();
+            }
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -214,6 +257,16 @@ public class LoginController {
 
     @FXML
     void getBackBtn(ActionEvent event) {
+        // Get current stage
+        Stage currentStage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+
+        // Case 1: Terminal Mode Modal Popup (it has an owner)
+        if (currentStage.getOwner() != null) {
+            currentStage.close();
+            return;
+        }
+
+        // Case 2: Standalone Remote Window
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/MainSelection.fxml"));
             Parent root = loader.load();
@@ -221,14 +274,21 @@ public class LoginController {
             MainSelectionController controller = loader.getController();
             controller.setClient(client);
 
-            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            stage.setTitle("BistroNine Client - Main Menu");
+            // Create a new Main Selection stage
+            Stage mainStage = new Stage();
+            mainStage.setTitle("BistroNine Client - Main Menu");
             Scene scene = new Scene(root);
-            stage.setScene(scene);
-            stage.show();
-            stage.centerOnScreen();
+            scene.getStylesheets().add(getClass().getResource("/gui/styles.css").toExternalForm());
+            mainStage.setScene(scene);
+            mainStage.setResizable(true);
+            mainStage.show();
+            mainStage.centerOnScreen();
+
+            // Close the current Remote stage
+            currentStage.close();
 
         } catch (Exception e) {
+            System.out.println("Error returning to Main Selection:");
             e.printStackTrace();
         }
     }
@@ -245,9 +305,11 @@ public class LoginController {
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             stage.setTitle("BistroNine - Guest Terminal");
             Scene scene = new Scene(root);
+            scene.getStylesheets().add(getClass().getResource("/gui/styles.css").toExternalForm());
             stage.setScene(scene);
+            stage.setFullScreen(false);
+            stage.setMaximized(true);
             stage.show();
-            stage.centerOnScreen();
 
         } catch (Exception e) {
             e.printStackTrace();

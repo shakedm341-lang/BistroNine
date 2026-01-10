@@ -25,6 +25,7 @@ public class LeaveWaitlistController extends BaseTerminalController {
     @FXML private TextField emailField;
     @FXML private TextField subscriberIdField;
     @FXML private Button btnBack;
+    @FXML private Button btnRemove;
 
     private boolean isDashboardMode = false;
     private Subscriber dashboardUser;
@@ -93,6 +94,28 @@ public class LeaveWaitlistController extends BaseTerminalController {
             guestFields.setManaged(true);
             subscriberFields.setVisible(false);
             subscriberFields.setManaged(false);
+            
+            // For guest mode, button is disabled until at least one field is filled
+            updateLeaveButtonState();
+        }
+
+        // Add listeners to enable/disable remove button as user types
+        phoneField.textProperty().addListener((obs, old, newValue) -> updateLeaveButtonState());
+        emailField.textProperty().addListener((obs, old, newValue) -> updateLeaveButtonState());
+    }
+
+    /**
+     * Updates the REMOVE FROM WAITLIST button state based on the presence of contact information.
+     * Guests must provide at least a phone number or an email.
+     */
+    private void updateLeaveButtonState() {
+        if (!isDashboardMode && BaseTerminalController.currentUserType == BaseTerminalController.UserType.GUEST) {
+            boolean hasPhone = !phoneField.getText().trim().isEmpty();
+            boolean hasEmail = !emailField.getText().trim().isEmpty();
+            btnRemove.setDisable(!hasPhone && !hasEmail);
+        } else {
+            // Subscribers or dashboard mode (pre-filled ID) are always enabled
+            btnRemove.setDisable(false);
         }
     }
 

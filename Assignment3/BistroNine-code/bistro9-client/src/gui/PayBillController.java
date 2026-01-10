@@ -76,6 +76,7 @@ public class PayBillController extends BaseTerminalController implements Initial
         searchSection.setVisible(true);
         searchSection.setManaged(true);
         btnBackOnly.setVisible(true);
+        btnBackOnly.setManaged(true);
     }
 
     @Override
@@ -170,6 +171,7 @@ public class PayBillController extends BaseTerminalController implements Initial
             billDetailsSection.setVisible(true);
             billDetailsSection.setManaged(true);
             btnBackOnly.setVisible(false);
+            btnBackOnly.setManaged(false);
         });
     }
 

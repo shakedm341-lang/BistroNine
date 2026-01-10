@@ -28,7 +28,7 @@ public class TerminalMenuController {
     private Button btnExit;
 
     @FXML
-    private Label lblMode;
+    private Label lblWelcome;
 
     public void setClient(ClientController client) {
         this.client = client;
@@ -36,12 +36,12 @@ public class TerminalMenuController {
     }
 
     private void updateModeLabel() {
-        if (lblMode != null) {
+        if (lblWelcome != null) {
             if (BaseTerminalController.currentUserType == BaseTerminalController.UserType.SUBSCRIBER) {
-                String subId = BaseTerminalController.currentSubscriberId;
-                lblMode.setText("Mode: Subscriber" + (subId != null ? " (ID: " + subId + ")" : " (Not Identified)"));
+                String name = BaseTerminalController.currentSubscriberName;
+                lblWelcome.setText("Welcome, " + (name != null ? name : "Subscriber"));
             } else {
-                lblMode.setText("Mode: Guest");
+                lblWelcome.setText("Welcome, Guest");
             }
         }
     }
@@ -69,6 +69,9 @@ public class TerminalMenuController {
     @FXML
     void handleExit(ActionEvent event) {
         try {
+            // Reset user type when logging out from the terminal
+            BaseTerminalController.setUserType(BaseTerminalController.UserType.GUEST);
+
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/TerminalIdentificationScreen.fxml"));
             Parent root = loader.load();
 
@@ -102,11 +105,23 @@ public class TerminalMenuController {
     private void switchScene(ActionEvent event, Parent root, String title) {
         Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
         stage.setTitle(title);
-        Scene scene = new Scene(root);
-        scene.getStylesheets().add(getClass().getResource("/gui/styles.css").toExternalForm());
-        stage.setScene(scene);
+        
+        Scene scene = stage.getScene();
+        if (scene == null) {
+            scene = new Scene(root);
+            stage.setScene(scene);
+        } else {
+            scene.setRoot(root);
+        }
+
+        // Ensure stylesheet is present
+        String cssPath = getClass().getResource("/gui/styles.css").toExternalForm();
+        if (!scene.getStylesheets().contains(cssPath)) {
+            scene.getStylesheets().add(cssPath);
+        }
+
+        stage.setMaximized(true);
         stage.show();
-        stage.centerOnScreen();
     }
 }
 

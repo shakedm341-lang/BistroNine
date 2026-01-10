@@ -7,109 +7,69 @@
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
-<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
-<?import javafx.scene.text.Font?>
 
-<VBox maxHeight="-Infinity" maxWidth="-Infinity"
-	minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0"
-	prefWidth="800.0" spacing="20.0" style="-fx-background-color: #FFFFFF;"
-	xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1"
-	fx:controller="gui.ProfileController">
+<StackPane xmlns="http://javafx.com/javafx/8.0.171" 
+           xmlns:fx="http://javafx.com/fxml/1" 
+           fx:controller="gui.ProfileController"
+           stylesheets="@styles.css">
 
-	<padding>
-		<Insets bottom="40.0" left="40.0" right="40.0" top="40.0" />
-	</padding>
+    <VBox styleClass="card" spacing="10.0" maxHeight="Infinity" maxWidth="Infinity">
+        
+        <padding>
+            <Insets top="20" right="30" bottom="20" left="30"/>
+        </padding>
 
-	<Label text="My Profile Settings" textFill="#2196f3">
-		<font>
-			<Font name="System Bold" size="28.0" />
-		</font>
-	</Label>
+        <VBox spacing="2.0">
+            <Label text="My Profile Settings" styleClass="title-text"/>
+            <Label text="Manage your account details and contact information." styleClass="subtitle-text"/>
+        </VBox>
 
-	<Separator prefWidth="200.0" />
+        <Separator />
 
-	<Label
-		text="Manage your account details and contact information."
-		textFill="#757575">
-		<font>
-			<Font size="14.0" />
-		</font>
-		<VBox.margin>
-			<Insets bottom="10.0" />
-		</VBox.margin>
-	</Label>
+        <VBox spacing="20.0" VBox.vgrow="ALWAYS">
+            
+            <padding><Insets top="10"/></padding>
 
-	<GridPane hgap="15.0" vgap="15.0">
-		<columnConstraints>
-			<ColumnConstraints hgrow="NEVER" minWidth="10.0"
-				prefWidth="120.0" />
-			<ColumnConstraints hgrow="SOMETIMES"
-				minWidth="10.0" />
-		</columnConstraints>
-		<rowConstraints>
-			<RowConstraints minHeight="10.0" prefHeight="35.0"
-				vgrow="SOMETIMES" />
-			<RowConstraints minHeight="10.0" prefHeight="35.0"
-				vgrow="SOMETIMES" />
-			<RowConstraints minHeight="10.0" prefHeight="35.0"
-				vgrow="SOMETIMES" />
-			<RowConstraints minHeight="10.0" prefHeight="35.0"
-				vgrow="SOMETIMES" />
-		</rowConstraints>
+            <GridPane hgap="15.0" vgap="15.0">
+                <columnConstraints>
+                    <ColumnConstraints hgrow="NEVER" minWidth="110.0" halignment="RIGHT" />
+                    <ColumnConstraints hgrow="ALWAYS" maxWidth="500.0" /> 
+                </columnConstraints>
 
-		<Label text="Username:" textFill="#424242">
-			<font>
-				<Font name="System Bold" size="14.0" />
-			</font>
-		</Label>
-		<TextField fx:id="usernameField" disable="true"
-			editable="false" maxWidth="200.0" prefWidth="200.0"
-			style="-fx-opacity: 0.7;" GridPane.columnIndex="1" />
+                <Label text="Username" styleClass="input-label" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                <TextField fx:id="usernameField" editable="false" text="MotiManager"
+                           styleClass="text-field-modern, text-field-readonly" 
+                           prefHeight="35.0" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
 
-		<Label text="Email Address:" textFill="#424242"
-			GridPane.rowIndex="1">
-			<font>
-				<Font name="System Bold" size="14.0" />
-			</font>
-		</Label>
-		<TextField fx:id="emailField" maxWidth="350.0"
-			prefWidth="350.0" promptText="Enter your email"
-			GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                <Label text="Role" styleClass="input-label" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                <TextField fx:id="roleField" editable="false" text="Restaurant Manager"
+                           styleClass="text-field-modern, text-field-readonly" 
+                           prefHeight="35.0" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
 
-		<Label text="Phone Number:" textFill="#424242"
-			GridPane.rowIndex="2">
-			<font>
-				<Font name="System Bold" size="14.0" />
-			</font>
-		</Label>
-		<TextField fx:id="phoneField" maxWidth="180.0"
-			prefWidth="180.0" promptText="Enter your phone number"
-			GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                <Separator GridPane.rowIndex="2" GridPane.columnIndex="0" GridPane.columnSpan="2" style="-fx-opacity: 0.5;"/>
 
-		<Label text="Role:" textFill="#424242" GridPane.rowIndex="3">
-			<font>
-				<Font name="System Bold" size="14.0" />
-			</font>
-		</Label>
-		<TextField fx:id="roleField" disable="true" editable="false"
-			maxWidth="200.0" prefWidth="200.0" style="-fx-opacity: 0.7;"
-			GridPane.columnIndex="1" GridPane.rowIndex="3" />
-	</GridPane>
+                <Label text="Email Address *" styleClass="input-label" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+                <TextField fx:id="emailField" promptText="Enter your email" 
+                           styleClass="text-field-modern" 
+                           prefHeight="35.0" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
 
-	<Button fx:id="updateButton" mnemonicParsing="false"
-		onAction="#handleUpdateProfile"
-		style="-fx-background-color: #2196F3; -fx-text-fill: white; -fx-cursor: hand;"
-		text="Update Profile">
-		<font>
-			<Font name="System Bold" size="14.0" />
-		</font>
-		<padding>
-			<Insets bottom="8.0" left="25.0" right="25.0" top="8.0" />
-		</padding>
-		<VBox.margin>
-			<Insets top="15.0" />
-		</VBox.margin>
-	</Button>
+                <Label text="Phone Number *" styleClass="input-label" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
+                <TextField fx:id="phoneField" promptText="Enter your phone number" 
+                           styleClass="text-field-modern" 
+                           prefHeight="35.0" GridPane.rowIndex="4" GridPane.columnIndex="1"/>
 
-</VBox>
+            </GridPane>
+
+            <Region VBox.vgrow="ALWAYS" />
+
+            <HBox alignment="CENTER_RIGHT" maxWidth="625.0"> <Button fx:id="updateButton" onAction="#handleUpdateProfile" 
+                        text="Update Profile" styleClass="btn-primary" prefHeight="40.0" prefWidth="160.0"/>
+            </HBox>
+
+        </VBox>
+    </VBox>
+</StackPane>

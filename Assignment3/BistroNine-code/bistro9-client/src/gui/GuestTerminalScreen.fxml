@@ -9,21 +9,15 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<BorderPane prefHeight="650.0" prefWidth="950.0" style="-fx-background-color: #f5f5f5;" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gui.GuestTerminalController">
+<BorderPane prefHeight="650.0" prefWidth="950.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gui.GuestTerminalController">
    <left>
-      <VBox prefHeight="650.0" prefWidth="250.0" spacing="8.0" style="-fx-background-color: #F4F4F4;" BorderPane.alignment="CENTER">
+      <VBox prefHeight="650.0" prefWidth="250.0" spacing="0.0" styleClass="sidebar" BorderPane.alignment="CENTER">
          <children>
-            <VBox alignment="CENTER_LEFT" prefHeight="80.0" spacing="5.0">
+            <VBox alignment="CENTER_LEFT" prefHeight="100.0" spacing="5.0">
                <children>
-                  <Label text="BistroNine" textFill="#2196f3">
-                     <font>
-                        <Font name="System Bold" size="24.0" />
-                     </font>
+                  <Label styleClass="sidebar-logo" text="BistroNine">
                   </Label>
-                  <Label text="Guest Terminal" textFill="#666666">
-                     <font>
-                        <Font size="14.0" />
-                     </font>
+                  <Label styleClass="sidebar-user-label" text="Guest Terminal">
                   </Label>
                </children>
                <padding>
@@ -31,65 +25,34 @@
                </padding>
             </VBox>
 
-            <Separator prefWidth="200.0" />
-
-            <Button mnemonicParsing="false" onAction="#goToNewReservation" prefHeight="50.0" prefWidth="250.0" style="-fx-background-color: transparent; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;" text="New Order / Reservation" textFill="#333333">
-               <padding>
-                  <Insets left="20.0" />
-               </padding>
-               <font>
-                  <Font size="14.0" />
-               </font>
-            </Button>
-
-            <Button mnemonicParsing="false" onAction="#goToLeaveWaitlist" prefHeight="50.0" prefWidth="250.0" style="-fx-background-color: transparent; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;" text="Leave Waitlist" textFill="#333333">
-               <padding>
-                  <Insets left="20.0" />
-               </padding>
-               <font>
-                  <Font size="14.0" />
-               </font>
-            </Button>
-
-            <Button mnemonicParsing="false" onAction="#goToPayBill" prefHeight="50.0" prefWidth="250.0" style="-fx-background-color: transparent; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;" text="Pay Bill" textFill="#333333">
-               <padding>
-                  <Insets left="20.0" />
-               </padding>
-               <font>
-                  <Font size="14.0" />
-               </font>
-            </Button>
+            <VBox spacing="2.0">
+               <children>
+                  <Button maxWidth="Infinity" mnemonicParsing="false" onAction="#goToNewReservation" styleClass="nav-btn" text="New Order / Reservation" />
+                  <Button maxWidth="Infinity" mnemonicParsing="false" onAction="#goToLeaveWaitlist" styleClass="nav-btn" text="Leave Waitlist" />
+                  <Button maxWidth="Infinity" mnemonicParsing="false" onAction="#goToPayBill" styleClass="nav-btn" text="Pay Bill" />
+               </children>
+            </VBox>
 
             <VBox VBox.vgrow="ALWAYS" />
 
-            <Separator prefWidth="200.0" />
-
-            <Button mnemonicParsing="false" onAction="#handleExit" prefHeight="60.0" prefWidth="250.0" style="-fx-background-color: transparent; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;" text="EXIT GUEST" textFill="#d32f2f">
+            <VBox spacing="10.0">
+               <children>
+                  <Button maxWidth="Infinity" mnemonicParsing="false" onAction="#handleExit" styleClass="nav-btn-logout" text="EXIT GUEST" />
+               </children>
                <padding>
-                  <Insets left="20.0" />
+                  <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
                </padding>
-               <font>
-                  <Font name="System Bold" size="16.0" />
-               </font>
-            </Button>
+            </VBox>
          </children>
       </VBox>
    </left>
    <center>
-      <StackPane fx:id="contentArea" style="-fx-background-color: white;" BorderPane.alignment="CENTER">
+      <StackPane fx:id="contentArea" styleClass="content-area" BorderPane.alignment="CENTER">
          <children>
             <VBox alignment="CENTER" spacing="10.0">
                <children>
-                  <Label text="Welcome to BistroNine" textFill="#cccccc">
-                     <font>
-                        <Font name="System Bold" size="32.0" />
-                     </font>
-                  </Label>
-                  <Label text="Select an action from the left menu" textFill="#999999">
-                     <font>
-                        <Font size="16.0" />
-                     </font>
-                  </Label>
+                  <Label styleClass="title-text" text="Welcome to BistroNine" />
+                  <Label styleClass="subtitle-text" text="Select an action from the left menu" />
                </children>
             </VBox>
          </children>

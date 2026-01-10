@@ -18,6 +18,7 @@ public abstract class BaseTerminalController {
 
     protected static UserType currentUserType = UserType.GUEST;
     protected static String currentSubscriberId = null;
+    protected static String currentSubscriberName = null;
 
     protected ClientController client;
 
@@ -27,9 +28,10 @@ public abstract class BaseTerminalController {
 
     public static void setUserType(UserType type) {
         currentUserType = type;
-        // Reset subscriber ID if switching types or starting fresh
+        // Reset subscriber details if switching types or starting fresh
         if (type == UserType.GUEST) {
             currentSubscriberId = null;
+            currentSubscriberName = null;
         }
     }
 
@@ -49,11 +51,23 @@ public abstract class BaseTerminalController {
 
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             stage.setTitle(title);
-            Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getResource("/gui/styles.css").toExternalForm());
-            stage.setScene(scene);
+            
+            Scene scene = stage.getScene();
+            if (scene == null) {
+                scene = new Scene(root);
+                stage.setScene(scene);
+            } else {
+                scene.setRoot(root);
+            }
+
+            // Ensure stylesheet is present
+            String cssPath = getClass().getResource("/gui/styles.css").toExternalForm();
+            if (!scene.getStylesheets().contains(cssPath)) {
+                scene.getStylesheets().add(cssPath);
+            }
+
+            stage.setMaximized(true);
             stage.show();
-            stage.centerOnScreen();
         } catch (Exception e) {
             System.err.println("Error switching to scene: " + fxmlPath);
             e.printStackTrace();

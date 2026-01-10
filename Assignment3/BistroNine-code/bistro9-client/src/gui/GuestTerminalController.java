@@ -90,7 +90,10 @@ public class GuestTerminalController {
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             stage.setTitle("BistroNine Client - Login Screen");
             Scene scene = new Scene(root);
+            scene.getStylesheets().add(getClass().getResource("/gui/styles.css").toExternalForm());
             stage.setScene(scene);
+            stage.setFullScreen(false);
+            stage.setMaximized(false);
             stage.show();
             stage.centerOnScreen();
 

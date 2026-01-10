@@ -79,7 +79,24 @@ public class JoinWaitlistController extends BaseTerminalController {
             subscriberFields.setVisible(false);
             subscriberFields.setManaged(false);
             
-            btnJoin.setDisable(false);
+            // For guest mode, button is disabled until at least one field is filled
+            updateJoinButtonState();
+        }
+
+        // Add listeners to enable/disable join button as user types
+        phoneField.textProperty().addListener((obs, old, newValue) -> updateJoinButtonState());
+        emailField.textProperty().addListener((obs, old, newValue) -> updateJoinButtonState());
+    }
+
+    /**
+     * Updates the JOIN WAITLIST button state based on the presence of contact information.
+     * Guests must provide at least a phone number or an email.
+     */
+    private void updateJoinButtonState() {
+        if (BaseTerminalController.currentUserType == BaseTerminalController.UserType.GUEST) {
+            boolean hasPhone = !phoneField.getText().trim().isEmpty();
+            boolean hasEmail = !emailField.getText().trim().isEmpty();
+            btnJoin.setDisable(!hasPhone && !hasEmail);
         }
     }
 

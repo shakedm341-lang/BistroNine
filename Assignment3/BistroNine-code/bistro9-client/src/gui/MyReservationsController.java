@@ -34,7 +34,7 @@ public class MyReservationsController implements Initializable, IReservationView
 	private TableView<TableReservation> reservationsTable;
 
 	@FXML
-	private TableColumn<TableReservation, String> colDateTime;
+	private TableColumn<TableReservation, Timestamp> colDateTime;
 
 	@FXML
 	private TableColumn<TableReservation, Integer> colGuests;
@@ -66,12 +66,18 @@ public class MyReservationsController implements Initializable, IReservationView
 	 */
 	private void initColumns() {
 
-		colDateTime.setCellValueFactory(cellData -> {
-			Timestamp ts = cellData.getValue().getReservationDate();
-			if (ts != null) {
-				return new SimpleStringProperty(ts.toLocalDateTime().format(formatter));
+		colDateTime.setCellValueFactory(new PropertyValueFactory<>("reservationDate"));
+
+		colDateTime.setCellFactory(column -> new TableCell<TableReservation, Timestamp>() {
+			@Override
+			protected void updateItem(Timestamp item, boolean empty) {
+				super.updateItem(item, empty);
+				if (empty || item == null) {
+					setText(null);
+				} else {
+					setText(item.toLocalDateTime().format(formatter));
+				}
 			}
-			return new SimpleStringProperty("");
 		});
 
 		colGuests.setCellValueFactory(new PropertyValueFactory<>("numberOfDiners"));
@@ -103,11 +109,11 @@ public class MyReservationsController implements Initializable, IReservationView
 					private final Button btn = new Button("Cancel");
 
 					{
+						btn.getStyleClass().addAll("btn-table-action", "btn-table-delete");
 						btn.setOnAction((event) -> {
 							TableReservation data = getTableView().getItems().get(getIndex());
 							handleCancelReservation(data);
 						});
-						btn.setStyle("-fx-background-color: #ffcdd2; -fx-text-fill: #b71c1c; -fx-cursor: hand;");
 					}
 
 					@Override

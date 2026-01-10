@@ -66,7 +66,7 @@ public class UserDashboardController {
     public void loadUserDetails(Subscriber user) {
         this.currentUser = user;
         ClientController.userDashboardController = this;
-        lblWelcome.setText("Hello, " + user.getUsername());
+        lblWelcome.setText("Hello, " + user.getFirstName() + " " + user.getLastName());
 
         String type = user.getType(); // Assuming format like "restaurant manager"
 
@@ -312,6 +312,7 @@ public class UserDashboardController {
             Scene scene = new Scene(root);
             scene.getStylesheets().add(getClass().getResource("/gui/styles.css").toExternalForm());
             stage.setScene(scene);
+            stage.setMaximized(false);
             stage.show();
             stage.centerOnScreen();
         } catch (Exception e) {

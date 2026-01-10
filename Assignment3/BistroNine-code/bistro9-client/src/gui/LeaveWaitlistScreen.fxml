@@ -10,25 +10,31 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<VBox alignment="TOP_CENTER" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="800.0" spacing="20.0" style="-fx-background-color: #f5f5f5;" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gui.LeaveWaitlistController">
+<VBox alignment="TOP_CENTER" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="800.0" spacing="20.0" styleClass="main-background" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gui.LeaveWaitlistController">
+   
    <fx:define>
       <ToggleGroup fx:id="customerType" />
    </fx:define>
+   
    <children>
-      <Label text="Leave Waitlist" textFill="#C62828">
-         <font>
-            <Font name="System Bold" size="36.0" />
-         </font>
+      
+      <VBox alignment="CENTER" spacing="5.0">
+         <children>
+            <Label styleClass="title-text" text="Leave Waitlist">
+               <font>
+                  <Font name="System Bold" size="36.0" />
+               </font>
+            </Label>
+            <Label fx:id="lblInstruction" styleClass="subtitle-text" text="Enter your details to remove your entry from the waitlist">
+               <font>
+                  <Font size="16.0" />
+               </font>
+            </Label>
+         </children>
          <VBox.margin>
             <Insets top="20.0" />
          </VBox.margin>
-      </Label>
-      
-      <Label fx:id="lblInstruction" text="Enter your details to remove your entry from the waitlist" textFill="#555555">
-         <font>
-            <Font size="18.0" />
-         </font>
-      </Label>
+      </VBox>
 
       <HBox fx:id="typeSelectionHBox" alignment="CENTER" spacing="40.0">
          <children>
@@ -43,39 +49,60 @@
                </font>
             </RadioButton>
          </children>
+         <VBox.margin>
+            <Insets bottom="10.0" top="10.0" />
+         </VBox.margin>
       </HBox>
 
-      <VBox fx:id="fieldsContainer" alignment="CENTER" maxWidth="500.0" spacing="15.0" style="-fx-background-color: white; -fx-padding: 30; -fx-background-radius: 10; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 5);">
+      <VBox fx:id="fieldsContainer" alignment="CENTER" maxWidth="500.0" spacing="20.0" styleClass="card">
          <children>
-            <!-- Guest Fields -->
-            <VBox fx:id="guestFields" spacing="10.0">
+            
+            <VBox fx:id="guestFields" spacing="15.0">
                <children>
-                  <Label text="Phone Number:" />
-                  <TextField fx:id="phoneField" prefHeight="40.0" promptText="Enter Mobile Number" />
-                  <Label text="Email Address:" />
-                  <TextField fx:id="emailField" prefHeight="40.0" promptText="Enter Email" />
+                  <Label styleClass="subtitle-text" text="Please provide at least one contact method (Phone or Email):" />
+                  <VBox spacing="5.0">
+                     <Label styleClass="input-label" text="Phone Number:" />
+                     <TextField fx:id="phoneField" prefHeight="45.0" promptText="Enter Mobile Number" styleClass="text-field-modern" />
+                  </VBox>
+                  <VBox spacing="5.0">
+                     <Label styleClass="input-label" text="Email Address:" />
+                     <TextField fx:id="emailField" prefHeight="45.0" promptText="Enter Email" styleClass="text-field-modern" />
+                  </VBox>
                </children>
             </VBox>
 
-            <!-- Subscriber Fields -->
             <VBox fx:id="subscriberFields" spacing="10.0">
                <children>
-                  <Label text="Subscriber ID:" />
-                  <TextField fx:id="subscriberIdField" prefHeight="40.0" promptText="Subscriber ID" />
+                  <VBox spacing="5.0">
+                     <Label styleClass="input-label" text="Subscriber ID:" />
+                     <TextField fx:id="subscriberIdField" prefHeight="45.0" promptText="Enter Subscriber ID" styleClass="text-field-modern" />
+                  </VBox>
                </children>
             </VBox>
+            
          </children>
+         <padding>
+            <Insets bottom="40.0" left="40.0" right="40.0" top="40.0" />
+         </padding>
       </VBox>
 
       <HBox alignment="CENTER" spacing="20.0">
          <children>
-            <Button mnemonicParsing="false" onAction="#handleLeave" prefHeight="50.0" prefWidth="250.0" style="-fx-background-color: #D32F2F; -fx-text-fill: white; -fx-font-weight: bold;" text="REMOVE FROM WAITLIST" />
-            <Button fx:id="btnBack" mnemonicParsing="false" onAction="#handleBack" prefHeight="50.0" prefWidth="120.0" style="-fx-background-color: #757575; -fx-text-fill: white;" text="Back" />
+            <Button fx:id="btnRemove" mnemonicParsing="false" onAction="#handleLeave" prefHeight="50.0" prefWidth="250.0" 
+                    style="-fx-background-color: -danger-red; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 8; -fx-cursor: hand;" 
+                    text="REMOVE FROM WAITLIST">
+               <font>
+                  <Font size="16.0" />
+               </font>
+            </Button>
+            
+            <Button fx:id="btnBack" mnemonicParsing="false" onAction="#handleBack" prefHeight="50.0" prefWidth="120.0" styleClass="btn-secondary-dark" text="Back" />
          </children>
          <VBox.margin>
             <Insets top="20.0" />
          </VBox.margin>
       </HBox>
+      
    </children>
    <padding>
       <Insets bottom="30.0" left="30.0" right="30.0" top="30.0" />

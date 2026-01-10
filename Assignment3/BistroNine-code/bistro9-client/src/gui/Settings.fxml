@@ -12,115 +12,100 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
-<?import javafx.scene.text.Font?>
+<?import javafx.scene.layout.Region?>
 
-<VBox prefHeight="650.0" prefWidth="850.0" spacing="15.0" style="-fx-background-color: white;" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gui.SettingsController">
-   <padding>
-      <Insets bottom="20.0" left="20.0" right="20.0" top="10.0" />
-   </padding>
-   <children>
-      <!-- Segmented Toggle Header -->
-      <HBox alignment="CENTER" maxWidth="500.0" prefHeight="40.0" style="-fx-background-color: #f0f0f0; -fx-background-radius: 20; -fx-padding: 3; -fx-border-color: #dddddd; -fx-border-radius: 20;" translateX="150.0">
-         <children>
-            <Button fx:id="btnStandardMode" maxWidth="Infinity" mnemonicParsing="false" onAction="#showStandardHours" prefHeight="34.0" prefWidth="240.0" style="-fx-background-color: #2196f3; -fx-text-fill: white; -fx-background-radius: 17; -fx-cursor: hand;" text="Standard Opening Hours" HBox.hgrow="ALWAYS">
-               <font>
-                  <Font name="System Bold" size="13.0" />
-               </font>
-            </Button>
-            <Button fx:id="btnSpecialMode" maxWidth="Infinity" mnemonicParsing="false" onAction="#showSpecialDates" prefHeight="34.0" prefWidth="240.0" style="-fx-background-color: transparent; -fx-text-fill: #666666; -fx-background-radius: 17; -fx-cursor: hand;" text="Special Dates" HBox.hgrow="ALWAYS">
-               <font>
-                  <Font name="System Bold" size="13.0" />
-               </font>
-            </Button>
-         </children>
-      </HBox>
+<StackPane xmlns="http://javafx.com/javafx/8.0.171" 
+           xmlns:fx="http://javafx.com/fxml/1" 
+           fx:controller="gui.SettingsController">
 
-      <Separator prefWidth="200.0" />
+    <VBox styleClass="card" spacing="10.0" maxHeight="Infinity" maxWidth="Infinity">
+        
+        <padding>
+            <Insets top="20" right="20" bottom="20" left="20"/>
+        </padding>
 
-      <StackPane VBox.vgrow="ALWAYS">
-         <children>
-            <!-- Standard Hours View -->
-            <VBox fx:id="standardHoursView" spacing="20.0">
-               <children>
-                  <HBox alignment="CENTER_LEFT" spacing="15.0">
-                     <children>
-                        <Label text="Select Day:" textFill="#333333">
-                           <font>
-                              <Font name="System Bold" size="15.0" />
-                           </font>
-                        </Label>
-                        <ComboBox fx:id="dayComboBox" onAction="#onDaySelected" prefHeight="35.0" prefWidth="180.0" promptText="Choose a day..." />
-                     </children>
-                  </HBox>
-                  
-                  <TableView fx:id="standardHoursTable" prefHeight="160.0" prefWidth="200.0" style="-fx-border-color: #e0e0e0; -fx-border-radius: 5;">
+        <Label text="Operation Settings" styleClass="subtitle-text" style="-fx-font-weight: bold; -fx-font-size: 20px;"/>
+
+        <HBox alignment="CENTER" maxWidth="500.0" spacing="5.0" 
+              style="-fx-background-color: #F7FAFC; -fx-background-radius: 25; -fx-padding: 4; -fx-border-color: #E2E8F0; -fx-border-radius: 25;">
+            
+            <Button fx:id="btnStandardMode" onAction="#showStandardHours" text="Standard Hours" 
+                    maxWidth="Infinity" HBox.hgrow="ALWAYS" prefHeight="32.0"
+                    style="-fx-background-color: -primary-blue; -fx-text-fill: white; -fx-background-radius: 20; -fx-font-weight: bold; -fx-cursor: hand;"/>
+            
+            <Button fx:id="btnSpecialMode" onAction="#showSpecialDates" text="Special Dates" 
+                    maxWidth="Infinity" HBox.hgrow="ALWAYS" prefHeight="32.0"
+                    style="-fx-background-color: transparent; -fx-text-fill: -text-secondary; -fx-background-radius: 20; -fx-font-weight: bold; -fx-cursor: hand;"/>
+        </HBox>
+
+        <Separator />
+
+        <StackPane VBox.vgrow="ALWAYS">
+            
+            <VBox fx:id="standardHoursView" spacing="15.0">
+                
+                <HBox alignment="CENTER_LEFT" spacing="15.0">
+                     <Label text="Select Day:" styleClass="input-label"/>
+                     <ComboBox fx:id="dayComboBox" onAction="#onDaySelected" prefWidth="180.0" prefHeight="35.0"
+                               style="-fx-background-color: white; -fx-border-color: #CBD5E0; -fx-border-radius: 5;"
+                               promptText="Choose a day..." />
+                </HBox>
+                
+                <TableView fx:id="standardHoursTable" styleClass="modern-table" prefHeight="130.0" VBox.vgrow="NEVER">
                     <columns>
-                      <TableColumn fx:id="standardOpenCol" prefWidth="150.0" text="Open Time" />
-                      <TableColumn fx:id="standardCloseCol" prefWidth="150.0" text="Close Time" />
-                        <TableColumn fx:id="standardActionCol" maxWidth="120.0" minWidth="100.0" prefWidth="110.0" text="Action" />
+                        <TableColumn fx:id="standardOpenCol" prefWidth="150.0" text="Open Time" />
+                        <TableColumn fx:id="standardCloseCol" prefWidth="150.0" text="Close Time" />
+                        <TableColumn fx:id="standardActionCol" prefWidth="120.0" text="Action" />
                     </columns>
-                     <columnResizePolicy>
+                    <columnResizePolicy>
                         <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
-                     </columnResizePolicy>
-                  </TableView>
-                  
-                  <HBox alignment="CENTER_LEFT" spacing="12.0" style="-fx-background-color: #f9f9f9; -fx-padding: 15; -fx-background-radius: 8; -fx-border-color: #eeeeee; -fx-border-radius: 8;">
-                     <children>
-                        <Label text="New Slot:" textFill="#555555">
-                           <font>
-                              <Font name="System Bold" size="13.0" />
-                           </font>
-                        </Label>
-                        <TextField fx:id="standardOpenTxt" prefHeight="35.0" prefWidth="100.0" promptText="08:00" />
-                        <Label text="to" textFill="#888888" />
-                        <TextField fx:id="standardCloseTxt" prefHeight="35.0" prefWidth="100.0" promptText="23:00" />
-                        <Button mnemonicParsing="false" onAction="#addStandardSlot" prefHeight="35.0" prefWidth="100.0" style="-fx-background-color: #2196f3; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand;" text="+ Add Slot" />
-                     </children>
-                  </HBox>
-               </children>
+                    </columnResizePolicy>
+                </TableView>
+                
+                <VBox spacing="10.0" style="-fx-background-color: #F8F9FA; -fx-background-radius: 8; -fx-padding: 10;">
+                    <Label text="Add New Shift" style="-fx-font-weight: bold; -fx-text-fill: -primary-blue;"/>
+                    <HBox alignment="CENTER_LEFT" spacing="15.0">
+                        <TextField fx:id="standardOpenTxt" promptText="08:00" styleClass="text-field-modern" prefWidth="100.0" prefHeight="35.0"/>
+                        <Label text="to" style="-fx-text-fill: -text-secondary;"/>
+                        <TextField fx:id="standardCloseTxt" promptText="23:00" styleClass="text-field-modern" prefWidth="100.0" prefHeight="35.0"/>
+                        
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Button onAction="#addStandardSlot" text="+ Add Shift" styleClass="btn-primary" prefHeight="35.0"/>
+                    </HBox>
+                </VBox>
             </VBox>
 
-            <!-- Special Dates View -->
-            <VBox fx:id="specialDatesView" spacing="20.0" visible="false">
-               <children>
-                  <HBox alignment="CENTER_LEFT" spacing="15.0">
-                     <children>
-                        <Label text="Select Date:" textFill="#333333">
-                           <font>
-                              <Font name="System Bold" size="15.0" />
-                           </font>
-                        </Label>
-                        <DatePicker fx:id="specialDatePicker" onAction="#onDateSelected" prefHeight="35.0" prefWidth="200.0" promptText="Pick a date..." />
-                     </children>
-                  </HBox>
-                  
-                  <TableView fx:id="specialHoursTable" prefHeight="160.0" prefWidth="200.0" style="-fx-border-color: #e0e0e0; -fx-border-radius: 5;">
+            <VBox fx:id="specialDatesView" spacing="15.0" visible="false">
+                
+                <HBox alignment="CENTER_LEFT" spacing="15.0">
+                     <Label text="Select Date:" styleClass="input-label"/>
+                     <DatePicker fx:id="specialDatePicker" onAction="#onDateSelected" prefWidth="200.0" prefHeight="35.0" promptText="Pick a date..." />
+                </HBox>
+                
+                <TableView fx:id="specialHoursTable" styleClass="modern-table" prefHeight="130.0" VBox.vgrow="NEVER">
                     <columns>
-                      <TableColumn fx:id="specialOpenCol" prefWidth="150.0" text="Open Time" />
-                      <TableColumn fx:id="specialCloseCol" prefWidth="150.0" text="Close Time" />
-                        <TableColumn fx:id="specialActionCol" maxWidth="120.0" minWidth="100.0" prefWidth="110.0" text="Action" />
+                        <TableColumn fx:id="specialOpenCol" prefWidth="150.0" text="Open Time" />
+                        <TableColumn fx:id="specialCloseCol" prefWidth="150.0" text="Close Time" />
+                        <TableColumn fx:id="specialActionCol" prefWidth="120.0" text="Action" />
                     </columns>
-                     <columnResizePolicy>
+                    <columnResizePolicy>
                         <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
-                     </columnResizePolicy>
-                  </TableView>
-                  
-                  <HBox alignment="CENTER_LEFT" spacing="12.0" style="-fx-background-color: #f9f9f9; -fx-padding: 15; -fx-background-radius: 8; -fx-border-color: #eeeeee; -fx-border-radius: 8;">
-                     <children>
-                        <Label text="New Slot:" textFill="#555555">
-                           <font>
-                              <Font name="System Bold" size="13.0" />
-                           </font>
-                        </Label>
-                        <TextField fx:id="specialOpenTxt" prefHeight="35.0" prefWidth="100.0" promptText="08:00" />
-                        <Label text="to" textFill="#888888" />
-                        <TextField fx:id="specialCloseTxt" prefHeight="35.0" prefWidth="100.0" promptText="23:00" />
-                        <Button mnemonicParsing="false" onAction="#addSpecialSlot" prefHeight="35.0" prefWidth="100.0" style="-fx-background-color: #2196f3; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand;" text="+ Add Slot" />
-                     </children>
-                  </HBox>
-               </children>
+                    </columnResizePolicy>
+                </TableView>
+                
+                <VBox spacing="10.0" style="-fx-background-color: #F8F9FA; -fx-background-radius: 8; -fx-padding: 10;">
+                    <Label text="Add Special Shift" style="-fx-font-weight: bold; -fx-text-fill: -primary-blue;"/>
+                    <HBox alignment="CENTER_LEFT" spacing="15.0">
+                        <TextField fx:id="specialOpenTxt" promptText="08:00" styleClass="text-field-modern" prefWidth="100.0" prefHeight="35.0"/>
+                        <Label text="to" style="-fx-text-fill: -text-secondary;"/>
+                        <TextField fx:id="specialCloseTxt" promptText="23:00" styleClass="text-field-modern" prefWidth="100.0" prefHeight="35.0"/>
+                        
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Button onAction="#addSpecialSlot" text="+ Add Shift" styleClass="btn-primary" prefHeight="35.0"/>
+                    </HBox>
+                </VBox>
             </VBox>
-         </children>
-      </StackPane>
-   </children>
-</VBox>
+
+        </StackPane>
+    </VBox>
+</StackPane>

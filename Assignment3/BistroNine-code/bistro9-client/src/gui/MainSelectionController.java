@@ -8,6 +8,7 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 public class MainSelectionController {
@@ -46,18 +47,62 @@ public class MainSelectionController {
     @FXML
     void enterRemoteAccess(ActionEvent event) {
         try {
-            
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/LoginScreen.fxml"));
             Parent root = loader.load();
             
             LoginController loginController = loader.getController();
             loginController.setClient(client);
+            loginController.setMode(LoginController.Mode.REMOTE);
             
-            System.out.println("Entering Remote Access (Login)...");
-            switchScene(event, root, "BistroNine Client - Login Screen");
+            // Create a completely new Stage for the Remote Mode application
+            Stage remoteStage = new Stage();
+            remoteStage.setTitle("BistroNine Client - Login");
+
+            Scene scene = new Scene(root);
+            String cssPath = getClass().getResource("/gui/styles.css").toExternalForm();
+            scene.getStylesheets().add(cssPath);
+            remoteStage.setScene(scene);
+            remoteStage.setResizable(false);
+
+            // Close the current (Main Selection) stage
+            Stage currentStage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            currentStage.close();
+
+            // Show and center the new remote stage
+            System.out.println("Opening standalone Remote Login window...");
+            remoteStage.show();
+            remoteStage.centerOnScreen();
             
         } catch (Exception e) {
-            System.out.println("Error loading Login Screen (Ensure the FXML exists!)");
+            System.out.println("Error launching Remote Mode window:");
+            e.printStackTrace();
+        }
+    }
+
+    @FXML
+    void handleBackToConnection(ActionEvent event) {
+        try {
+            // If the client is connected, we might want to close the connection
+            if (client != null) {
+                // client.closeConnection(); // Assuming there's a close method if needed
+            }
+
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/ConnectToServerGui.fxml"));
+            Parent root = loader.load();
+
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            stage.setTitle("BistroNine Client - Connection to Server");
+            Scene scene = new Scene(root);
+            String cssPath = getClass().getResource("/gui/styles.css").toExternalForm();
+            scene.getStylesheets().add(cssPath);
+            stage.setScene(scene);
+            stage.setResizable(false);
+            stage.setMaximized(false);
+            stage.show();
+            stage.centerOnScreen();
+
+        } catch (Exception e) {
+            System.out.println("Error returning to Connection Screen:");
             e.printStackTrace();
         }
     }
@@ -66,18 +111,37 @@ public class MainSelectionController {
         Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
         stage.setTitle(title);
 
-        // By default, allow resizing unless we explicitly want a fixed window.
-        // The login screen should NOT be resizable.
-        if (title.contains("Login Screen")) {
+        Scene scene = stage.getScene();
+        if (scene == null) {
+            scene = new Scene(root);
+            stage.setScene(scene);
+        } else {
+            scene.setRoot(root);
+        }
+
+        // Ensure stylesheet is present
+        String cssPath = getClass().getResource("/gui/styles.css").toExternalForm();
+        if (!scene.getStylesheets().contains(cssPath)) {
+            scene.getStylesheets().add(cssPath);
+        }
+
+        // Terminal Identification should be maximized
+        if (title.contains("Terminal Identification")) {
+            stage.setFullScreen(false);
+            stage.setMaximized(true);
+        } else if (title.contains("Login Screen")) {
+            stage.setFullScreen(false);
+            stage.setMaximized(false);
             stage.setResizable(false);
         } else {
+            stage.setFullScreen(false);
+            stage.setMaximized(false);
             stage.setResizable(true);
         }
 
-        Scene scene = new Scene(root);
-        scene.getStylesheets().add(getClass().getResource("/gui/styles.css").toExternalForm());
-        stage.setScene(scene);
         stage.show();
-        stage.centerOnScreen();
+        if (!stage.isFullScreen() && !stage.isMaximized()) {
+            stage.centerOnScreen();
+        }
     }
 }
