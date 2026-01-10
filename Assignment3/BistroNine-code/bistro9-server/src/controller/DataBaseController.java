@@ -92,9 +92,13 @@ public class DataBaseController {
 	// 56. deleteOpeningTimeQuery(OpeningHours) : boolean
 	// 57. deleteSpecialOpeningTimeQuery(OpeningHoursPerDay) : boolean
 	// 58. updateBillAmountsQuery(Bill) : boolean
+	// 59. closeRestaurantOnSpecialDayQuery(OpeningHoursPerDay) : boolean
+	// 60. updateSpecialOpeningTimeQuery(OpeningHoursPerDay, OpeningHoursPerDay) :
+	// boolean
+
 	// .
 	// END OF API.
-	
+
 	private static DataBaseController instance;
 
 	// DB connection settings data
@@ -3234,14 +3238,18 @@ public class DataBaseController {
 		return false;
 	}
 
-	//52
+	// 52
 	/**
-	 * Retrieves the entire waiting list from the database, ordered by entry time (FIFO).
+	 * Retrieves the entire waiting list from the database, ordered by entry time
+	 * (FIFO).
 	 * <p>
-	 * The list is sorted in ascending order of <code>entryTimeToList</code>, ensuring that customers who arrived first appear at the top of the list.
+	 * The list is sorted in ascending order of <code>entryTimeToList</code>,
+	 * ensuring that customers who arrived first appear at the top of the list.
 	 * </p>
 	 *
-	 * @return An ArrayList of ArrayLists, where each inner list contains the raw data fields (ID, reservation ref, group size, times, status, type) of a single waiting entry, or null on error.
+	 * @return An ArrayList of ArrayLists, where each inner list contains the raw
+	 *         data fields (ID, reservation ref, group size, times, status, type) of
+	 *         a single waiting entry, or null on error.
 	 */
 	public ArrayList<ArrayList<Object>> getWaitingListQuery() {
 		ArrayList<ArrayList<Object>> waitingList = new ArrayList<>();
@@ -3286,7 +3294,7 @@ public class DataBaseController {
 		return waitingList;
 	}
 
-	//53
+	// 53
 	/**
 	 * Retrieves table details by tableId and updates the Table object.
 	 * 
@@ -3333,13 +3341,16 @@ public class DataBaseController {
 		return null; // Return null if not found
 	}
 
-	//54
+	// 54
 	/**
-	 * Updates the status and exit timestamp for a specific entry in the waiting list.
-	 * This is typically used when a customer is moved to a table or leaves the queue.
+	 * Updates the status and exit timestamp for a specific entry in the waiting
+	 * list. This is typically used when a customer is moved to a table or leaves
+	 * the queue.
 	 *
-	 * @param waiter The WaitList object containing the waitingId, the new status, and the exit time.
-	 * @return true if the update was successful (record found and modified), false otherwise.
+	 * @param waiter The WaitList object containing the waitingId, the new status,
+	 *               and the exit time.
+	 * @return true if the update was successful (record found and modified), false
+	 *         otherwise.
 	 */
 	public boolean updateStatusAndExitTimeInWaitingListQuery(WaitList waiter) {
 		PooledConnection pConn = this.getConnection();
@@ -3369,16 +3380,20 @@ public class DataBaseController {
 		}
 		return false;
 	}
-	//55
+
+	// 55
 	/**
-	 * Performs a logical deletion of a customer from the waiting list by marking them as cancelled.
+	 * Performs a logical deletion of a customer from the waiting list by marking
+	 * them as cancelled.
 	 * <p>
-	 * Instead of physically removing the row from the database, this method updates the status to 'cancelled'
-	 * and sets the exit time to the current server timestamp. This preserves the record for historical analysis.
+	 * Instead of physically removing the row from the database, this method updates
+	 * the status to 'cancelled' and sets the exit time to the current server
+	 * timestamp. This preserves the record for historical analysis.
 	 * </p>
 	 *
 	 * @param waiter The WaitList object containing the ID of the entry to cancel.
-	 * @return true if the record was successfully found and updated, false otherwise.
+	 * @return true if the record was successfully found and updated, false
+	 *         otherwise.
 	 */
 	public boolean deleteFromWaitList(WaitList waiter) {
 		PooledConnection pConn = this.getConnection();
@@ -3407,12 +3422,13 @@ public class DataBaseController {
 		return false;
 	}
 
-	//56
+	// 56
 	/**
-	 * Checks if there are any active entries in the waiting list that can be accommodated by a specific table capacity.
+	 * Checks if there are any active entries in the waiting list that can be
+	 * accommodated by a specific table capacity.
 	 * <p>
-	 * This method queries the database to see if any customer with status 'waiting' has a group size
-	 * less than or equal to the provided number of seats.
+	 * This method queries the database to see if any customer with status 'waiting'
+	 * has a group size less than or equal to the provided number of seats.
 	 * </p>
 	 *
 	 * @param tableSeats The number of seats available at the table being queried.
@@ -3449,7 +3465,7 @@ public class DataBaseController {
 		return false;
 	}
 
-	//57
+	// 57
 	/**
 	 * Checks if a specific confirmation code already exists in the waiting_list
 	 * table. joins waiting_list with table_reservations to find the code.  
@@ -3496,15 +3512,17 @@ public class DataBaseController {
 		return false;
 	}
 
-	//58
+	// 58
 	/**
 	 * Adds a new entry to the restaurant's waiting list.
 	 * <p>
-	 * This method inserts a record containing the reservation reference, group size, and type (e.g., 'walk_in' or 'check_in').
-	 * Default values for the entry timestamp and initial status (usually 'waiting') are handled by the database.
+	 * This method inserts a record containing the reservation reference, group
+	 * size, and type (e.g., 'walk_in' or 'check_in'). Default values for the entry
+	 * timestamp and initial status (usually 'waiting') are handled by the database.
 	 * </p>
 	 *
-	 * @param newWait The WaitList object containing the reservationId, number of diners, and queue type.
+	 * @param newWait The WaitList object containing the reservationId, number of
+	 *                diners, and queue type.
 	 * @return true if the insertion was successful, false otherwise.
 	 */
 	public boolean addToWaitList(WaitList newWait) {
@@ -3541,6 +3559,206 @@ public class DataBaseController {
 			closeResources(ps, null);
 			releaseConnection(pConn);
 		}
+		return false;
+	}
+
+	// 59
+	/**
+	 * Explicitly closes the restaurant on a specific date by setting its hours to
+	 * 00:00-00:00.
+	 * <p>
+	 * This method performs an atomic transaction: 1. <b>Deletes</b> any existing
+	 * special hours entries for the target date (cleaning the slate). 2.
+	 * <b>Inserts</b> a single new record with openingTime = 00:00 and closingTime =
+	 * 00:00.
+	 * </p>
+	 *
+	 * @param openingHours The OpeningHoursPerDay object containing the target date
+	 *                     and the "closed" time slot.
+	 * @return true if the operation (delete + insert) was completed successfully,
+	 *         false otherwise.
+	 */
+	public boolean closeRestaurantOnSpecialDayQuery(OpeningHoursPerDay openingHours) {
+		PooledConnection pConn = this.getConnection();
+
+		if (pConn == null) {
+			return false;
+		}
+
+		Connection conn = pConn.getConnection();
+		PreparedStatement psDelete = null;
+		PreparedStatement psInsert = null;
+		boolean success = false;
+
+		try {
+			conn.setAutoCommit(false); // Start Transaction
+
+			// STEP 1: Delete ANY existing records for this date
+			// We don't check rowsAffected here because it's okay if the day was already
+			// empty.
+			String deleteQuery = "DELETE FROM special_hours WHERE specificDate = ?";
+			psDelete = conn.prepareStatement(deleteQuery);
+			psDelete.setDate(1, java.sql.Date.valueOf(openingHours.getDay()));
+			psDelete.executeUpdate();
+
+			// STEP 2: Insert the "Closed" record (00:00 - 00:00)
+			String insertQuery = "INSERT INTO special_hours (specificDate, openingTime, closingTime) VALUES (?, ?, ?)";
+			psInsert = conn.prepareStatement(insertQuery);
+
+			for (TimeSlot slot : openingHours.getSlots()) {
+				psInsert.setDate(1, java.sql.Date.valueOf(openingHours.getDay()));
+				psInsert.setTime(2, java.sql.Time.valueOf(slot.getOpen()));
+				psInsert.setTime(3, java.sql.Time.valueOf(slot.getClose()));
+
+				psInsert.executeUpdate();
+			}
+
+			conn.commit(); // Commit both changes
+			success = true;
+
+		} catch (SQLException e) {
+			System.out.println("Error closing restaurant on special day: " + e.getMessage());
+			e.printStackTrace();
+			try {
+				if (conn != null)
+					conn.rollback();
+			} catch (SQLException ex) {
+				ex.printStackTrace();
+			}
+			return false;
+		} finally {
+			try {
+				if (conn != null)
+					conn.setAutoCommit(true);
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+			closeResources(psDelete, null);
+			closeResources(psInsert, null);
+			releaseConnection(pConn);
+		}
+
+		return success;
+	}
+
+	// 60
+	/**
+	 * Updates a specific special opening hour record, changing its start and end
+	 * times.
+	 * <p>
+	 * This method identifies the row to update by matching the <b>date</b> and the
+	 * <b>original</b> opening/closing times. It then updates that specific row with
+	 * the <b>new</b> opening and closing times provided.
+	 * </p>
+	 *
+	 * @param oldHours The OpeningHoursPerDay object containing the date and the
+	 *                 <b>original</b> time slot (used for the WHERE clause).
+	 * @param newHours The OpeningHoursPerDay object containing the <b>new</b> time
+	 *                 slot (used for the SET clause).
+	 * @return true if the record was found and updated successfully, false
+	 *         otherwise.
+	 */
+	public boolean updateSpecialOpeningTimeQuery(OpeningHoursPerDay oldHours, OpeningHoursPerDay newHours) {
+		PooledConnection pConn = this.getConnection();
+
+		if (pConn == null) {
+			return false;
+		}
+
+		Connection conn = pConn.getConnection();
+		PreparedStatement ps = null;
+
+		try {
+			// Extract the single time slots from the lists (Logic ensures size is 1)
+			TimeSlot oldSlot = oldHours.getSlots().get(0);
+			TimeSlot newSlot = newHours.getSlots().get(0);
+
+			String query = "UPDATE special_hours SET openingTime = ?, closingTime = ? "
+					+ "WHERE specificDate = ? AND openingTime = ? AND closingTime = ?";
+
+			ps = conn.prepareStatement(query);
+
+			// SET clause (The NEW values)
+			ps.setTime(1, java.sql.Time.valueOf(newSlot.getOpen()));
+			ps.setTime(2, java.sql.Time.valueOf(newSlot.getClose()));
+
+			// WHERE clause (The OLD values to identify the row)
+			ps.setDate(3, java.sql.Date.valueOf(oldHours.getDay()));
+			ps.setTime(4, java.sql.Time.valueOf(oldSlot.getOpen()));
+			ps.setTime(5, java.sql.Time.valueOf(oldSlot.getClose()));
+
+			int rowsAffected = ps.executeUpdate();
+
+			return rowsAffected > 0;
+
+		} catch (SQLException e) {
+			System.out.println("Error updating special opening time: " + e.getMessage());
+			e.printStackTrace();
+		} finally {
+			closeResources(ps, null);
+			releaseConnection(pConn);
+		}
+
+		return false;
+	}
+
+	// 61
+	/**
+	 * Updates a specific weekly opening hour record (Standard Schedule).
+	 * <p>
+	 * This method identifies the row to update by matching the <b>day of the
+	 * week</b> and the <b>original</b> opening/closing times. It then updates that
+	 * specific row with the <b>new</b> opening and closing times provided.
+	 * </p>
+	 *
+	 * @param oldHours The OpeningHours object containing the day string and the
+	 *                 <b>original</b> time slot (used for the WHERE clause).
+	 * @param newHours The OpeningHours object containing the <b>new</b> time slot
+	 *                 (used for the SET clause).
+	 * @return true if the record was found and updated successfully, false
+	 *         otherwise.
+	 */
+	public boolean updateOpeningTimeQuery(OpeningHours oldHours, OpeningHours newHours) {
+		PooledConnection pConn = this.getConnection();
+
+		if (pConn == null) {
+			return false;
+		}
+
+		Connection conn = pConn.getConnection();
+		PreparedStatement ps = null;
+
+		try {
+			// Extract the single time slots from the lists (Logic ensures size is 1)
+			TimeSlot oldSlot = oldHours.getSlots().get(0);
+			TimeSlot newSlot = newHours.getSlots().get(0);
+
+			String query = "UPDATE weekly_hours SET openingTime = ?, closingTime = ? "
+					+ "WHERE dayOfWeek = ? AND openingTime = ? AND closingTime = ?";
+
+			ps = conn.prepareStatement(query);
+
+			// SET clause (The NEW values)
+			ps.setTime(1, java.sql.Time.valueOf(newSlot.getOpen()));
+			ps.setTime(2, java.sql.Time.valueOf(newSlot.getClose()));
+
+			// WHERE clause (The OLD values to identify the row)
+			ps.setString(3, oldHours.getDay()); // e.g., "SUNDAY"
+			ps.setTime(4, java.sql.Time.valueOf(oldSlot.getOpen()));
+			ps.setTime(5, java.sql.Time.valueOf(oldSlot.getClose()));
+
+			int rowsAffected = ps.executeUpdate();
+
+			return rowsAffected > 0;
+
+		} catch (SQLException e) {
+			System.out.println("Error updating weekly opening time: " + e.getMessage());
+			e.printStackTrace();
+		} finally {
+			closeResources(ps, null);
+			releaseConnection(pConn);
+		}
+
 		return false;
 	}
 
