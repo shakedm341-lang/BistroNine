@@ -94,9 +94,7 @@ public class DataBaseController {
 	// 58. updateBillAmountsQuery(Bill) : boolean
 	// .
 	// END OF API.
-	//.
-	//.
-	//.
+	
 	private static DataBaseController instance;
 
 	// DB connection settings data
