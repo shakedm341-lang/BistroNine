@@ -593,9 +593,9 @@ public class CustomerController
 			}
 
 
-			EmailSendController.sendEmail(sub.getEmail(), "Confirmation Code Recovery","Don't worry bistro9 is here for you, everything is saved with us!\n"+"Here are all the confirmation codes for your orders for today:"+codesAsString);// send email to the customer with all his confirmation codes for today
+			EmailSendController.sendEmail(sub.getEmail(), "Confirmation Code Recovery","Don't worry bistro9 is here for you, everything is saved with us!\n"+"Here are all the confirmation codes for your orders for today:\n"+codesAsString);// send email to the customer with all his confirmation codes for today
 
-			SmsSendController.sendSms(sub.getPhoneNumber(), "Confirmation Code Recovery","Don't worry bistro9 is here for you, everything is saved with us!\n"+"Here are all the confirmation codes for your orders for today:"+codesAsString);
+			SmsSendController.sendSms(sub.getPhoneNumber(), "Confirmation Code Recovery","Don't worry bistro9 is here for you, everything is saved with us!\n"+"Here are all the confirmation codes for your orders for today:\n"+codesAsString);
 
 		}
 		else {

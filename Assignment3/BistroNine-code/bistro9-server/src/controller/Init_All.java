@@ -75,7 +75,7 @@ public class Init_All {
     private static void initOpeningHours(Connection con, Statement stmt) throws SQLException {
         String[] days = {"SUNDAY", "MONDAY", "WEDNESDAY", "THURSDAY"};
         for (String d : days) stmt.executeUpdate("INSERT INTO weekly_hours VALUES ('" + d + "', '08:00:00', '23:00:00')");
-        stmt.executeUpdate("INSERT INTO weekly_hours VALUES ('TUESDAY', '08:00:00', '12:00:00'), ('TUESDAY', '16:00:00', '23:00:00'), ('FRIDAY', '08:00:00', '14:00:00'), ('SATURDAY', '20:00:00', '23:59:59')");
+        stmt.executeUpdate("INSERT INTO weekly_hours VALUES ('TUESDAY', '08:00:00', '12:00:00'), ('TUESDAY', '16:00:00', '23:00:00'), ('FRIDAY', '08:00:00', '14:00:00'), ('SATURDAY', '20:00:00', '01:00:00')");
     }
 
     private static void initSpecialHours(Connection con, Statement stmt) throws SQLException {
@@ -189,19 +189,26 @@ public class Init_All {
 
             int confCode = 5000;
             
-            // --- השינוי כאן: קביעת תאריך התחלה קשיח ל-01.12.2025 ---
-            LocalDate date = LocalDate.of(2025, 12, 1); 
+            // תאריך התחלה: 01.12.2025 (כפי שביקשת קודם)
+            LocalDate startDate = LocalDate.of(2025, 12, 1);
             
-            // הגדלתי קצת את הלולאה (ל-70 יום) כדי שתכסה גם את פברואר
-            for (int i = 0; i < 70; i++) { 
-                createDailyReservations(con, psRes, psBill, psWaitHistory, custIds, date.plusDays(i), confCode);
-                confCode += 30;
+            // תאריך סיום: היום הנוכחי + חודש אחד קדימה
+            LocalDate endDate = LocalDate.now().plusMonths(1);
+
+            // חישוב מספר הימים שיש בין ההתחלה לסיום
+            long daysToCreate = ChronoUnit.DAYS.between(startDate, endDate);
+
+            // לולאה שרצה בדיוק על הטווח הזה
+            for (int i = 0; i <= daysToCreate; i++) { 
+                createDailyReservations(con, psRes, psBill, psWaitHistory, custIds, startDate.plusDays(i), confCode);
+                confCode += 30; // קידום קוד האישור
             }
         }
+        System.out.println("Reservations created from 2025-12-01 until one month from now.");
     }
 
     private static void createDailyReservations(Connection con, PreparedStatement psRes, PreparedStatement psBill, PreparedStatement psWaitHistory, List<Integer> custIds, LocalDate date, int startConfCode) throws SQLException {
-        // דילוג אם זה יום סגור או היום הנוכחי
+        // דילוג אם זה יום סגור או היום הנוכחי (כדי ש-LiveDining יטפל בהיום)
         if (isDayClosed(con, date) || date.equals(LocalDate.now())) return;
 
         boolean isFutureDate = date.isAfter(LocalDate.now());
@@ -212,7 +219,26 @@ public class Init_All {
 
         // 1. עומס מלא (Peak Days)
         if (isPeakDay) {
-            LocalTime peakHour = LocalTime.of(19, 0);
+            LocalTime peakHour;
+
+            // --- לוגיקה חדשה לבחירת שעת השיא לפי שעות הפתיחה של אותו יום ---
+            boolean isFriday = date.getDayOfWeek() == java.time.DayOfWeek.FRIDAY;
+            boolean isSaturday = date.getDayOfWeek() == java.time.DayOfWeek.SATURDAY;
+            boolean isEarlyClosingDate = date.equals(LocalDate.of(2026, 1, 15)) || date.equals(LocalDate.of(2026, 4, 1));
+            boolean isLateOpeningDate = date.equals(LocalDate.of(2026, 1, 20));
+
+            if (isFriday || isEarlyClosingDate) {
+                // ימים שנסגרים ב-14:00 -> נעשה את העומס ב-12:00 בצהריים
+                peakHour = LocalTime.of(12, 0); 
+            } else if (isSaturday || isLateOpeningDate) {
+                // ימים שנפתחים רק בערב (20:00 או 19:00) -> נעשה את העומס ב-21:00
+                peakHour = LocalTime.of(21, 0);
+            } else {
+                // ימים רגילים -> עומס בערב
+                peakHour = LocalTime.of(19, 0);
+            }
+            // -------------------------------------------------------------
+
             for (int i = 0; i < 10; i++) {
                 int custId = custIds.get(random.nextInt(custIds.size()));
                 LocalDateTime scheduledTime = LocalDateTime.of(date, peakHour);
@@ -220,12 +246,14 @@ public class Init_All {
                 psRes.setTimestamp(5, Timestamp.valueOf(scheduledTime));
                 
                 if (scheduledTime.isBefore(now)) {
+                     // עבר
                      psRes.setTimestamp(6, Timestamp.valueOf(scheduledTime));
                      psRes.setTimestamp(7, Timestamp.valueOf(scheduledTime.plusHours(2)));
                      psRes.setString(8, "completed");
                      psRes.executeUpdate();
                      createBill(psBill, psRes, true);
                 } else {
+                     // עתיד
                      psRes.setNull(6, java.sql.Types.TIMESTAMP); psRes.setNull(7, java.sql.Types.TIMESTAMP);
                      psRes.setString(8, "active");
                      psRes.executeUpdate();
@@ -240,52 +268,36 @@ public class Init_All {
         for (int i = 0; i < dailyRes; i++) {
             LocalTime rTime = getRandomOpenTime(con, date);
             if (rTime == null) continue;
-            if (isPeakDay && rTime.getHour() == 19) rTime = rTime.minusHours(3);
+            
+            // תיקון: אם זה יום שיא בערב, לא נקבע הזמנות נוספות שמתנגשות עם ה-Peak Hour שבחרנו
+            if (isPeakDay) {
+                // אם בחרנו שעת שיא 19:00, נזיז את המפוזרים לצהריים
+                // אם בחרנו שעת שיא 12:00 (יום שישי), זה בסדר כי הרנדום יפזר אותם
+                 if (rTime.getHour() == 19) rTime = rTime.minusHours(3);
+            }
 
             LocalDateTime scheduled = LocalDateTime.of(date, rTime);
             int custId = custIds.get(random.nextInt(custIds.size()));
             int diners = 2 + random.nextInt(4);
 
-            // --- לוגיקה חדשה: גיוון בזמני הגעה ועזיבה ---
+            // גיוון בזמנים (מגיעים מוקדם/מאוחר/בזמן)
             LocalDateTime actualArrival;
             LocalDateTime actualLeaving;
-
             double arrChance = random.nextDouble();
             double leaveChance = random.nextDouble();
 
-            // חישוב זמן הגעה בפועל
-            if (arrChance < 0.20) {
-                // 20% מקדימים משמעותית (15 עד 45 דקות לפני הזמן)
-                actualArrival = scheduled.minusMinutes(15 + random.nextInt(31));
-            } else if (arrChance < 0.40) {
-                // 20% מאחרים (15 עד 30 דקות אחרי הזמן)
-                actualArrival = scheduled.plusMinutes(15 + random.nextInt(16));
-            } else if (arrChance < 0.70) {
-                // 30% מדויקים (בדיוק בזמן או +/- 2 דקות)
-                actualArrival = scheduled.plusMinutes(random.nextInt(5) - 2);
-            } else {
-                // 30% רגיל (סטייה קלה של +/- 10 דקות)
-                actualArrival = scheduled.plusMinutes(random.nextInt(21) - 10);
-            }
+            if (arrChance < 0.20) actualArrival = scheduled.minusMinutes(15 + random.nextInt(31));
+            else if (arrChance < 0.40) actualArrival = scheduled.plusMinutes(15 + random.nextInt(16));
+            else if (arrChance < 0.70) actualArrival = scheduled.plusMinutes(random.nextInt(5) - 2);
+            else actualArrival = scheduled.plusMinutes(random.nextInt(21) - 10);
 
-            // חישוב זמן שהייה (ומתוכו זמן עזיבה)
             long durationMinutes;
-            if (leaveChance < 0.20) {
-                // 20% נתקעים במסעדה (בין שעתיים וחצי ל-3.5 שעות)
-                durationMinutes = 150 + random.nextInt(61);
-            } else if (leaveChance < 0.40) {
-                // 20% אוכלים מהר ועפים (בין 45 דקות לשעה ורבע)
-                durationMinutes = 45 + random.nextInt(31);
-            } else if (leaveChance < 0.70) {
-                // 30% שעתיים בול
-                durationMinutes = 120;
-            } else {
-                // 30% רגיל (שעתיים +/- רבע שעה)
-                durationMinutes = 105 + random.nextInt(31);
-            }
+            if (leaveChance < 0.20) durationMinutes = 150 + random.nextInt(61);
+            else if (leaveChance < 0.40) durationMinutes = 45 + random.nextInt(31);
+            else if (leaveChance < 0.70) durationMinutes = 120;
+            else durationMinutes = 105 + random.nextInt(31);
 
             actualLeaving = actualArrival.plusMinutes(durationMinutes);
-            // ---------------------------------------------------
 
             boolean isFutureTime = scheduled.isAfter(now);
             boolean isOngoing = !isFutureTime && actualLeaving.isAfter(now); 
@@ -296,26 +308,20 @@ public class Init_All {
             psRes.setTimestamp(5, Timestamp.valueOf(scheduled));
 
             if (isFutureTime) {
-                // עתיד
                 psRes.setNull(1, java.sql.Types.INTEGER);
                 psRes.setNull(6, java.sql.Types.TIMESTAMP); psRes.setNull(7, java.sql.Types.TIMESTAMP);
                 psRes.setString(8, "active");
                 psRes.executeUpdate();
-
             } else if (isOngoing) {
                  continue; 
-
             } else {
-                // עבר
-                boolean cancelled = random.nextDouble() < 0.2; // 20% ביטול
+                boolean cancelled = random.nextDouble() < 0.2; 
                 psRes.setInt(1, 1 + random.nextInt(10));
                 psRes.setTimestamp(6, Timestamp.valueOf(actualArrival)); psRes.setTimestamp(7, Timestamp.valueOf(actualLeaving));
                 psRes.setString(8, cancelled ? "cancelled" : "completed");
                 psRes.executeUpdate();
 
-                if (!cancelled) {
-                    createBill(psBill, psRes, true);
-                }
+                if (!cancelled) createBill(psBill, psRes, true);
 
                 if (!date.equals(LocalDate.now()) && random.nextDouble() < 0.3) {
                     ResultSet rs = psRes.getGeneratedKeys();
@@ -408,13 +414,69 @@ public class Init_All {
         // מבוטל
     }
 
+ // פונקציה חכמה שמגרילה שעה בהתאם לשעות הפתיחה והחוק של "שעתיים לפני סגירה"
     private static LocalTime getRandomOpenTime(Connection con, LocalDate date) {
-        return LocalTime.of(9 + random.nextInt(12), 0);
+        int startHour = 8;  // שעת פתיחה ברירת מחדל
+        int closeHour = 23; // שעת סגירה ברירת מחדל
+
+        java.time.DayOfWeek day = date.getDayOfWeek();
+        
+        // 1. בדיקת ימים מיוחדים
+        if (date.equals(LocalDate.of(2026, 1, 15)) || date.equals(LocalDate.of(2026, 4, 1))) {
+            // ימים שנסגרים ב-14:00 (חגים/ימים קצרים)
+            closeHour = 14; 
+        } else if (date.equals(LocalDate.of(2026, 1, 20))) {
+            // יום שנפתח מאוחר (אירוע בערב)
+            startHour = 19;
+            closeHour = 24; // חצות
+        } else if (date.equals(LocalDate.of(2026, 1, 25))) {
+            // יום עם פיצול (נניח שנבחר רק מהערב לצורך הפשטות)
+            startHour = 16;
+            closeHour = 23;
+        } 
+        // 2. בדיקת ימי שגרה
+        else if (day == java.time.DayOfWeek.FRIDAY) {
+            closeHour = 14;
+        } else if (day == java.time.DayOfWeek.SATURDAY) {
+            startHour = 20;
+            closeHour = 24;
+        } else if (day == java.time.DayOfWeek.TUESDAY) {
+            // יום שלישי מפוצל (08-12, 16-23).
+            // נגריל: אם יוצא מספר נמוך נלך לבוקר, אחרת לערב
+            if (random.nextBoolean()) {
+                closeHour = 12; // משמרת בוקר
+            } else {
+                startHour = 16; // משמרת ערב
+                closeHour = 23;
+            }
+        }
+
+        // --- יישום החוק: מקסימום הזמנה = שעתיים לפני הסגירה ---
+        int maxReservationHour = closeHour - 2;
+
+        // הגנה: אם בטעות נוצר מצב ששעת ההתחלה גדולה מהמקסימום (למשל נפתח ב-20:00 ונסגר ב-21:00)
+        if (startHour > maxReservationHour) {
+            return null; 
+        }
+
+        // הגרלת שעה בטווח המותר
+        int randomHour = startHour + random.nextInt(maxReservationHour - startHour + 1);
+        
+        // הגרלת דקות (00, 15, 30, 45)
+        int randomMinute = random.nextInt(4) * 15;
+
+        return LocalTime.of(randomHour, randomMinute);
     }
 
     private static boolean isDayClosed(Connection con, LocalDate date) {
-        return date.equals(LocalDate.of(2025, 12, 25));
+        // רשימת ימים סגורים (כולל חגים ושיפוצים)
+        return date.equals(LocalDate.of(2025, 12, 25)) || 
+               date.equals(LocalDate.of(2026, 1, 1)) || 
+               date.equals(LocalDate.of(2026, 1, 28)) || 
+               date.equals(LocalDate.of(2026, 4, 22));
     }
+
+  
 
     private static void initReports(Connection con, Statement stmt) throws SQLException {
         System.out.println("Initializing historical reports for November...");
