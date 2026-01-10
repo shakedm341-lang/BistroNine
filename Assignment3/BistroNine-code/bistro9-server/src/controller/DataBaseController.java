@@ -91,9 +91,10 @@ public class DataBaseController {
 	// 55. updateOpeningTimeQuery(OpeningHours) : boolean
 	// 56. deleteOpeningTimeQuery(OpeningHours) : boolean
 	// 57. deleteSpecialOpeningTimeQuery(OpeningHoursPerDay) : boolean
+	// 58. updateBillAmountsQuery(Bill) : boolean
 	// .
 	// END OF API.
-
+	//.
 	private static DataBaseController instance;
 
 	// DB connection settings data
@@ -237,6 +238,7 @@ public class DataBaseController {
 	 * ///////////////////////////////////
 	 */
 
+	// 1
 	/**
 	 * Deletes specific special opening hours for a specific date. Implements STRICT
 	 * "All-or-Nothing" logic: If even ONE slot is not found, it stops, rolls back,
@@ -313,6 +315,7 @@ public class DataBaseController {
 		return success;
 	}
 
+	// 2
 	/**
 	 * Deletes specific weekly opening hours. Implements STRICT "All-or-Nothing"
 	 * logic: If even ONE slot is not found (rowsAffected == 0), it immediately
@@ -384,6 +387,7 @@ public class DataBaseController {
 		return success;
 	}
 
+	// 3
 	/**
 	 * Adds new weekly opening hours for a specific day of the week. This method
 	 * inserts new slots without deleting existing ones. * @param openingHours The
@@ -457,8 +461,7 @@ public class DataBaseController {
 		return success;
 	}
 
-	// 54
-
+	// 4
 	/**
 	 * Updates an existing bill record with payment details, amounts, and discount
 	 * info.
@@ -495,6 +498,16 @@ public class DataBaseController {
 		return false;
 	}
 
+	// 5
+	/**
+	 * Updates the financial details (totals and discounts) of a specific bill in
+	 * the database.
+	 *
+	 * @param bill The Bill object containing the billId and the new amount/discount
+	 *             values to be updated.
+	 * @return true if the update was successful (the bill existed and was
+	 *         modified), false otherwise.
+	 */
 	public boolean updateBillAmountsQuery(Bill bill) {
 		PooledConnection pConn = this.getConnection();
 		if (pConn == null)
@@ -525,8 +538,7 @@ public class DataBaseController {
 		return false;
 	}
 
-	// 53
-
+	// 6
 	/**
 	 * Retrieves the reservation ID associated with a specific bill ID.
 	 *
@@ -568,8 +580,7 @@ public class DataBaseController {
 		return 0;
 	}
 
-	// 52
-
+	// 7
 	/**
 	 * Updates the reservation date and time for a specific reservation.
 	 *
@@ -614,6 +625,7 @@ public class DataBaseController {
 		return false;
 	}
 
+	// 8
 	/**
 	 * Checks if a report already exists in the report_manager table for the given
 	 * date range and type.
@@ -662,6 +674,7 @@ public class DataBaseController {
 		return false;
 	}
 
+	// 9
 	/**
 	 * Cancels a waiting list entry by setting status to 'cancelled' based on the
 	 * reservation ID. This is used when a reservation is auto-cancelled due to
@@ -706,6 +719,7 @@ public class DataBaseController {
 		return false;
 	}
 
+	// 10
 	/**
 	 * Calculates the average arrival delay (Actual Arrival - Scheduled Time) in
 	 * minutes for a specific date. Only considers 'completed' reservations.
@@ -753,6 +767,7 @@ public class DataBaseController {
 		return null; // Return null on error
 	}
 
+	// 11
 	/**
 	 * Calculates the average overstay duration (Leaving Time - (Arrival Time + 2
 	 * Hours)) in minutes. Only considers 'completed' reservations. * @param date
@@ -800,6 +815,7 @@ public class DataBaseController {
 		return null; // Return null on error
 	}
 
+	// 12
 	/**
 	 * Inserts a new time report into the database. Uses a Transaction to ensure
 	 * both report_manager and time_report tables are updated correctly.
@@ -894,6 +910,7 @@ public class DataBaseController {
 		return false;
 	}
 
+	// 13
 	/**
 	 * Retrieves the time report data for a specific date range by fetching
 	 * pre-saved data directly from the time_report table. * @param report The
@@ -944,6 +961,7 @@ public class DataBaseController {
 		return false;
 	}
 
+	// 14
 	/**
 	 * Counts total 'completed' reservations for a specific date.
 	 * 
@@ -986,6 +1004,7 @@ public class DataBaseController {
 		return -1; // Return -1 on error
 	}
 
+	// 15
 	/**
 	 * Counts total 'seated' customers from the waiting list for a specific date.
 	 * 
@@ -1030,6 +1049,7 @@ public class DataBaseController {
 		return -1; // Return -1 on error
 	}
 
+	// 16
 	/**
 	 * Inserts a new subscriber report into the database. Uses a Transaction to
 	 * ensure both report_manager and subscriber_report tables are updated
@@ -1125,6 +1145,7 @@ public class DataBaseController {
 		return false;
 	}
 
+	// 17
 	/**
 	 * Retrieves the subscriber report data for a specific date range by fetching
 	 * pre-saved data directly from the subscriber_report table. * @param report The
@@ -1175,6 +1196,7 @@ public class DataBaseController {
 		return false;
 	}
 
+	// 18
 	/**
 	 * Retrieves the standard weekly opening hours for a specific day of the week.
 	 * Populates the slots in the passed OpeningHours object.
@@ -1238,6 +1260,7 @@ public class DataBaseController {
 		return false;
 	}
 
+	// 19
 	/**
 	 * Retrieves all dates that have special hours defined in the database.
 	 * 
@@ -1286,7 +1309,17 @@ public class DataBaseController {
 		return false;
 	}
 
-	// הושלם
+	// 20
+	/**
+	 * Retrieves all reservation records associated with a specific customer ID from
+	 * the database.
+	 *
+	 * @param customerId The unique identifier of the customer whose reservations
+	 *                   are to be fetched.
+	 * @return An ArrayList of ArrayLists, where each inner list contains the raw
+	 *         data fields of a single reservation, or null if the database
+	 *         connection fails.
+	 */
 	public ArrayList<ArrayList<Object>> getAllReservationsQueryByCustomerId(int customerId) {
 
 		ArrayList<ArrayList<Object>> allReservations = new ArrayList<>();
@@ -1335,7 +1368,18 @@ public class DataBaseController {
 		return allReservations;
 	}
 
-	// c1
+	// 21
+	/**
+	 * Retrieves all reservation records scheduled for a specific date from the
+	 * database. This method filters by the date part of the reservation timestamp,
+	 * ignoring the specific time.
+	 *
+	 * @param day The LocalDate representing the day for which to retrieve
+	 *            reservations.
+	 * @return An ArrayList of ArrayLists, where each inner list contains the raw
+	 *         data fields of a single reservation, or null if the database
+	 *         connection fails.
+	 */
 	public ArrayList<ArrayList<Object>> getAllReservationsQueryByDay(LocalDate day) {
 
 		ArrayList<ArrayList<Object>> allReservations = new ArrayList<>();
@@ -1389,8 +1433,23 @@ public class DataBaseController {
 		return allReservations;
 	}
 
-	// c2
-
+	// 22
+	/**
+	 * Retrieves the effective opening hours for a specific date, prioritizing
+	 * specific overrides over the general schedule.
+	 * <p>
+	 * Logic Flow: 1. <b>Special Hours:</b> Checks for specific date overrides
+	 * first. If an entry exists where start equals end time, the day is marked as
+	 * explicitly CLOSED. 2. <b>Weekly Hours:</b> If no special hours exist for the
+	 * date, falls back to the standard weekly schedule for that day of the week.
+	 * </p>
+	 *
+	 * @param openingHours The OpeningHoursPerDay object containing the date to
+	 *                     query.
+	 * @return The same OpeningHoursPerDay object populated with the found
+	 *         TimeSlots, or with a null list if the restaurant is closed or on
+	 *         error.
+	 */
 	public OpeningHoursPerDay getOpeningHoursByDate(OpeningHoursPerDay openingHours) {
 
 		// 1. Get connection from the pool
@@ -1490,8 +1549,15 @@ public class DataBaseController {
 		return openingHours;
 	}
 
-	// c3
-
+	// 23
+	/**
+	 * Retrieves the complete list of all physical tables defined in the restaurant
+	 * configuration.
+	 *
+	 * @return An ArrayList of ArrayLists, where each inner list contains the
+	 *         details (ID, seat count, location, status) of a single table, or null
+	 *         if the database connection fails.
+	 */
 	public ArrayList<ArrayList<Object>> getAllTablesInRestaurant() {
 
 		ArrayList<ArrayList<Object>> allTables = new ArrayList<>();
@@ -1532,30 +1598,7 @@ public class DataBaseController {
 		return allTables;
 	}
 
-	/*
-	 * public boolean updateReservationDetailsQuery(TableReservation t) {
-	 * PooledConnection pConn = null;//The connection from the "connection pool"
-	 * PreparedStatement ps = null;//The SQL statement to be executed
-	 * 
-	 * try { pConn = getConnection();//Get a connection from the "connection pool"
-	 * if (pConn == null) return false;
-	 * 
-	 * //SQL query to update the reservation details String sql =
-	 * "UPDATE tablereservations SET ReservationDate = ?, numberOfDiners = ? WHERE reservationID = ?"
-	 * ;
-	 * 
-	 * //Set the parameters for the SQL query ps =
-	 * pConn.getConnection().prepareStatement(sql); ps.setTimestamp(1,
-	 * t.getReservationDate()); ps.setInt(2, t.getNumberOfDiners()); ps.setInt(3,
-	 * t.getReservationId());
-	 * 
-	 * return ps.executeUpdate() > 0;
-	 * 
-	 * } catch (SQLException e) { e.printStackTrace(); return false; } finally { if
-	 * (ps != null) try { ps.close(); } catch (SQLException e) {}
-	 * releaseConnection(pConn); } }
-	 */
-
+	// 24
 	/**
 	 * Checks the login details of a subscriber against the database.
 	 * 
@@ -1564,7 +1607,6 @@ public class DataBaseController {
 	 * @return The Subscriber object with full details if credentials are correct,
 	 *         null otherwise.
 	 */
-	// הושלם
 	public Subscriber checkLoginDetails(Subscriber sub) {
 		// FIX 1: Retrieve the connection from the pool properly
 		PooledConnection pConn = this.getConnection();
@@ -1615,8 +1657,7 @@ public class DataBaseController {
 		return null; // Credentials are incorrect
 	}
 
-	// d1
-
+	// 25
 	// updated 31/12/25 to logically delete by changing
 	// the status to cancelled.
 	/**
@@ -1664,8 +1705,7 @@ public class DataBaseController {
 		return false;
 	}
 
-	// d2
-
+	// 26
 	/**
 	 * Updates the status of a reservation (e.g., from 'active' to 'cancelled').
 	 * 
@@ -1709,8 +1749,7 @@ public class DataBaseController {
 		return false;
 	}
 
-	// d3
-
+	// 27
 	/**
 	 * Retrieves bill details from the database based on the reservation ID and
 	 * updates the provided Bill object.
@@ -1764,7 +1803,22 @@ public class DataBaseController {
 		return bill;
 	}
 
-	// n6
+	// 28
+	/**
+	 * Inserts a new reservation record into the database and updates the provided
+	 * object with server-generated fields.
+	 * <p>
+	 * Upon successful insertion, this method automatically: 1. Retrieves the
+	 * auto-generated <b>reservationId</b>. 2. Fetches the default <b>status</b> and
+	 * <b>creation timestamp</b> assigned by the database. 3. Updates the passed
+	 * TableReservation object with these values.
+	 * </p>
+	 *
+	 * @param res The TableReservation object containing the reservation details
+	 *            (customer, time, diners).
+	 * @return true if the reservation was successfully created and the object
+	 *         updated, false on database error.
+	 */
 	public boolean createNewReservation(TableReservation res) {
 		// 1. Get the pooled connection
 		PooledConnection pConn = this.getConnection();
@@ -1840,6 +1894,7 @@ public class DataBaseController {
 		return false;
 	}
 
+	// 29
 	/**
 	 * Checks if a specific confirmation code already exists in the database. Used
 	 * to ensure that generated confirmation codes are unique.
@@ -1847,7 +1902,6 @@ public class DataBaseController {
 	 * @param code The confirmation code to check.
 	 * @return true if the code already exists, false if it is unique.
 	 */
-	// הושלם
 	public boolean checkIfConfCodeExistsInDB(int code) {
 		// FIX 1: Get the pooled connection properly
 		PooledConnection pConn = this.getConnection();
@@ -1882,6 +1936,7 @@ public class DataBaseController {
 		return false;
 	}
 
+	// 30
 	/**
 	 * Retrieves the customer ID for a given customer based on their phone number or
 	 * email. If the customer does not exist, a new record is created in the
@@ -1890,7 +1945,6 @@ public class DataBaseController {
 	 * @param cust The Customer object containing phone number and email.
 	 * @return The customer ID if found or created, -1 on failure.
 	 */
-	// הושלם
 	public int getCustomerId(Customer cust) {
 		// FIX 1: Get the pooled connection properly
 		PooledConnection pConn = this.getConnection();
@@ -1950,6 +2004,19 @@ public class DataBaseController {
 		return customerId;
 	}
 
+	// STATIC METHOD
+	/**
+	 * Utility method to safely close JDBC resources (Statement and ResultSet).
+	 * <p>
+	 * This method performs null checks and suppresses any SQLExceptions that might
+	 * occur during closing. This ensures that exceptions in the
+	 * <code>finally</code> block do not mask the original exception from the
+	 * <code>try</code> block.
+	 * </p>
+	 *
+	 * @param stmt The PreparedStatement to close.
+	 * @param rs   The ResultSet to close.
+	 */
 	private static void closeResources(PreparedStatement stmt, ResultSet rs) {
 		try {
 			if (rs != null)
@@ -1963,8 +2030,7 @@ public class DataBaseController {
 		}
 	}
 
-	// e1
-
+	// 31
 	/**
 	 * Inserts a new subscriber into the database and returns the generated
 	 * subscriberId.
@@ -2023,8 +2089,7 @@ public class DataBaseController {
 		return newSubscriberId;
 	}
 
-	// e2
-
+	// 32
 	/**
 	 * Updates the contact details (phone/email) of a subscriber (linked to the
 	 * customer table). Only non-null fields in the Subscriber object will be
@@ -2105,8 +2170,7 @@ public class DataBaseController {
 		return false;
 	}
 
-	// e3
-
+	// 33
 	/**
 	 * Retrieves all subscribers from the database, including their contact info
 	 * from the customer table.
@@ -2183,6 +2247,7 @@ public class DataBaseController {
 		return allSubscribers;
 	}
 
+	// 34
 	/**
 	 * Retrieves the discount percentage for a specific customer type.
 	 * 
@@ -2227,6 +2292,7 @@ public class DataBaseController {
 		return discount;
 	}
 
+	// 35
 	/**
 	 * Inserts a new bill record into the database.
 	 * 
@@ -2273,7 +2339,7 @@ public class DataBaseController {
 		return false;
 	}
 
-	// n17
+	// 36
 	/**
 	 * Retrieves reservation details using the confirmation code. Updates the passed
 	 * TableReservation object with the data found.
@@ -2332,6 +2398,7 @@ public class DataBaseController {
 		return false;
 	}
 
+	// 37
 	/**
 	 * Retrieves bill details using the reservation ID. Updates the passed Bill
 	 * object with the data found.
@@ -2386,6 +2453,7 @@ public class DataBaseController {
 		return false;
 	}
 
+	// 38
 	/**
 	 * Updates a bill to status 'Paid' and sets the payment method. Returns the
 	 * associated reservationId upon success.
@@ -2446,6 +2514,7 @@ public class DataBaseController {
 		return reservationId;
 	}
 
+	// 39
 	/**
 	 * Retrieves reservation details using the reservation ID. Updates the passed
 	 * TableReservation object with the data found.
@@ -2498,6 +2567,7 @@ public class DataBaseController {
 		return false;
 	}
 
+	// 40
 	/**
 	 * Retrieves the customer type string based on the customer ID.
 	 * 
@@ -2553,6 +2623,7 @@ public class DataBaseController {
 		return type;
 	}
 
+	// 41
 	/**
 	 * Updates the opening hours for a specific day by deleting old entries and
 	 * inserting new ones (Transaction-based).
@@ -2629,6 +2700,7 @@ public class DataBaseController {
 		return success;
 	}
 
+	// 42
 	/**
 	 * Appends new special opening hours for a specific date to the existing ones.
 	 * This method does NOT delete existing entries; it only adds new rows. * @param
@@ -2699,6 +2771,7 @@ public class DataBaseController {
 		return success;
 	}
 
+	// 43
 	/**
 	 * Retrieves all reservations from the database.
 	 * 
@@ -2752,6 +2825,7 @@ public class DataBaseController {
 		return allReservations;
 	}
 
+	// 44
 	/**
 	 * Updates the leaving time for a specific reservation.
 	 * 
@@ -2794,6 +2868,7 @@ public class DataBaseController {
 		return false;
 	}
 
+	// 45
 	/**
 	 * Retrieves all reservations with status 'active' or 'arrived'.
 	 * 
@@ -2848,6 +2923,7 @@ public class DataBaseController {
 		return activeReservations;
 	}
 
+	// 46
 	/**
 	 * Retrieves customer details by ID. If the customer is a subscriber, it fetches
 	 * the full profile. If the customer is a regular customer, it fetches only
@@ -2915,6 +2991,7 @@ public class DataBaseController {
 		return false;
 	}
 
+	// 47
 	/**
 	 * Updates the status of a restaurant table.
 	 * 
@@ -2958,6 +3035,7 @@ public class DataBaseController {
 		return false;
 	}
 
+	// 48
 	/**
 	 * Updates the number of seats for a restaurant table.
 	 * 
@@ -3000,6 +3078,7 @@ public class DataBaseController {
 		return false;
 	}
 
+	// 49
 	/**
 	 * Updates an existing reservation with new details (Table ID, Arrival Time,
 	 * Status).
@@ -3058,6 +3137,7 @@ public class DataBaseController {
 		return false;
 	}
 
+	// 50
 	/**
 	 * Inserts a new table into the database and retrieves the generated ID.
 	 * 
@@ -3109,6 +3189,7 @@ public class DataBaseController {
 		return null;
 	}
 
+	// 51
 	// updated 31/12/25 to only change the status
 	// to cancelled instead of real delete.
 	/**
@@ -3153,11 +3234,14 @@ public class DataBaseController {
 		return false;
 	}
 
+	//52
 	/**
-	 * Retrieves all waiting list entries. Indices match
-	 * WaitListController.getAllWaitingAsWaitList: 0: waitingId, 1: reservationId,
-	 * 2: numberOfDiners, 3: entryTimeToList, 4: exitTimeFromList, 5: status, 6:
-	 * type
+	 * Retrieves the entire waiting list from the database, ordered by entry time (FIFO).
+	 * <p>
+	 * The list is sorted in ascending order of <code>entryTimeToList</code>, ensuring that customers who arrived first appear at the top of the list.
+	 * </p>
+	 *
+	 * @return An ArrayList of ArrayLists, where each inner list contains the raw data fields (ID, reservation ref, group size, times, status, type) of a single waiting entry, or null on error.
 	 */
 	public ArrayList<ArrayList<Object>> getWaitingListQuery() {
 		ArrayList<ArrayList<Object>> waitingList = new ArrayList<>();
@@ -3202,6 +3286,7 @@ public class DataBaseController {
 		return waitingList;
 	}
 
+	//53
 	/**
 	 * Retrieves table details by tableId and updates the Table object.
 	 * 
@@ -3248,9 +3333,13 @@ public class DataBaseController {
 		return null; // Return null if not found
 	}
 
+	//54
 	/**
-	 * Updates the status and exit time of a waiter. Corresponds to:
-	 * DBC.updateStatusAndExitTimeInWaitingListQuery(waiter)
+	 * Updates the status and exit timestamp for a specific entry in the waiting list.
+	 * This is typically used when a customer is moved to a table or leaves the queue.
+	 *
+	 * @param waiter The WaitList object containing the waitingId, the new status, and the exit time.
+	 * @return true if the update was successful (record found and modified), false otherwise.
 	 */
 	public boolean updateStatusAndExitTimeInWaitingListQuery(WaitList waiter) {
 		PooledConnection pConn = this.getConnection();
@@ -3280,10 +3369,16 @@ public class DataBaseController {
 		}
 		return false;
 	}
-
+	//55
 	/**
-	 * Logically deletes a waiter by setting status to 'cancelled'. Corresponds to:
-	 * DBC.deleteFromWaitList(waiter)
+	 * Performs a logical deletion of a customer from the waiting list by marking them as cancelled.
+	 * <p>
+	 * Instead of physically removing the row from the database, this method updates the status to 'cancelled'
+	 * and sets the exit time to the current server timestamp. This preserves the record for historical analysis.
+	 * </p>
+	 *
+	 * @param waiter The WaitList object containing the ID of the entry to cancel.
+	 * @return true if the record was successfully found and updated, false otherwise.
 	 */
 	public boolean deleteFromWaitList(WaitList waiter) {
 		PooledConnection pConn = this.getConnection();
@@ -3312,9 +3407,16 @@ public class DataBaseController {
 		return false;
 	}
 
+	//56
 	/**
-	 * Checks if there is anyone in the waiting list ('waiting') who could fit at a
-	 * table with the specific number of seats.
+	 * Checks if there are any active entries in the waiting list that can be accommodated by a specific table capacity.
+	 * <p>
+	 * This method queries the database to see if any customer with status 'waiting' has a group size
+	 * less than or equal to the provided number of seats.
+	 * </p>
+	 *
+	 * @param tableSeats The number of seats available at the table being queried.
+	 * @return true if at least one matching waiting group exists, false otherwise.
 	 */
 	public boolean isTableNeededQueue(int tableSeats) {
 		PooledConnection pConn = this.getConnection();
@@ -3347,6 +3449,7 @@ public class DataBaseController {
 		return false;
 	}
 
+	//57
 	/**
 	 * Checks if a specific confirmation code already exists in the waiting_list
 	 * table. joins waiting_list with table_reservations to find the code.  
@@ -3393,9 +3496,16 @@ public class DataBaseController {
 		return false;
 	}
 
+	//58
 	/**
-	 * Inserts a new entry into the waiting_list. Corresponds to:
-	 * DBC.addToWaitList(newWait) in WaitListController.
+	 * Adds a new entry to the restaurant's waiting list.
+	 * <p>
+	 * This method inserts a record containing the reservation reference, group size, and type (e.g., 'walk_in' or 'check_in').
+	 * Default values for the entry timestamp and initial status (usually 'waiting') are handled by the database.
+	 * </p>
+	 *
+	 * @param newWait The WaitList object containing the reservationId, number of diners, and queue type.
+	 * @return true if the insertion was successful, false otherwise.
 	 */
 	public boolean addToWaitList(WaitList newWait) {
 		PooledConnection pConn = this.getConnection();
