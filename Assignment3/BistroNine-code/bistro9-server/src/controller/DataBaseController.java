@@ -95,6 +95,7 @@ public class DataBaseController {
 	// .
 	// END OF API.
 	//.
+	//.
 	private static DataBaseController instance;
 
 	// DB connection settings data
