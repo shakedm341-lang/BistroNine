@@ -8,6 +8,7 @@ import java.util.Random;
 
 import data.Bill;
 import data.Customer;
+import data.HistoryReservation;
 import data.Message;
 
 import data.Subscriber;

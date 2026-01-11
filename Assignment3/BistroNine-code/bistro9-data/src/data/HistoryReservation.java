@@ -1,4 +1,4 @@
-package controller;
+package data;
 
 import java.sql.Timestamp;
 
