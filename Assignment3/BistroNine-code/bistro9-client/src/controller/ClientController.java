@@ -230,6 +230,7 @@ public class ClientController extends AbstractClient {
             case ADD_NEW_SPECIAL_OPENING_TIME:
             case DELETE_OPENING_TIME:
             case DELETE_SPECIAL_OPENING_TIME:
+            case CLOSE_RESTAURANT_ON_SPECIAL_DAY:
                 handleSaveOpeningHoursResponse(message);
                 break;
                 
@@ -391,8 +392,8 @@ public class ClientController extends AbstractClient {
     // Helper method for handling the save response (update/add) for opening hours
     private void handleSaveOpeningHoursResponse(Message message) {
         if (settingsController != null) {
-            Boolean success = (Boolean) message.content;
-            settingsController.onSaveResponse(success);// Notify the boundary about the save operation status
+            Object response = message.content;
+            settingsController.onSaveResponse(response);// Notify the boundary about the save operation status
         }
     }
     

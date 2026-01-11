@@ -35,6 +35,8 @@ public class UserDashboardController {
     @FXML
     private Button btnMyReservations;
     @FXML
+    private Button btnVisitHistory;
+    @FXML
     private Button btnNewReservation;
     @FXML
     private Button btnLeaveWaitlist;
@@ -150,6 +152,24 @@ public class UserDashboardController {
             Parent root = loader.load();
 
             MyReservationsController controller = loader.getController();
+            controller.setDependencies(this.currentUser, this.client);
+
+            contentArea.getChildren().clear();
+            contentArea.getChildren().add(root);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @FXML
+    void goToVisitHistory(ActionEvent event) {
+        try {
+            setActiveButton((Button) event.getSource());
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/VisitHistory.fxml"));
+            Parent root = loader.load();
+
+            VisitHistoryController controller = loader.getController();
             controller.setDependencies(this.currentUser, this.client);
 
             contentArea.getChildren().clear();
@@ -302,13 +322,14 @@ public class UserDashboardController {
     @FXML
     void doLogout(ActionEvent event) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/MainSelection.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/LoginScreen.fxml"));
             Parent root = loader.load();
-            MainSelectionController controller = loader.getController();
+            LoginController controller = loader.getController();
             controller.setClient(client);
+            controller.setMode(LoginController.Mode.REMOTE);
 
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            stage.setTitle("BistroNine - Select Mode");
+            stage.setTitle("BistroNine Client - Login");
             Scene scene = new Scene(root);
             scene.getStylesheets().add(getClass().getResource("/gui/styles.css").toExternalForm());
             stage.setScene(scene);

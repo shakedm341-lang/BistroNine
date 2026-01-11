@@ -101,6 +101,7 @@
                         <TextField fx:id="specialCloseTxt" promptText="23:00" styleClass="text-field-modern" prefWidth="100.0" prefHeight="35.0"/>
                         
                         <Region HBox.hgrow="ALWAYS"/>
+                        <Button fx:id="btnCloseDay" onAction="#closeRestaurantForDay" text="Close Entire Day" styleClass="btn-danger" prefHeight="35.0"/>
                         <Button onAction="#addSpecialSlot" text="+ Add Shift" styleClass="btn-primary" prefHeight="35.0"/>
                     </HBox>
                 </VBox>

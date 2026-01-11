@@ -43,7 +43,7 @@
                         <Label text="Number of Diners" styleClass="input-label"/>
                         <HBox alignment="CENTER" styleClass="stepper-container" spacing="0" maxWidth="Infinity">
                              <Button onAction="#decreaseDiners" text="-" styleClass="stepper-btn"/>
-                             <TextField fx:id="txtDiners" text="2" editable="false" 
+                             <TextField fx:id="txtDiners" text="1" editable="false" 
                                         styleClass="stepper-field" prefWidth="60" alignment="CENTER"/>
                              <Button onAction="#increaseDiners" text="+" styleClass="stepper-btn"/>
                         </HBox>
@@ -78,11 +78,6 @@
                 <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
                 
                 <HBox spacing="15.0" alignment="CENTER_LEFT">
-                    <VBox HBox.hgrow="ALWAYS" spacing="5">
-                        <Label text="Full Name" styleClass="input-label"/>
-                        <TextField fx:id="nameTxt" disable="true" styleClass="text-field-modern"/>
-                    </VBox>
-                    
                     <VBox HBox.hgrow="ALWAYS" spacing="5">
                         <Label text="Phone" styleClass="input-label"/>
                         <TextField fx:id="phoneTxt" disable="true" styleClass="text-field-modern"/>

@@ -86,6 +86,8 @@
     -fx-padding: 10px 20px;
     -fx-cursor: hand;
     -fx-font-weight: bold;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
 }
 
 .btn-primary:hover {
@@ -346,6 +348,21 @@
 .form-bg {
     -fx-background-color: -input-background; /* Grayish background for the editing area */
     -fx-background-radius: 12px;
+}
+
+/* --- Red Button (Danger) --- */
+.btn-danger {
+    -fx-background-color: -danger-red;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8px;
+    -fx-cursor: hand;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+
+.btn-danger:hover {
+    -fx-background-color: #C53030; /* Darker red */
 }
 
 /* --- Green Button (Success) --- */

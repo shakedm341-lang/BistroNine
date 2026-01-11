@@ -41,6 +41,9 @@
                     <Button fx:id="btnMyReservations" mnemonicParsing="false" onAction="#goToMyReservations"
                             styleClass="nav-btn" text="My Reservations" maxWidth="Infinity"/>
 
+                    <Button fx:id="btnVisitHistory" mnemonicParsing="false" onAction="#goToVisitHistory"
+                            styleClass="nav-btn" text="Visit History" maxWidth="Infinity"/>
+
                     <Button fx:id="btnNewReservation" mnemonicParsing="false" onAction="#openNewReservation"
                             styleClass="nav-btn" text="New Reservation" maxWidth="Infinity"/>
                     

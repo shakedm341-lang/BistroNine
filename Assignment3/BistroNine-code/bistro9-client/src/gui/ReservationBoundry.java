@@ -34,7 +34,6 @@ public class ReservationBoundry {
     @FXML private ListView<String> timeList;
     @FXML private Button btnCheckAvailability; // Added reference to the new button
 
-    @FXML private TextField nameTxt;
     @FXML private TextField phoneTxt;
     @FXML private Button btnCreate;
     @FXML private TextField emailTxt;
@@ -46,6 +45,7 @@ public class ReservationBoundry {
 
     
     private boolean isRepMod = false;
+    private boolean isEmbedded = false;
     
     public void initData(Subscriber user, boolean custMod) {
         initData(user, custMod, false);
@@ -54,18 +54,16 @@ public class ReservationBoundry {
     public void initData(Subscriber user, boolean custMod, boolean isEmbedded) {
         this.currentUser = user;
         this.isRepMod = custMod;
+        this.isEmbedded = isEmbedded;
 
         if (user != null && !custMod) {
             // mode: SUBSCRIBER
 
             // 1. Pre-fill the fields with subscriber details
-            // Note: Using First+Last name is usually better for reservations than Username
-            nameTxt.setText(user.getFirstName() + " " + user.getLastName());
             phoneTxt.setText(user.getPhoneNumber());
             emailTxt.setText(user.getEmail());
 
             // 2. Disable fields - Subscribers cannot edit their registered details here
-            nameTxt.setDisable(true);
             phoneTxt.setDisable(true);
             emailTxt.setDisable(true);
 
@@ -76,12 +74,10 @@ public class ReservationBoundry {
             // mode: GUEST USER
 
             // 1. Clear any previous data to ensure a clean form
-            nameTxt.clear();
             phoneTxt.clear();
             emailTxt.clear();
 
             // 2. Enable fields - Guests must manually enter their details
-            nameTxt.setDisable(false);
             phoneTxt.setDisable(false);
             emailTxt.setDisable(false);
 
@@ -263,10 +259,25 @@ public class ReservationBoundry {
         String phone = phoneTxt.getText().trim(); 
         String email = emailTxt.getText().trim();
 
-        // 2. Validation: Ensure at least Phone OR Email is provided 
-        if (phone.isEmpty() && email.isEmpty()) {
-            showAlert(AlertType.WARNING, "Missing Contact Info", "Please enter at least a Phone Number OR an Email Address.");
-            return;
+        // 2. Health Checks for Guest/Representative Mode
+        if (currentUser == null || isRepMod) {
+            // Check if both are empty
+            if (phone.isEmpty() && email.isEmpty()) {
+                showAlert(AlertType.WARNING, "Missing Contact Info", "Please enter at least a phone number or an email address.");
+                return;
+            }
+
+            // Validate Phone if provided: Must be exactly 10 digits
+            if (!phone.isEmpty() && !phone.matches("^\\d{10}$")) {
+                showAlert(AlertType.WARNING, "Invalid Phone", "Phone number must be exactly 10 digits.");
+                return;
+            }
+
+            // Validate Email if provided: Must contain @ and a dot suffix (e.g., .com, .co.il)
+            if (!email.isEmpty() && !email.matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")) {
+                showAlert(AlertType.WARNING, "Invalid Email", "Please enter a valid email (e.g. name@example.com).");
+                return;
+            }
         }
 
         // 3. Prepare Data for Server
@@ -281,8 +292,8 @@ public class ReservationBoundry {
         } else {
             // Case B: Guest or Representative creating for a customer
             params.add("customer");                    // Index 0: Type
-            params.add(phone.isEmpty() ? null : phone);// Index 1: Phone (or null if empty)
-            params.add(email.isEmpty() ? null : email);// Index 2: Email (or null if empty)
+            params.add(phone);                         // Index 1: Phone
+            params.add(email);                         // Index 2: Email
         }
 
         //Add Number of Diners
@@ -320,6 +331,27 @@ public class ReservationBoundry {
     }
     
     /**
+     * Resets the reservation form to its initial state.
+     */
+    private void resetForm() {
+        // 1. Reset date picker
+        datePicker.setValue(null);
+        
+        // 2. Reset diners count
+        diners = 1;
+        txtDiners.setText(String.valueOf(diners));
+        
+        // 3. Clear time slots
+        timeList.getItems().clear();
+        
+        // 4. Reset create button
+        btnCreate.setDisable(true);
+        
+        // 5. Re-initialize based on current user mode (to handle field clearing/pre-filling)
+        initData(currentUser, isRepMod, isEmbedded);
+    }
+
+    /**
      * Callback method to handle the server's response.
      * The server now returns an Integer (Confirmation Code) on success, or null on failure.
      */
@@ -333,7 +365,7 @@ public class ReservationBoundry {
                         "Your Confirmation Code is: " + confirmationCode + "\n" +
                         "Please save this code for future reference.");
                 
-                // Optional: Clear form or go back to home
+                resetForm();
             } else {
                 showAlert(AlertType.ERROR, "Failure", 
                     "Failed to create reservation.\nPlease check your details and try again.");
