@@ -6,14 +6,15 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Random;
 
+import data.Bill;
 import data.Customer;
 import data.Message;
-import data.OpeningHoursPerDay;
+
 import data.Subscriber;
 import data.Table;
 import data.TableReservation;
 import data.TimeSlot;
-import data.WaitList;
+
 
 public class ReservationControler 
 {
@@ -51,7 +52,10 @@ public class ReservationControler
 
 		case GET_ALL_RESERVATIONS:
 			return getAllReservations();
-
+			
+		case GET_HISTORY_RESERVATION_BY_CUSTOMER_ID:
+			return getHistoryReservationByCustomerId(msg);
+			
 		case CREATE_NEW_RESERVATION:
 			return createNewReservation(msg);
 
@@ -498,6 +502,60 @@ public class ReservationControler
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////Logic methods//////////////////////////////////////////////////////////////////////
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	
+	/**
+	 * Retrieves the history of reservations for a specific customer from the
+	 * database.
+	 *
+	 * @param msg The message containing the customer details. The content of the
+	 *           message is expected to be an ArrayList<Object> with the following
+	 *           order: [Location 0 :typeCustomer (String), if
+	 *           customer Location 1,2: phone number(String) and/or email(String) if
+	 *           subscribers Location 1:customerId ]
+	 * 
+	 * @return An ArrayList of HistoryReservation objects representing the
+	 *        reservation history for the specified customer.
+	 *        an empty list if there are no reservations.
+	 */
+	private ArrayList<HistoryReservation> getHistoryReservationByCustomerId(Message msg)
+	{
+		ArrayList<TableReservation> reservation =  getAllReservationsByCustomerId(msg);
+		if (reservation == null) {
+	        return new ArrayList<>(); //Return an empty list if there are no reservations
+	    }
+		ArrayList<HistoryReservation> historyResreservations = new ArrayList<>();
+		
+		for (TableReservation res : reservation) 
+        {
+			HistoryReservation historyRes = new HistoryReservation();
+			historyRes.setTableId(res.getTableId());
+			historyRes.setNumberOfDiners(res.getNumberOfDiners());
+			historyRes.setConfirmationCode(res.getConfirmationCode());
+			historyRes.setReservationDate(res.getReservationDate());
+			historyRes.setDateOfMakeReservation(res.getDateOfMakeReservation());
+			historyRes.setStatus(res.getStatus());
+			
+			if ("completed".equals(res.getStatus())) 
+			{
+				Bill bill = new Bill();
+				bill.setReservationId(res.getReservationId());
+				if (DBC.getBillByReservationId(bill)) 
+				{
+					historyRes.setTotalAmountAfterDiscount(bill.getTotalAmountAfterDiscount());
+					historyRes.setDiscountSize(bill.getDiscountSize());
+					historyRes.setPaymentMethod(bill.getPaymentMethod());
+				}
+				else {
+					System.out.println("Error: Could not retrieve bill for reservation ID " + res.getReservationId());
+				}
+			}
+
+			historyResreservations.add(historyRes);
+        }
+        
+		return historyResreservations;
+	}
+	
 	/**
 	 * Retrieves all table reservations from the database.
 	 *
@@ -1014,6 +1072,9 @@ public class ReservationControler
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////Automated tasks//////////////////////////////////////////////////////////////////////
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	
+	
+	
 	/**
 	 * Deletes late reservations from the DB. A reservation is considered late
 	 * if the customer has not arrived within 15 minutes of the reservation time.

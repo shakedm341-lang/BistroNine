@@ -410,9 +410,9 @@ public class Init_All {
         System.out.println("Created exactly 4 'arrived' reservations for existing customers.");
     }
 
-    private static void initWaitingListForToday(Connection con) {
+    /*private static void initWaitingListForToday(Connection con) {
         // מבוטל
-    }
+    }*/
 
  // פונקציה חכמה שמגרילה שעה בהתאם לשעות הפתיחה והחוק של "שעתיים לפני סגירה"
     private static LocalTime getRandomOpenTime(Connection con, LocalDate date) {
