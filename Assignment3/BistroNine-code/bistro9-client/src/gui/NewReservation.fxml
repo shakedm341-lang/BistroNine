@@ -43,7 +43,7 @@
                         <Label text="Number of Diners" styleClass="input-label"/>
                         <HBox alignment="CENTER" styleClass="stepper-container" spacing="0" maxWidth="Infinity">
                              <Button onAction="#decreaseDiners" text="-" styleClass="stepper-btn"/>
-                             <TextField fx:id="txtDiners" text="1" editable="false" 
+                             <TextField fx:id="txtDiners" text="2" editable="false" 
                                         styleClass="stepper-field" prefWidth="60" alignment="CENTER"/>
                              <Button onAction="#increaseDiners" text="+" styleClass="stepper-btn"/>
                         </HBox>
