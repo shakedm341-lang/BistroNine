@@ -100,7 +100,7 @@ public class OpeningTimeController
 	 * @param openingHours The OpeningHoursPerDay object representing the specific date and time slots.
 	 * @return An ArrayList of TableReservation objects that conflict.
 	 */
-	private ArrayList<TableReservation> getConflictingReservationsForSpecialOpeningTime(OpeningHoursPerDay openingHours)
+	private static ArrayList<TableReservation> getConflictingReservationsForSpecialOpeningTime(OpeningHoursPerDay openingHours)
 	{
 		// Get all active reservations
 		ArrayList<TableReservation> reservations = ReservationControler.getAllReservationsActive();
@@ -166,7 +166,7 @@ public class OpeningTimeController
 	 * @return An ArrayList of TableReservation objects that conflict with the
 	 *         specified opening hours.
 	 */
-	private ArrayList<TableReservation> getConflictingReservationsForOpeningTime(OpeningHours openingHours)
+	private static ArrayList<TableReservation> getConflictingReservationsForOpeningTime(OpeningHours openingHours)
 	{
 		//get all active reservations from the DB
 		ArrayList<TableReservation> reservations = ReservationControler.getAllReservationsActive();
@@ -249,7 +249,7 @@ public class OpeningTimeController
 	 * - ArrayList with Subscribers: Failed, list of conflicting customers.
 	 * - null: Error.
 	 */
-	private ArrayList<Subscriber> closeRestaurantOnSpecialDay(Message msg)
+	private synchronized static ArrayList<Subscriber> closeRestaurantOnSpecialDay(Message msg)
 	{
 		@SuppressWarnings("unchecked") 
 		ArrayList<Object> list = (ArrayList<Object>) msg.content;
@@ -346,7 +346,7 @@ public class OpeningTimeController
 	 *         contains the subscribers that have conflicting reservations. 
 	 *         - null:error occurred during update.
 	 */
-	private ArrayList<Subscriber> updateSpecialOpeningTime(Message msg)
+	private synchronized static ArrayList<Subscriber> updateSpecialOpeningTime(Message msg)
 	{
 		@SuppressWarnings("unchecked") 
 		ArrayList<Object> list = (ArrayList<Object>) msg.content;
@@ -492,7 +492,7 @@ public class OpeningTimeController
 	 *         contains the subscribers that have conflicting reservations. 
 	 *         - null: error occurred during update.
 	 */
-	private ArrayList<Subscriber> updateOpeningTime(Message msg)
+	private synchronized static ArrayList<Subscriber> updateOpeningTime(Message msg)
 	{
 		@SuppressWarnings("unchecked") 
 		ArrayList<Object> list = (ArrayList<Object>) msg.content;//get the customer id from the message content
@@ -625,7 +625,7 @@ public class OpeningTimeController
 	 *             Location 2 : LocalTime (closing time)]
 	 * @return true if the update was successful, false otherwise.
 	 */
-	private boolean addNewOpeningTime(Message msg)
+	private synchronized static boolean addNewOpeningTime(Message msg)
 	{
 		@SuppressWarnings("unchecked") 
 		ArrayList<Object> list = (ArrayList<Object>) msg.content;//get the customer id from the message content
@@ -687,7 +687,7 @@ public class OpeningTimeController
 	 *            Location 2 : LocalTime (closing time)]
 	 * @return true if the addition was successful, false otherwise.
 	 */
-	private boolean addNewSpecialOpeningTime(Message msg)
+	private synchronized static boolean addNewSpecialOpeningTime(Message msg)
 	{
 		@SuppressWarnings("unchecked") 
 		ArrayList<Object> list = (ArrayList<Object>) msg.content;//get the customer id from the message content
@@ -751,7 +751,7 @@ public class OpeningTimeController
 	 * - ArrayList<Subscriber> : deletion failed due to conflicts, the list contains the subscribers that have conflicting reservations.
 	 * - null: error occurred during deletion.
 	 */
-	private ArrayList<Subscriber> deleteSpecialOpeningTime(Message msg)
+	private synchronized static ArrayList<Subscriber> deleteSpecialOpeningTime(Message msg)
 	{
 		@SuppressWarnings("unchecked") 
 		ArrayList<Object> list = (ArrayList<Object>) msg.content;//get the customer id from the message content
@@ -842,7 +842,7 @@ public class OpeningTimeController
 	 * - ArrayList<Subscriber> : deletion failed due to conflicts, the list contains the subscribers that have conflicting reservations.
 	 * - null: error occurred during deletion.
 	 */
-	private ArrayList<Subscriber> deleteOpeningTime(Message msg)
+	private synchronized static ArrayList<Subscriber> deleteOpeningTime(Message msg)
 	{
 		@SuppressWarnings("unchecked") 
 		ArrayList<Object> list = (ArrayList<Object>) msg.content;//get the customer id from the message content

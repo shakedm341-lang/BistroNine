@@ -191,7 +191,7 @@ public class BillController
 	 * @param res  The table reservation associated with the bill.
 	 * @return true if the bill was calculated successfully, false otherwise.
 	 */
-	private static boolean calcBill(Bill bill, TableReservation res) 
+	private synchronized static boolean calcBill(Bill bill, TableReservation res) 
 	{
 		//bill id allready set in the bill object
 
@@ -311,7 +311,7 @@ public class BillController
 	 *            [Location 0 :bill ID (int), Location 1: payment method (String)]
 	 * @return true if the bill was paid successfully, false otherwise.
 	 */
-	private boolean payBill(Message msg)
+	private synchronized static boolean payBill(Message msg)
 	{
 		@SuppressWarnings("unchecked") 
 		ArrayList<Object> list = (ArrayList<Object>) msg.content;//get bill Id from the message

@@ -17,7 +17,9 @@ import data.WaitList;
 
 public class ReservationControler 
 {
-
+	private static final int RESERVATION_DURATION_MINUTES = 120;
+    private static final int LATE_ARRIVAL_LIMIT_MINUTES = 15;
+    private static final int REMINDER_ALERT_MINUTES = 119; // או 120
 	private static DataBaseController DBC=DataBaseController.getInstance();//Interfacing with the DB Controller
 
 	/**
@@ -401,7 +403,7 @@ public class ReservationControler
 	 * @param diners The number of diners to be accommodated.
 	 * @return The best fit Table object, or null if no suitable table is found.
 	 */
-	private Table findBestFitTable(ArrayList<Table> tables, int diners) 
+	private static Table findBestFitTable(ArrayList<Table> tables, int diners) 
 	{
 		Table bestFit = null;
 		for (Table t : tables) // For each table in the list of tables
@@ -683,7 +685,7 @@ public class ReservationControler
 	 *   
 	 * @return The confirmation code (Integer) of the new reservation if the creation succeeded, null otherwise.
 	 */
-	private Integer  createNewReservation(Message msg)
+	private synchronized static Integer  createNewReservation(Message msg)
 	{
 
 		@SuppressWarnings("unchecked") 
@@ -830,7 +832,7 @@ public class ReservationControler
 	 *         the requested number of diners on the specified date, or null if no
 	 *         times are available.
 	 */
-	private ArrayList<LocalTime> checkingTableAvailability(Message msg)
+	private synchronized static ArrayList<LocalTime> checkingTableAvailability(Message msg)
 	{
 
 		@SuppressWarnings("unchecked") 
@@ -930,7 +932,7 @@ public class ReservationControler
 							// Calculate the time difference in minutes between the existing reservation and the requested time
 							long minutesBetween = Math.abs(java.time.Duration.between(existingResTime,currentCheckDateTime).toMinutes());
 
-							if (minutesBetween < 120) 
+							if (minutesBetween < RESERVATION_DURATION_MINUTES) 
 							{
 
 								overlappingRes.add(res);// Add the overlapping reservation to the list
@@ -991,7 +993,7 @@ public class ReservationControler
 	 *            confirmationCode (Integer)]
 	 * @return true if the reservation was deleted successfully, false otherwise.
 	 */
-	private 	boolean  deleteReservation(Message msg)
+	private synchronized static 	boolean  deleteReservation(Message msg)
 	{
 		@SuppressWarnings("unchecked") 
 		ArrayList<Object> list = (ArrayList<Object>) msg.content;//get the reservation details from the message content
@@ -1042,7 +1044,7 @@ public class ReservationControler
 				LocalDateTime resTime = res.getReservationDate().toLocalDateTime();// Get the reservation time as LocalDateTime
 
 				// If the current time is more than 15 minutes past the reservation time
-				if (resTime.plusMinutes(15).isBefore(nowTime)) 
+				if (resTime.plusMinutes(LATE_ARRIVAL_LIMIT_MINUTES).isBefore(nowTime)) 
 				{
 					// Update the reservation status to "canceled" in the DB
 					if (updateReservation(res, "status", "cancelled") == false) {
@@ -1125,7 +1127,7 @@ public class ReservationControler
 				long minutesUntilRes = java.time.Duration.between(nowTime, resTime).toMinutes();
 
 				// If the reservation is 2 hours away
-				if ( minutesUntilRes == 119) 
+				if ( minutesUntilRes == REMINDER_ALERT_MINUTES) 
 				{
 					Subscriber sub = new Subscriber();
 					sub.setCustomerId( res.getCustomerId());

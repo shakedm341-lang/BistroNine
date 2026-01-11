@@ -69,7 +69,7 @@ public class TableController
 	 * @return ArrayList<TableReservation> A list of reservations that would cause overbooking if the update is applied.
 	 */
 
-	private ArrayList<TableReservation> getConflictingReservationsForUpdate(int tableId, int newSeats) 
+	private static ArrayList<TableReservation> getConflictingReservationsForUpdate(int tableId, int newSeats) 
 	{
 		// ---------------------------------------------------------
 		// Retrieve current snapshot
@@ -198,7 +198,7 @@ public class TableController
 	 * @param tableId The ID of the table to be deleted.
 	 * @return ArrayList<TableReservation> A list of reservations that would be displaced/unassigned if the table is deleted.
 	 */
-	private ArrayList<TableReservation> getConflictingReservationsForDeletion(int tableId) 
+	private static ArrayList<TableReservation> getConflictingReservationsForDeletion(int tableId) 
 	{
 		// ---------------------------------------------------------
 		// Retrieve Data Snapshot
@@ -495,7 +495,7 @@ public class TableController
 	 *
 	 * @param tables The ArrayList of Table objects to be sorted.
 	 */
-	private void sortTablesBySeatsAscending(ArrayList<Table> tables) 
+	private static void sortTablesBySeatsAscending(ArrayList<Table> tables) 
 	{
 		if (tables == null || tables.size() <= 1) 
 		{
@@ -534,7 +534,7 @@ public class TableController
 	 * @param availableTables The ArrayList of available Table objects.
 	 * @return true if all reservations can fit optimally, false otherwise.
 	 */
-	private boolean canFitOptimally(ArrayList<TableReservation> reservations, ArrayList<Table> availableTables) 
+	private static boolean canFitOptimally(ArrayList<TableReservation> reservations, ArrayList<Table> availableTables) 
 	{
 		//create a temporary copy of the available tables to manipulate
 		ArrayList<Table> tempTables = new ArrayList<>();
@@ -622,7 +622,7 @@ public class TableController
 	 * @return A TableReservation object with updated details, or null if not found
 	 *         or an error occurs.check the status of the reservation and update the customer if getting a table or get in to waitlisted.
 	 */
-	private TableReservation receiveTableIdByConfCode(Message msg)
+	private synchronized static TableReservation receiveTableIdByConfCode(Message msg)
 	{
 
 		@SuppressWarnings("unchecked") 
@@ -786,7 +786,7 @@ public class TableController
 	 *            (String)]
 	 * @return The Table object that was added to the database, or null if an error
 	 */
-	private Table addTable(Message msg)
+	private synchronized static Table addTable(Message msg)
 	{
 		@SuppressWarnings("unchecked") 
 		ArrayList<Object> list = (ArrayList<Object>) msg.content;//get the reservation details from the message content
@@ -836,7 +836,7 @@ public class TableController
 	 * - ArrayList<Subscriber> : can't deleted Table (List contains the subscribers involved in conflicting reservations).
 	 * - null: Error or Invalid Input.
 	 */
-	private ArrayList<Subscriber> deleteTable(Message msg)
+	private synchronized static ArrayList<Subscriber> deleteTable(Message msg)
 	{
 		@SuppressWarnings("unchecked")
 		ArrayList<Object> list = (ArrayList<Object>) msg.content;
@@ -902,7 +902,7 @@ public class TableController
 	 * - ArrayList<Subscriber>: can't updated Table (List contains the subscribers involved in conflicting reservations).
 	 * - null: Error or Invalid Input.
 	 */
-	private ArrayList<Subscriber> updateTableSeatsNumber(Message msg)
+	private synchronized static ArrayList<Subscriber> updateTableSeatsNumber(Message msg)
 	{
 		@SuppressWarnings("unchecked")
 		ArrayList<Object> list = (ArrayList<Object>) msg.content;

@@ -217,7 +217,7 @@ public class CustomerController
 	 * 		Location 6:phoneNumber (String),Location 7:email (String)]
 	 * @return Subscriber object for the subscriber id assigned by the database.
 	 */
-	private Subscriber addNewSubscriber(Message msg)
+	private synchronized Subscriber addNewSubscriber(Message msg)
 	{
 
 		@SuppressWarnings("unchecked") 
@@ -307,7 +307,7 @@ public class CustomerController
 	 *            1:phoneNumber (String) or null,Location 2:email (String) or null]
 	 * @return true if the update was successful, false otherwise.
 	 */
-	private boolean updateSubscriberDetails(Message msg)
+	private synchronized boolean updateSubscriberDetails(Message msg)
 	{
 		@SuppressWarnings("unchecked") 
 		ArrayList<Object> list = (ArrayList<Object>) msg.content;//get the reservation details from the message content

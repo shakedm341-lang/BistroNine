@@ -65,7 +65,7 @@ public class WaitListController
 	 * @param res       The TableReservation object associated with the waiter.
 	 * @return true if the waiter was successfully seated; false otherwise.
 	 */
-	public static boolean seatWaiter(WaitList waiter, Table freeTable,TableReservation res)
+	public synchronized static boolean seatWaiter(WaitList waiter, Table freeTable,TableReservation res)
 	{
 
 		//update waitlist status to seated and set exitTimeFromList to now
@@ -221,7 +221,7 @@ public class WaitListController
 	 * @param freeTable The Table object representing the free table.
 	 * @return true if a matching waiter was found and seated; false otherwise.
 	 */
-	public static WaitList findMatchInWaitingList(Table freeTable)
+	public synchronized static WaitList findMatchInWaitingList(Table freeTable)
 	{
 
 		ArrayList<ArrayList<Object>> allWaits = new ArrayList<>();
@@ -306,7 +306,7 @@ public class WaitListController
 	 * @return true if the customer was successfully deleted from the wait list;
 	 *         false otherwise.
 	 */
-	private boolean deleteFromWaitList(Message msg)
+	private synchronized static boolean deleteFromWaitList(Message msg)
 	{
 		@SuppressWarnings("unchecked") 
 		ArrayList<Object> list = (ArrayList<Object>) msg.content;
@@ -495,7 +495,7 @@ public class WaitListController
 	 * @return A TableReservation object representing the newly created reservation,
 	 *           or null if the operation failed.         
 	 */
-	private TableReservation getInToWaitList(Message msg)
+	private synchronized static TableReservation getInToWaitList(Message msg)
 	{
 		@SuppressWarnings("unchecked") 
 		ArrayList<Object> list = (ArrayList<Object>) msg.content;

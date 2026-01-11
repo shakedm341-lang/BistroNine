@@ -1,36 +1,55 @@
-/* Standard button styling */
+/* --- Connect Button (Green) --- */
 .connect-btn {
-    -fx-background-color: #4CAF50;
+    -fx-background-color: #059669; /* ירוק */
     -fx-text-fill: white;
     -fx-font-weight: bold;
     -fx-font-size: 14px;
-    -fx-cursor: hand; /* Changes cursor to a hand pointer */
+    -fx-cursor: hand;
+    
+    /* עיצוב גיאומטרי */
+    -fx-background-radius: 8px;
+    -fx-border-radius: 8px;
+    -fx-padding: 10px 20px;
+    
+    /* אפקט צל ירקרק עדין */
+    -fx-effect: dropshadow(three-pass-box, rgba(5, 150, 105, 0.3), 10, 0, 0, 3);
 }
 
-/* When mouse hovers over the button */
 .connect-btn:hover {
-    -fx-background-color: #45a049; /* Slightly darker green */
-    
-    /* Glow effect: */
-    /* dropshadow(blur-type, color, radius, spread, offset-x, offset-y) */
-    -fx-effect: dropshadow(three-pass-box, #66BB6A, 15, 0.4, 0, 0);
+    -fx-background-color: #047857; /* ירוק כהה יותר בהובר */
+    -fx-effect: dropshadow(three-pass-box, rgba(5, 150, 105, 0.6), 15, 0.4, 0, 0);
 }
 
-/* When button is pressed - stronger effect */
 .connect-btn:pressed {
-    -fx-background-color: #3e8e41; /* Very dark green */
-    
-    /* Shrinking effect to make it more noticeable */
-    -fx-scale-x: 0.80;
-    -fx-scale-y: 0.80;
+    -fx-background-color: #064E3B;
+    -fx-scale-x: 0.96;
+    -fx-scale-y: 0.96;
 }
 
-/* Exit button styling (in case you want to restore it later) */
+/* --- Back / Exit Button (Gray) --- */
 .exit-btn {
-    -fx-background-color: #f44336;
+    -fx-background-color: #808080; /* אפור מלא וברור */
     -fx-text-fill: white;
     -fx-font-weight: bold;
     -fx-font-size: 14px;
+    -fx-cursor: hand;
+    
+    /* עיצוב גיאומטרי זהה בדיוק לירוק */
+    -fx-background-radius: 8px;
+    -fx-border-radius: 8px;
+    -fx-padding: 10px 20px;
+    
+    /* אפקט צל אפור עדין */
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.2), 10, 0, 0, 3);
 }
-.exit-btn:hover { -fx-background-color: #d32f2f; }
-.exit-btn:pressed { -fx-background-color: #b71c1c; }
+
+.exit-btn:hover {
+    -fx-background-color: #666666; /* אפור כהה יותר בהובר */
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.4), 15, 0.4, 0, 0);
+}
+
+.exit-btn:pressed {
+    -fx-background-color: #404040; /* אפור כמעט שחור בלחיצה */
+    -fx-scale-x: 0.96;
+    -fx-scale-y: 0.96;
+}
