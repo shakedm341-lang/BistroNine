@@ -363,9 +363,14 @@ public class BillController
 			return  false;
 		}
 
-		ReservationControler.updateReservation(res,"status", "completed");
-		Timestamp nowTime = java.sql.Timestamp.valueOf(LocalDateTime.now());
-		ReservationControler.updateReservation(res,"leavingTime", nowTime);
+		if (ReservationControler.updateReservation(res, "status", "completed")) 
+		{
+		    Timestamp nowTime = java.sql.Timestamp.valueOf(LocalDateTime.now());
+		    ReservationControler.updateReservation(res, "leavingTime", nowTime);
+		} else {
+		    System.out.println("Error: Failed to update status to completed. Leaving time was NOT updated.");
+		}
+	
 
 		Table freeTable=new Table();
 		freeTable.setTableId(res.getTableId());
@@ -402,6 +407,16 @@ public class BillController
 			{
 				System.out.println("Error: could not find customer for reservation " + res.getConfirmationCode());
 				return false;
+			}
+
+			if (DBC.getCustomerType(sub.getCustomerId()).equals("customer"))
+			{
+				EmailSendController.sendEmail(sub.getEmail(), "Your table is ready 🍽️","Hey customer, good news! A table has become available for "+ waiterRes.getNumberOfDiners() +" diners at Bistro 9 .\r\n"
+						+ "Looking forward to seeing you at the entrance!");// send email to the customer with all his confirmation codes for today
+
+				SmsSendController.sendSms(sub.getPhoneNumber(), "Your table is ready 🍽️","Hey customer, good news! A table has become available for "+ waiterRes.getNumberOfDiners() +" diners at Bistro 9 .\r\n"
+						+ "Looking forward to seeing you at the entrance!");
+				return true;
 			}
 
 			EmailSendController.sendEmail(sub.getEmail(), "Your table is ready 🍽️","Hey "+sub.getFirstName()+" "+sub.getLastName()+", good news! A table has become available for "+ waiterRes.getNumberOfDiners() +" diners at Bistro 9 .\r\n"

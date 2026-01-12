@@ -4,7 +4,7 @@ import java.sql.Timestamp;
 
 public class HistoryReservation 
 {
-
+	private int reservationId;
 	private int tableId;
 	private int numberOfDiners;
 	private int confirmationCode;
@@ -90,6 +90,14 @@ public class HistoryReservation
 
 	public void setDiscountSize(double discountSize) {
 		this.discountSize = discountSize;
+	}
+
+	public int getReservationId() {
+		return reservationId;
+	}
+
+	public void setReservationId(int reservationId) {
+		this.reservationId = reservationId;
 	}
 
 }

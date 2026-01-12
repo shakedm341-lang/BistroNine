@@ -593,15 +593,15 @@ public class CustomerController
 			}
 
 
-			EmailSendController.sendEmail(sub.getEmail(), "Confirmation Code Recovery","Don't worry bistro9 is here for you, everything is saved with us!\n"+"Here are all the confirmation codes for your orders for today:\n"+codesAsString);// send email to the customer with all his confirmation codes for today
+			EmailSendController.sendEmail(sub.getEmail(), "Confirmation Code Recovery","Don't worry bistro9 is here for you😊, everything is saved with us!\n"+"Here are all the confirmation codes for your orders for today:\n"+codesAsString);// send email to the customer with all his confirmation codes for today
 
-			SmsSendController.sendSms(sub.getPhoneNumber(), "Confirmation Code Recovery","Don't worry bistro9 is here for you, everything is saved with us!\n"+"Here are all the confirmation codes for your orders for today:\n"+codesAsString);
+			SmsSendController.sendSms(sub.getPhoneNumber(), "Confirmation Code Recovery","Don't worry bistro9 is here for you😊, everything is saved with us!\n"+"Here are all the confirmation codes for your orders for today:\n"+codesAsString);
 
 		}
 		else {
-			EmailSendController.sendEmail(sub.getEmail(), "Oops, we couldn't find any confirmation codes for today","We searched the system, but we didn't find any active confirmation codes for today.\n"+" Could it be that the reservation is for a different date?");// send email to the customer that no confirmation codes found for today
+			EmailSendController.sendEmail(sub.getEmail(), "Oops, we couldn't find any confirmation codes for today🤭","We searched the system, but we didn't find any active confirmation codes for today.\n"+" Could it be that the reservation is for a different date?");// send email to the customer that no confirmation codes found for today
 
-			SmsSendController.sendSms(sub.getPhoneNumber(), "Oops, we couldn't find any confirmation codes for today","We searched the system, but we didn't find any active confirmation codes for today.\n"+" Could it be that the reservation is for a different date?");
+			SmsSendController.sendSms(sub.getPhoneNumber(), "Oops, we couldn't find any confirmation codes for today🤭","We searched the system, but we didn't find any active confirmation codes for today.\n"+" Could it be that the reservation is for a different date?");
 
 		}
 

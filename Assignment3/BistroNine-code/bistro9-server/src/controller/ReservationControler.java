@@ -71,6 +71,12 @@ public class ReservationControler
 
 		case GET_ALL_DINERS_AT_RESTAURANT:
 			return getAllDinersAtRestaurant(msg);
+			
+		case GET_RESERVATION_BY_ATTRIBUTE:
+			return getReservationByAttribute(msg);
+			
+		case GET_ALL_RESERVATIONS_BY_DATE_RANGE:
+			return getALLReservationByDateRange(msg);
 
 		default:
 			System.out.println("Unknown task received.");
@@ -211,6 +217,52 @@ public class ReservationControler
 		return null;//Return false if the reservation was not created successfully in the DB
 	}
 
+	/**
+	 * Converts a list of TableReservation objects into HistoryReservation objects.
+	 *
+	 * @param allReservations A list of TableReservation objects.
+	 * @return An ArrayList of HistoryReservation objects representing the
+	 *         reservations.
+	 */
+	public static ArrayList<HistoryReservation> getAllReservationsAsHistoryReservation(ArrayList<TableReservation> allReservations)
+	{
+		if (allReservations == null) 
+		{
+			return null;
+		}
+		ArrayList<HistoryReservation> historyReservations = new ArrayList<>();
+
+		for (TableReservation res : allReservations) 
+		{
+			HistoryReservation historyRes = new HistoryReservation();
+			historyRes.setReservationId(res.getReservationId());
+			historyRes.setTableId(res.getTableId());
+			historyRes.setNumberOfDiners(res.getNumberOfDiners());
+			historyRes.setConfirmationCode(res.getConfirmationCode());
+			historyRes.setReservationDate(res.getReservationDate());
+			historyRes.setDateOfMakeReservation(res.getDateOfMakeReservation());
+			historyRes.setStatus(res.getStatus());
+
+			if ("completed".equals(res.getStatus())) 
+			{
+				Bill bill = new Bill();
+				bill.setReservationId(res.getReservationId());
+				if (DBC.getBillByReservationId(bill)) 
+				{
+					historyRes.setTotalAmountAfterDiscount(bill.getTotalAmountAfterDiscount());
+					historyRes.setDiscountSize(bill.getDiscountSize());
+					historyRes.setPaymentMethod(bill.getPaymentMethod());
+				}
+				else {
+					System.out.println("Error: Could not retrieve bill for reservation ID " + res.getReservationId());
+				}
+			}
+
+			historyReservations.add(historyRes);
+		}
+
+		return historyReservations;
+	}
 
 	/**
 	 * Converts a list of reservations from the database into TableReservation
@@ -505,6 +557,161 @@ public class ReservationControler
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	
 	/**
+	 * Retrieves all table reservations within a specific date range from the
+	 * database.
+	 *
+	 * @param msg The message containing the date range details. The content of the
+	 *            message is expected to be an ArrayList<Object> with the following
+	 *            order: [Location 0 :startDate (Timestamp), Location 1: endDate
+	 *            (Timestamp)]
+	 * 
+	 * @return An ArrayList of HistoryReservation objects representing all
+	 *         reservations within the specified date range. an empty list if there
+	 *         are no reservations.
+	 */
+	private ArrayList<HistoryReservation> getALLReservationByDateRange(Message msg)
+	{
+		 @SuppressWarnings("unchecked") 
+			ArrayList<Object> list = (ArrayList<Object>) msg.content;//get details from the message content
+			ArrayList<HistoryReservation> historyResreservations= new ArrayList<>();//List to hold all reservations as HistoryReservation objects;
+			ArrayList<TableReservation> results = new ArrayList<>();
+			Timestamp startDate;
+			Timestamp endDate;
+			
+			//Setting start Date from the list we got from the message content
+			if (list.get(0) instanceof Timestamp) 
+			{
+				startDate = (Timestamp) list.get(0);
+			} else 
+			{
+				System.out.println("Error: Index 0 is not a Timestamp!");
+				return null;
+			}
+			
+			//Setting end Date from the list we got from the message content
+			if (list.get(1) instanceof Timestamp) 
+			{
+				endDate = (Timestamp) list.get(1);
+			} else 
+			{
+				System.out.println("Error: Index 1 is not a Timestamp!");
+				return null;
+			}
+			
+			
+			ArrayList<ArrayList<Object>> rawList = DBC.getReservationsByDateRangeQuery(startDate, endDate);
+			results = getAllReservationsAsTableReservation(rawList);
+
+			if (results == null) 
+			{
+				return new ArrayList<>();
+			}
+
+			return getAllReservationsAsHistoryReservation(results);
+			
+	}
+	
+	
+	/**
+	 * Retrieves table reservations based on a specific attribute from the database.
+	 *
+	 * @param msg The message containing the attribute details. The content of the
+	 *            message is expected to be an ArrayList<Object> with the following
+	 *            order: [Location 0 :attribute (String), Location 1: value
+	 *            (String/Integer depending on the attribute)]
+	 * 
+	 * @return An ArrayList of HistoryReservation objects representing the
+	 *         reservation history for the specified attribute. an empty list if
+	 *         there are no reservations.
+	 */
+	private ArrayList<HistoryReservation> getReservationByAttribute(Message msg)
+	{
+		@SuppressWarnings("unchecked") 
+		ArrayList<Object> list = (ArrayList<Object>) msg.content;//get details from the message content
+		ArrayList<HistoryReservation> historyResreservations= new ArrayList<>();//List to hold all reservations as HistoryReservation objects;
+		String attribute;
+		
+		
+		//Setting attribute from the list we got from the message content
+		if (list.get(0) instanceof String) 
+		{
+			attribute = (String) list.get(0);
+		} else 
+		{
+			System.out.println("Error: Index 0 is not a String!");
+			return null;
+		}
+		ArrayList<TableReservation> results = new ArrayList<>();
+
+	    // Determine which attribute to query by
+	    switch (attribute) 
+	    {
+	        case "status":
+	            if (list.get(1) instanceof String) 
+	            {
+	                String status = (String) list.get(1);
+	                ArrayList<ArrayList<Object>> rawList = DBC.getReservationsByAttributeQuery("status", status);
+	                results = getAllReservationsAsTableReservation(rawList);
+	            } else {
+	                System.out.println("Error: Index 1 is not a String!");
+	                return null;
+	            }
+	            break;
+
+	        case "tableId":
+	            if (list.get(1) instanceof Integer) {
+	                int tableId = (Integer) list.get(1);
+	                ArrayList<ArrayList<Object>> rawList = DBC.getReservationsByAttributeQuery("tableId", tableId);
+	                results = getAllReservationsAsTableReservation(rawList);
+	            } else {
+	                System.out.println("Error: Index 1 is not an Integer!");
+	                return null;
+	            }
+	            break;
+
+	        case "numberOfDiners":
+	            if (list.get(1) instanceof Integer) {
+	                int numberOfDiners = (Integer) list.get(1);
+	                ArrayList<ArrayList<Object>> rawList = DBC.getReservationsByAttributeQuery("numberOfDiners", numberOfDiners);
+	                results = getAllReservationsAsTableReservation(rawList);
+	            } else {
+	                System.out.println("Error: Index 1 is not an Integer!");
+	                return null;
+	            }
+	            break;
+
+	        case "confirmationCode":
+	            if (list.get(1) instanceof Integer) {
+	                int confirmationCode = (Integer) list.get(1);
+	                TableReservation res = new TableReservation();
+	                res.setConfirmationCode(confirmationCode);
+	                
+	                
+	                if (DBC.getReservationsByConferenceCodeQuery(res)) {
+	                    results.add(res);
+	                }
+	            } else {
+	                System.out.println("Error: Index 1 is not an Integer!");
+	                return null;
+	            }
+	            break;
+
+	        default:
+	            System.out.println("Error: Unknown attribute received: " + attribute);
+	            return null;
+	    }
+
+	    
+	    if (results == null) {
+	        return new ArrayList<>(); 
+	    }
+
+	    
+	    return getAllReservationsAsHistoryReservation(results);
+		
+	}
+	
+	/**
 	 * Retrieves the history of reservations for a specific customer from the
 	 * database.
 	 *
@@ -524,35 +731,13 @@ public class ReservationControler
 		if (reservation == null) {
 	        return new ArrayList<>(); //Return an empty list if there are no reservations
 	    }
-		ArrayList<HistoryReservation> historyResreservations = new ArrayList<>();
 		
-		for (TableReservation res : reservation) 
-        {
-			HistoryReservation historyRes = new HistoryReservation();
-			historyRes.setTableId(res.getTableId());
-			historyRes.setNumberOfDiners(res.getNumberOfDiners());
-			historyRes.setConfirmationCode(res.getConfirmationCode());
-			historyRes.setReservationDate(res.getReservationDate());
-			historyRes.setDateOfMakeReservation(res.getDateOfMakeReservation());
-			historyRes.setStatus(res.getStatus());
-			
-			if ("completed".equals(res.getStatus())) 
-			{
-				Bill bill = new Bill();
-				bill.setReservationId(res.getReservationId());
-				if (DBC.getBillByReservationId(bill)) 
-				{
-					historyRes.setTotalAmountAfterDiscount(bill.getTotalAmountAfterDiscount());
-					historyRes.setDiscountSize(bill.getDiscountSize());
-					historyRes.setPaymentMethod(bill.getPaymentMethod());
-				}
-				else {
-					System.out.println("Error: Could not retrieve bill for reservation ID " + res.getReservationId());
-				}
-			}
-
-			historyResreservations.add(historyRes);
-        }
+		ArrayList<HistoryReservation> historyResreservations= getAllReservationsAsHistoryReservation(reservation);
+		
+		if (historyResreservations == null) 
+		{
+			return null;  
+		}
         
 		return historyResreservations;
 	}
@@ -627,7 +812,7 @@ public class ReservationControler
 
 					subscribersAtRestaurant.add(cust);
 				} else {
-					// זה מנוי אמיתי - נוסיף אותו כמו שהוא
+					
 					subscribersAtRestaurant.add(sub);
 				} 
 			}
@@ -1131,30 +1316,30 @@ public class ReservationControler
 					if (sub.getType()!=null) 
 					{
 
-						EmailSendController.sendEmail(sub.getEmail(), "Your bistro9 reservation has been cancelled", "Hello "+sub.getFirstName()+" "+sub.getLastName()+" ,\r\n"
+						EmailSendController.sendEmail(sub.getEmail(), "‼️❌Your bistro9 reservation has been cancelled❌‼️", "Hello "+sub.getFirstName()+" "+sub.getLastName()+" ,\r\n"
 								+ "We are contacting you regarding your reservation for "+res.getReservationDate()+".\r\n"
 								+ "Unfortunately, your reservation has been canceled. We are very sorry for the inconvenience caused.\r\n"
 								+ "We look forward to seeing you at our place at another time,\r\n"
-								+ "Hopefully you have a nice day, bistro9");// Send email that the reservation was cancelled
-						SmsSendController.sendSms(sub.getPhoneNumber(), "Your bistro9 reservation has been cancelled", "Hello "+sub.getFirstName()+" "+sub.getLastName()+",\r\n"
+								+ "Hopefully you have a nice day🙏🏾, bistro9");// Send email that the reservation was cancelled
+						SmsSendController.sendSms(sub.getPhoneNumber(), "‼️❌Your bistro9 reservation has been cancelled❌‼️", "Hello "+sub.getFirstName()+" "+sub.getLastName()+",\r\n"
 								+ "We are contacting you regarding your reservation for "+res.getReservationDate()+".\r\n"
 								+ "Unfortunately, your reservation has been canceled. We are very sorry for the inconvenience caused.\r\n"
 								+ "We look forward to seeing you at our place at another time,\r\n"
-								+ "Hopefully you have a nice day, bistro9");
+								+ "Hopefully you have a nice day🙏🏾, bistro9");
 					}
 					else
 					{
-						EmailSendController.sendEmail(sub.getEmail(), "Your bistro9 reservation has been cancelled", "Hello customer ,\r\n"
+						EmailSendController.sendEmail(sub.getEmail(), "‼️❌Your bistro9 reservation has been cancelled❌‼️", "Hello customer ,\r\n"
 								+ "We are contacting you regarding your reservation for "+res.getReservationDate()+".\r\n"
 								+ "Unfortunately, your reservation has been canceled. We are very sorry for the inconvenience caused.\r\n"
 								+ "We look forward to seeing you at our place at another time,\r\n"
-								+ "Hopefully you have a nice day, bistro9");// Send email that the reservation was cancelled
-						SmsSendController.sendSms(sub.getPhoneNumber(), "Your bistro9 reservation has been cancelled",
+								+ "Hopefully you have a nice day🙏🏾, bistro9");// Send email that the reservation was cancelled
+						SmsSendController.sendSms(sub.getPhoneNumber(), "‼️❌Your bistro9 reservation has been cancelled❌‼️",
 								"Hello customer ,\r\n"
 										+ "We are contacting you regarding your reservation for "+res.getReservationDate()+".\r\n"
 										+ "Unfortunately, your reservation has been canceled. We are very sorry for the inconvenience caused.\r\n"
 										+ "We look forward to seeing you at our place at another time,\r\n"
-										+ "Hopefully you have a nice day, bistro9");
+										+ "Hopefully you have a nice day🙏🏾, bistro9");
 					}
 
 				}
