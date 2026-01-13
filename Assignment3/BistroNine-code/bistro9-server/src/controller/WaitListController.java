@@ -67,7 +67,8 @@ public class WaitListController
 	 */
 	public synchronized static boolean seatWaiter(WaitList waiter, Table freeTable,TableReservation res)
 	{
-
+		String originalStatus = waiter.getStatus();
+		Timestamp originalExitTime = waiter.getExitTimeFromList();
 		//update waitlist status to seated and set exitTimeFromList to now
 		waiter.setStatus("seated");
 		waiter.setExitTimeFromList(new Timestamp(System.currentTimeMillis())); 
@@ -84,7 +85,15 @@ public class WaitListController
 
 			if (!DBC.updateReservation(res)) 
 			{
-				System.out.println("Error linking table to reservation.");
+System.out.println("Error linking table to reservation. Performing Rollback.");
+				
+				// ROLLBACK 
+				
+				waiter.setStatus(originalStatus); // waiting
+				waiter.setExitTimeFromList(originalExitTime); // null or previous time
+				DBC.updateStatusAndExitTimeInWaitingListQuery(waiter);
+				// --- ROLLBACK END ---
+				
 				return false; // Error updating reservation
 
 			}
@@ -109,9 +118,16 @@ public class WaitListController
 
 			if (!DBC.updateReservation(res)) 
 			{
-				System.out.println("Error linking table to reservation.");
+System.out.println("Error linking table to reservation. Performing Rollback.");
+				
+				// ROLLBACK
+				
+				waiter.setStatus("waiting"); 
+				waiter.setExitTimeFromList(null); 
+				DBC.updateStatusAndExitTimeInWaitingListQuery(waiter);
+				
+				
 				return false; // Error updating reservation
-
 			}
 
 			return true; 
@@ -410,7 +426,14 @@ public class WaitListController
 					{
 						if (!DBC.deleteReservationByConfCode(res.getConfirmationCode())) //Deleting the reservation associated with the deleted waiter
 						{
-							System.out.println("Error cancelling reservation for deleted waiter.");
+System.out.println("Error cancelling reservation for deleted waiter. Performing Rollback.");
+							
+							// ROLLBACK 
+							
+							waiter.setStatus("waiting");
+							DBC.updateStatusAndExitTimeInWaitingListQuery(waiter); 
+	
+							
 							return false; // Error cancelling reservation
 						}
 						return true; // Successfully deleted the waiter from the wait list

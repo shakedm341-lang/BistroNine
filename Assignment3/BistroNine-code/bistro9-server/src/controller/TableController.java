@@ -709,14 +709,18 @@ public class TableController
 			if (!DBC.updateReservation(checkInRes)) 
 			{
 				System.out.println("Failed to update reservation.");
+                // ROLLBACK 
 				TableController.updateTable(bestTable.getTableId(), "status", "available");
-				return null; // failed to update reservation
+				return null;
 			}
 
 			//create a new bill for the reservation 
 			if (!BillController.createNewBill(checkInRes))
 			{
-				System.out.println("Warning: Reservation completed but Bill creation failed.");
+				System.out.println("Critical Error: Bill creation failed. Rolling back.");
+                //  ROLLBACK 
+				updateTable(bestTable.getTableId(), "status", "available");
+
 				return null; // Bill creation failed
 			}
 

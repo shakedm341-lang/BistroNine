@@ -4,13 +4,12 @@ package data;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import org.objenesis.strategy.StdInstantiatorStrategy; // Make sure you import this!
+import org.objenesis.strategy.StdInstantiatorStrategy; 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 
 public class KryoUtil {
 
-    // 1. ThreadLocal ensures every thread gets its own Kryo instance
     private static final ThreadLocal<Kryo> kryoThreadLocal = ThreadLocal.withInitial(() -> {
         Kryo kryo = new Kryo();
         
@@ -23,6 +22,12 @@ public class KryoUtil {
         return kryo;
     });
 
+    /**
+     * Serializes a given object into a byte array using Kryo.
+     * Use this method to prepare an object for transmission over a network or storage.
+     * * @param object The object to be serialized.
+     * @return A byte array representing the serialized object.
+     */
     public static byte[] serialize(Object object) {
         Kryo kryo = kryoThreadLocal.get();
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -32,6 +37,11 @@ public class KryoUtil {
         return outputStream.toByteArray();
     }
 
+    /**
+     * Deserializes a byte array back into its original Java object.
+     * * @param bytes The byte array containing the serialized object data.
+     * @return The reconstructed Object, or null if the input byte array is null.
+     */
     public static Object deserialize(byte[] bytes) {
         if (bytes == null) return null;
         Kryo kryo = kryoThreadLocal.get();

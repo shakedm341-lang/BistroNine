@@ -208,10 +208,20 @@ public class ReservationControler
 					{
 						return newRes;//Return to server the confirmation code of the new reservation);
 					}
-					return null;//Return false if bill was not created successfully in the DB
+					//  ROLLBACK 
+					System.out.println("Critical Error: Bill creation failed. Rolling back reservation and table.");
+                    
+	                TableController.updateTable(newRes.getTableId(), "status", "available");
+                    
+	                DBC.deleteReservationByConfCode(newRes.getConfirmationCode());
+                    
+                    
+					return null;
 				}
+				DBC.deleteReservationByConfCode(newRes.getConfirmationCode());
 				return null;//Return false if table status was not updated successfully in the DB
 			}
+			DBC.deleteReservationByConfCode(newRes.getConfirmationCode());
 			return null;//Return false if reservation status was not updated successfully in the DB
 		}
 		return null;//Return false if the reservation was not created successfully in the DB
@@ -628,7 +638,7 @@ public class ReservationControler
 	{
 		@SuppressWarnings("unchecked") 
 		ArrayList<Object> list = (ArrayList<Object>) msg.content;//get details from the message content
-		ArrayList<HistoryReservation> historyResreservations= new ArrayList<>();//List to hold all reservations as HistoryReservation objects;
+		
 		String attribute;
 		
 		

@@ -366,7 +366,11 @@ public class BillController
 		if (ReservationControler.updateReservation(res, "status", "completed")) 
 		{
 		    Timestamp nowTime = java.sql.Timestamp.valueOf(LocalDateTime.now());
-		    ReservationControler.updateReservation(res, "leavingTime", nowTime);
+		    if (!ReservationControler.updateReservation(res, "leavingTime", nowTime)) 
+		    {
+               
+                System.out.println("Warning: Could not update leaving time.");
+            }
 		} else {
 		    System.out.println("Error: Failed to update status to completed. Leaving time was NOT updated.");
 		}
@@ -377,14 +381,27 @@ public class BillController
 
 		if (DBC.getTableByTableIdQuery(freeTable)==null)//update table data in table Object else return false
 		{
+			System.out.println("Critical Error: Could not fetch table to free it. Rolling back reservation status.");
+            ReservationControler.updateReservation(res, "status", "arrived");
+            ReservationControler.updateReservation(res, "leavingTime", null);
 			return false;
 		}
 
 
 
+		
+		// set table status to available 
+		if (!DBC.updateTableStatus(freeTable.getTableId(), "available")) 
+		{
+            // ROLLBACK: Revert reservation to "arrived"
+            System.out.println("Critical Error: Could not free table. Rolling back reservation status.");
+            ReservationControler.updateReservation(res, "status", "arrived");
+            ReservationControler.updateReservation(res, "leavingTime", null);
+            return false;
+        }
+		
 		//find match in the waiting list for the freed table
 		WaitList waiter = WaitListController.findMatchInWaitingList(freeTable);
-		DBC.updateTableStatus(freeTable.getTableId(), "available");// set table status to available 
 		if (waiter!=null)
 		{
 			//status of the table is already  occupied from the last customer that was seated from the waiting list
