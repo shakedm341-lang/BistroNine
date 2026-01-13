@@ -754,21 +754,31 @@ public class ReservationControler
 	}
 	
 	/**
-	 * Retrieves all table reservations from the database.
-	 *
-	 * 
-	 * @return An ArrayList of TableReservation objects representing all
-	 *         reservations in the database.
+	 * Retrieves all reservations from the database and converts them to history objects.
+	 * * @return An ArrayList of HistoryReservation objects, or an empty list if none found.
 	 */
-	private ArrayList<TableReservation> getAllReservations()
+	private ArrayList<HistoryReservation> getAllReservations()
 	{
-		ArrayList<ArrayList<Object>> allReservations = new ArrayList<>();//List to hold all reservations from the DB as a list of lists of objects
-		ArrayList<TableReservation> reservationsListAsTableRes = new ArrayList<>();//List to hold all reservations as TableReservation objects
+		// Fetch all raw reservation data from the database
+		ArrayList<ArrayList<Object>> allReservations = DBC.getAllReservationsQuery();
 
-		allReservations = DBC.getAllReservationsQuery();//Get all reservations from the DB as a list of lists of objects
-		reservationsListAsTableRes=	getAllReservationsAsTableReservation(allReservations);//Convert the list of reservations from the DB into list of TableReservation objects
+		// Safety check: ensure data was retrieved successfully
+		if (allReservations == null) 
+		{
+			return new ArrayList<>(); 
+		}
 
-		return reservationsListAsTableRes;//Return to server the list of reservations as TableReservation 
+		// Convert raw DB data into TableReservation objects
+		ArrayList<TableReservation> reservationsListAsTableRes = getAllReservationsAsTableReservation(allReservations);
+
+		// Safety check: ensure conversion was successful
+		if (reservationsListAsTableRes == null) 
+		{
+			return new ArrayList<>();
+		}
+
+		// Convert to HistoryReservation objects and return to client
+		return getAllReservationsAsHistoryReservation(reservationsListAsTableRes);
 	}
 
 	/**
