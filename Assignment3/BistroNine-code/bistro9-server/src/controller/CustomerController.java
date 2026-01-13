@@ -586,24 +586,30 @@ public class CustomerController
 		{
 			StringBuilder codesAsString = new StringBuilder();
 
-
 			for (Integer code : confCodes) 
 			{
 				codesAsString.append("confirmation code: ").append(code).append("\n"); 
 			}
 
+			String emailSubject = "Confirmation Code Recovery";
+			String emailBody = "Don't worry bistro9 is here for you😊, everything is saved with us!\n"
+					+ "Here are all the confirmation codes for your orders for today:\n" + codesAsString;
 
-			EmailSendController.sendEmail(sub.getEmail(), "Confirmation Code Recovery","Don't worry bistro9 is here for you😊, everything is saved with us!\n"+"Here are all the confirmation codes for your orders for today:\n"+codesAsString);// send email to the customer with all his confirmation codes for today
-
-			SmsSendController.sendSms(sub.getPhoneNumber(), "Confirmation Code Recovery","Don't worry bistro9 is here for you😊, everything is saved with us!\n"+"Here are all the confirmation codes for your orders for today:\n"+codesAsString);
-
+			// Send success notifications
+			EmailSendController.sendEmail(sub.getEmail(), emailSubject, emailBody);
+			SmsSendController.sendSms(sub.getPhoneNumber(), emailSubject, emailBody);
 		}
-		else {
-			EmailSendController.sendEmail(sub.getEmail(), "Oops, we couldn't find any confirmation codes for today🤭","We searched the system, but we didn't find any active confirmation codes for today.\n"+" Could it be that the reservation is for a different date?");// send email to the customer that no confirmation codes found for today
+		else 
+		{
+			String emailSubject = "Oops, we couldn't find any confirmation codes for today🤭";
+			String emailBody = "We searched the system, but we didn't find any active confirmation codes for today.\n"
+					+ " Could it be that the reservation is for a different date?";
 
-			SmsSendController.sendSms(sub.getPhoneNumber(), "Oops, we couldn't find any confirmation codes for today🤭","We searched the system, but we didn't find any active confirmation codes for today.\n"+" Could it be that the reservation is for a different date?");
-
+			// Send not found notifications
+			EmailSendController.sendEmail(sub.getEmail(), emailSubject, emailBody);
+			SmsSendController.sendSms(sub.getPhoneNumber(), emailSubject, emailBody);
 		}
+		
 
 
 		return true;

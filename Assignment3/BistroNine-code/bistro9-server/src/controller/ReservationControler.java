@@ -19,6 +19,7 @@ import data.TimeSlot;
 
 public class ReservationControler 
 {
+	private static ArrayList<Integer> sentReminders = new ArrayList<>();
 	private static final int RESERVATION_DURATION_MINUTES = 120;
     private static final int LATE_ARRIVAL_LIMIT_MINUTES = 15;
     private static final int REMINDER_ALERT_MINUTES = 119; // או 120
@@ -1323,34 +1324,29 @@ public class ReservationControler
 					DBC.deleteFromWaitListByReservationIdQuery(res.getReservationId());//update waitlist if the reservation was in the waitlist changed status to cancelled
 					updateReservation(res, "leavingTime", Timestamp.valueOf(LocalDateTime.now()));//update leaving time to now"
 
-					if (sub.getType()!=null) 
-					{
+					String emailSubject = "‼️❌Your bistro9 reservation has been cancelled❌‼️";
+					String emailBody;
 
-						EmailSendController.sendEmail(sub.getEmail(), "‼️❌Your bistro9 reservation has been cancelled❌‼️", "Hello "+sub.getFirstName()+" "+sub.getLastName()+" ,\r\n"
-								+ "We are contacting you regarding your reservation for "+res.getReservationDate()+".\r\n"
+					if (sub.getType() != null) 
+					{
+						emailBody = "Hello " + sub.getFirstName() + " " + sub.getLastName() + " ,\r\n"
+								+ "We are contacting you regarding your reservation for " + res.getReservationDate() + ".\r\n"
 								+ "Unfortunately, your reservation has been canceled. We are very sorry for the inconvenience caused.\r\n"
 								+ "We look forward to seeing you at our place at another time,\r\n"
-								+ "Hopefully you have a nice day🙏🏾, bistro9");// Send email that the reservation was cancelled
-						SmsSendController.sendSms(sub.getPhoneNumber(), "‼️❌Your bistro9 reservation has been cancelled❌‼️", "Hello "+sub.getFirstName()+" "+sub.getLastName()+",\r\n"
-								+ "We are contacting you regarding your reservation for "+res.getReservationDate()+".\r\n"
-								+ "Unfortunately, your reservation has been canceled. We are very sorry for the inconvenience caused.\r\n"
-								+ "We look forward to seeing you at our place at another time,\r\n"
-								+ "Hopefully you have a nice day🙏🏾, bistro9");
+								+ "Hopefully you have a nice day🙏🏾, bistro9";
 					}
 					else
 					{
-						EmailSendController.sendEmail(sub.getEmail(), "‼️❌Your bistro9 reservation has been cancelled❌‼️", "Hello customer ,\r\n"
-								+ "We are contacting you regarding your reservation for "+res.getReservationDate()+".\r\n"
+						emailBody = "Hello customer ,\r\n"
+								+ "We are contacting you regarding your reservation for " + res.getReservationDate() + ".\r\n"
 								+ "Unfortunately, your reservation has been canceled. We are very sorry for the inconvenience caused.\r\n"
 								+ "We look forward to seeing you at our place at another time,\r\n"
-								+ "Hopefully you have a nice day🙏🏾, bistro9");// Send email that the reservation was cancelled
-						SmsSendController.sendSms(sub.getPhoneNumber(), "‼️❌Your bistro9 reservation has been cancelled❌‼️",
-								"Hello customer ,\r\n"
-										+ "We are contacting you regarding your reservation for "+res.getReservationDate()+".\r\n"
-										+ "Unfortunately, your reservation has been canceled. We are very sorry for the inconvenience caused.\r\n"
-										+ "We look forward to seeing you at our place at another time,\r\n"
-										+ "Hopefully you have a nice day🙏🏾, bistro9");
+								+ "Hopefully you have a nice day🙏🏾, bistro9";
 					}
+
+					// Send the cancellation notifications using the variables
+					EmailSendController.sendEmail(sub.getEmail(), emailSubject, emailBody);
+					SmsSendController.sendSms(sub.getPhoneNumber(), emailSubject, emailBody);
 
 				}
 			}
@@ -1383,38 +1379,49 @@ public class ReservationControler
 				// Calculate the time difference in minutes between now and the reservation time
 				long minutesUntilRes = java.time.Duration.between(nowTime, resTime).toMinutes();
 
-				// If the reservation is 2 hours away
-				if ( minutesUntilRes == REMINDER_ALERT_MINUTES) 
+				// Check if the reservation is within the reminder window (between 110 and 120 minutes before)
+				// This prevents missing the alert due to server lag, unlike checking for exact minute
+				if (minutesUntilRes >= 110 && minutesUntilRes <= 120) 
 				{
+					// Check if we already sent a reminder for this reservation to avoid spamming
+					if (sentReminders.contains(res.getReservationId())) 
+					{
+						continue; 
+					}
+
 					Subscriber sub = new Subscriber();
 					sub.setCustomerId( res.getCustomerId());
 
 					if (!DBC.getCustomerByCustomerId(sub))
 					{
 						System.out.println("Error: could not find customer for reservation " + res.getConfirmationCode());
-						return;
+						continue;
 					}
 
+					String emailSubject = "bistro9 is waiting for you! 🎉🥂🎉";
+					String emailBody;
 
 					if (sub.getType()!=null) 
 					{
-						EmailSendController.sendEmail(sub.getEmail(), "bistro9 is waiting for you! 🎉🥂🎉", "Hi "+ sub.getFirstName()+ " " +sub.getLastName() + ", we just wanted to remind you that your table for "+res.getNumberOfDiners()+" diners at Bistro9 is reserved for today in 2 hours ("+res.getReservationDate()+").\r\n"
+						emailBody = "Hi "+ sub.getFirstName()+ " " +sub.getLastName() + ", we just wanted to remind you that your table for "+res.getNumberOfDiners()+" diners at Bistro9 is reserved for today in 2 hours ("+res.getReservationDate()+").\r\n"
 								+ "The restaurant staff is already preparing for you.\r\n"
-								+ "We look forward to seeing you and wish you an enjoyable meal.");// Send email reminder to the customer
-						SmsSendController.sendSms(sub.getPhoneNumber(), "bistro9 is waiting for you! 🎉🥂🎉","Hi "+ sub.getFirstName()+ " " +sub.getLastName() + ", we just wanted to remind you that your table for "+res.getNumberOfDiners()+" diners at Bistro9 is reserved for today in 2 hours ("+res.getReservationDate()+").\r\n"
-								+ "The restaurant staff is already preparing for you.\r\n"
-								+ "We look forward to seeing you and wish you an enjoyable meal.");// Send sms reminder to the customer
+								+ "We look forward to seeing you and wish you an enjoyable meal.";
 					}
 					else
 					{ 
-						EmailSendController.sendEmail(sub.getEmail(), "bistro9 is waiting for you! 🎉🥂🎉", "Hi customer, we just wanted to remind you that your table for "+res.getNumberOfDiners()+" diners at Bistro9 is reserved for today in 2 hours ("+res.getReservationDate()+").\r\n"
+						emailBody = "Hi customer, we just wanted to remind you that your table for "+res.getNumberOfDiners()+" diners at Bistro9 is reserved for today in 2 hours ("+res.getReservationDate()+").\r\n"
 								+ "The restaurant staff is already preparing for you.\r\n"
-								+ "We look forward to seeing you and wish you an enjoyable meal.");// Send email reminder to the customer
-						SmsSendController.sendSms(sub.getPhoneNumber(), "bistro9 is waiting for you! 🎉🥂🎉","Hi customer, we just wanted to remind you that your table for "+res.getNumberOfDiners()+" diners at Bistro9 is reserved for today in 2 hours ("+res.getReservationDate()+").\r\n"
-								+ "The restaurant staff is already preparing for you.\r\n"
-								+ "We look forward to seeing you and wish you an enjoyable meal.");// Send sms reminder to the customer
-
+								+ "We look forward to seeing you and wish you an enjoyable meal.";
 					}
+
+					// Send the notifications
+					EmailSendController.sendEmail(sub.getEmail(), emailSubject, emailBody);
+					SmsSendController.sendSms(sub.getPhoneNumber(), emailSubject, emailBody);
+
+					// Mark this reservation as reminded in memory
+					sentReminders.add(res.getReservationId());
+					
+					System.out.println("Reminder sent successfully for reservation ID: " + res.getReservationId());
 				}
 			}
 		}

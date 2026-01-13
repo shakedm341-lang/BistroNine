@@ -89,43 +89,33 @@ public class BillController
 		int discountAsInt = (int) bill.getDiscountSize();
 
 
-		if (sub.getType()!=null) 
-		{
+		String emailSubject = "Your BistroNine bill is ready🧾";
+		String emailBody;
 
-			EmailSendController.sendEmail(sub.getEmail(), "Your BistroNine bill is ready🧾", "Hi "+sub.getFirstName()+" "+sub.getLastName()+", Thank you for dining with us at Bistro9! It was a pleasure to host you.\r\n"
+		if (sub.getType() != null) 
+		{
+			emailBody = "Hi " + sub.getFirstName() + " " + sub.getLastName() + ", Thank you for dining with us at Bistro9! It was a pleasure to host you.\r\n"
 					+ "\r\n"
 					+ "Attached is your bill summary:\r\n"
-					+ "Amount before discount: "+formattedAmount+" ₪\r\n"
-					+ "Discount: "+discountAsInt+" %\r\n"
-					+ "Total to pay: "+formattedTotal+" ₪\r\n"
-					+ "We look forward to seeing you again soon, Bistro9 Team 🍷");// Send email reminder to the customer
-			SmsSendController.sendSms(sub.getPhoneNumber(), "Your BistroNine bill is ready🧾",
-					"Hi " + sub.getFirstName() + " " + sub.getLastName() + ", Thank you for dining with us at Bistro9! It was a pleasure to host you.\r\n"
-							+ "\r\n"
-							+ "Attached is your bill summary:\r\n"
-							+ "Amount before discount: " + formattedAmount + " ₪\r\n"
-							+ "Discount: " + discountAsInt + " %\r\n"
-							+ "Total to pay: " + formattedTotal + " ₪\r\n"
-							+ "We look forward to seeing you again soon, Bistro9 Team 🍷");// Send sms reminder to the customer
+					+ "Amount before discount: " + formattedAmount + " ₪\r\n"
+					+ "Discount: " + discountAsInt + " %\r\n"
+					+ "Total to pay: " + formattedTotal + " ₪\r\n"
+					+ "We look forward to seeing you again soon, Bistro9 Team 🍷";
 		}
 		else
 		{
-			EmailSendController.sendEmail(sub.getEmail(), "Your BistroNine bill is ready🧾", "Hi customer, Thank you for dining with us at Bistro9! It was a pleasure to host you.\r\n"
+			emailBody = "Hi customer, Thank you for dining with us at Bistro9! It was a pleasure to host you.\r\n"
 					+ "\r\n"
 					+ "Attached is your bill summary:\r\n"
-					+ "Amount before discount: "+formattedAmount+" ₪\r\n"
-					+ "Discount: "+discountAsInt+" %\r\n"
-					+ "Total to pay: "+formattedTotal+" ₪\r\n"
-					+ "We look forward to seeing you again soon, Bistro9 Team 🍷");// Send email reminder to the customer
-			SmsSendController.sendSms(sub.getPhoneNumber(), "Your BistroNine bill is ready🧾",
-					"Hi customer, Thank you for dining with us at Bistro9! It was a pleasure to host you.\r\n"
-							+ "\r\n"
-							+ "Attached is your bill summary:\r\n"
-							+ "Amount before discount: " + formattedAmount + " ₪\r\n"
-							+ "Discount: " + discountAsInt + " %\r\n"
-							+ "Total to pay: " + formattedTotal + " ₪\r\n"
-							+ "We look forward to seeing you again soon, Bistro9 Team 🍷");// Send sms reminder to the customer
+					+ "Amount before discount: " + formattedAmount + " ₪\r\n"
+					+ "Discount: " + discountAsInt + " %\r\n"
+					+ "Total to pay: " + formattedTotal + " ₪\r\n"
+					+ "We look forward to seeing you again soon, Bistro9 Team 🍷";
 		}
+
+		// Send notifications using the variables
+		EmailSendController.sendEmail(sub.getEmail(), emailSubject, emailBody);
+		SmsSendController.sendSms(sub.getPhoneNumber(), emailSubject, emailBody);
 	}
 
 	/**
@@ -426,21 +416,24 @@ public class BillController
 				return false;
 			}
 
+			String emailSubject = "Your table is ready 🍽️";
+			String emailBody;
+
 			if (DBC.getCustomerType(sub.getCustomerId()).equals("customer"))
 			{
-				EmailSendController.sendEmail(sub.getEmail(), "Your table is ready 🍽️","Hey customer, good news! A table has become available for "+ waiterRes.getNumberOfDiners() +" diners at Bistro 9 .\r\n"
-						+ "Looking forward to seeing you at the entrance!");// send email to the customer with all his confirmation codes for today
-
-				SmsSendController.sendSms(sub.getPhoneNumber(), "Your table is ready 🍽️","Hey customer, good news! A table has become available for "+ waiterRes.getNumberOfDiners() +" diners at Bistro 9 .\r\n"
-						+ "Looking forward to seeing you at the entrance!");
-				return true;
+				emailBody = "Hey customer, good news! A table has become available for " + waiterRes.getNumberOfDiners() + " diners at Bistro 9 .\r\n"
+						+ "Looking forward to seeing you at the entrance!";
+			}
+			else
+			{
+				emailBody = "Hey " + sub.getFirstName() + " " + sub.getLastName() + ", good news! A table has become available for " + waiterRes.getNumberOfDiners() + " diners at Bistro 9 .\r\n"
+						+ "Looking forward to seeing you at the entrance!";
 			}
 
-			EmailSendController.sendEmail(sub.getEmail(), "Your table is ready 🍽️","Hey "+sub.getFirstName()+" "+sub.getLastName()+", good news! A table has become available for "+ waiterRes.getNumberOfDiners() +" diners at Bistro 9 .\r\n"
-					+ "Looking forward to seeing you at the entrance!");// send email to the customer with all his confirmation codes for today
-
-			SmsSendController.sendSms(sub.getPhoneNumber(), "Your table is ready 🍽️","Hey "+sub.getFirstName()+" "+sub.getLastName()+", good news! A table has become available for "+ waiterRes.getNumberOfDiners() +" diners at Bistro 9 .\r\n"
-					+ "Looking forward to seeing you at the entrance!");
+			// Send notifications using the variables
+			EmailSendController.sendEmail(sub.getEmail(), emailSubject, emailBody);
+			SmsSendController.sendSms(sub.getPhoneNumber(), emailSubject, emailBody);
+			
 			return true;
 		}
 
