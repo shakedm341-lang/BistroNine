@@ -6,6 +6,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -96,6 +97,8 @@ public class DataBaseController {
 	// 59. closeRestaurantOnSpecialDayQuery(OpeningHoursPerDay) : boolean
 	// 60. updateSpecialOpeningTimeQuery(OpeningHoursPerDay, OpeningHoursPerDay) : boolean
 	// 61. updateOpeningTimeQuery(OpeningHours, OpeningHours) : boolean
+	// 62. getReservationsByDateRangeQuery(Timestamp, Timestamp) : ArrayList<ArrayList<Object>>
+	// 63. getReservationsByAttributeQuery(String, Object) : ArrayList<ArrayList<Object>>
 	// .
 	// END OF API.
 
@@ -2705,13 +2708,18 @@ public class DataBaseController {
 
 	// 42
 	/**
-	 * Appends new special opening hours for a specific date to the existing ones.
-	 * This method does NOT delete existing entries; it only adds new rows. * @param
-	 * openingHours The OpeningHoursPerDay object containing the date and list of
-	 * slots to add.
+	 * Appends new special opening hours for a specific date.
+	 * <p>
+	 * <b>Logic Update:</b> Before inserting, this method automatically checks if
+	 * the day is currently marked as "Closed" (00:00 - 00:00). If that specific
+	 * "Closed" slot exists, it is deleted first to allow the new hours to take
+	 * effect.
+	 * </p>
+	 * * @param openingHours The OpeningHoursPerDay object containing the date and
+	 * list of slots to add.
 	 * 
-	 * @return true if the insertion was successful, false otherwise (e.g., database
-	 *         error or duplicate primary key).
+	 * @return true if the operation (conditional delete + insertions) was
+	 *         successful, false on error.
 	 */
 	public boolean addNewSpecialOpeningTimeQuery(OpeningHoursPerDay openingHours) {
 		// 1. Get connection from the pool
@@ -2723,6 +2731,7 @@ public class DataBaseController {
 		}
 
 		Connection conn = pConn.getConnection();
+		PreparedStatement psClean = null;
 		PreparedStatement psInsert = null;
 		boolean success = false;
 
@@ -2730,7 +2739,21 @@ public class DataBaseController {
 			// START TRANSACTION
 			conn.setAutoCommit(false);
 
-			// Step 1: Insert the new time slots (No Deletion happens here)
+			// -----------------------------------------------------------------
+			// STEP 1: Conditional Clean-up
+			// Try to delete the specific "00:00 - 00:00" slot for this date.
+			// If it exists, it gets deleted. If not, this does nothing (rowsAffected = 0)
+			// and we continue.
+			// -----------------------------------------------------------------
+			String cleanQuery = "DELETE FROM special_hours WHERE specificDate = ? AND openingTime = '00:00:00' AND closingTime = '00:00:00'";
+			psClean = conn.prepareStatement(cleanQuery);
+			psClean.setDate(1, java.sql.Date.valueOf(openingHours.getDay()));
+			psClean.executeUpdate();
+			// We don't check the result here because it's okay if it didn't exist.
+
+			// -----------------------------------------------------------------
+			// STEP 2: Insert the new time slots
+			// -----------------------------------------------------------------
 			String insertQuery = "INSERT INTO special_hours (specificDate, openingTime, closingTime) VALUES (?, ?, ?)";
 			psInsert = conn.prepareStatement(insertQuery);
 
@@ -2747,7 +2770,7 @@ public class DataBaseController {
 			success = true;
 
 		} catch (SQLException e) {
-			System.out.println("Error adding special hours (Possible duplicate entry or DB error): " + e.getMessage());
+			System.out.println("Error adding special hours: " + e.getMessage());
 			e.printStackTrace();
 			try {
 				// ROLLBACK if something went wrong
@@ -2767,6 +2790,7 @@ public class DataBaseController {
 				e.printStackTrace();
 			}
 
+			closeResources(psClean, null); // Close the cleanup statement
 			closeResources(psInsert, null);
 			releaseConnection(pConn); // Release back to pool
 		}
@@ -3759,6 +3783,171 @@ public class DataBaseController {
 		}
 
 		return false;
+	}
+
+	// 62
+	/**
+	 * Retrieves all reservation records that fall within a specific date range.
+	 * <p>
+	 * The query filters based on the <b>reservationDate</b> column. It is
+	 * inclusive, meaning it searches for records where the date is greater than or
+	 * equal to the start and less than or equal to the end.
+	 * </p>
+	 *
+	 * @param startDate The beginning of the date range (Timestamp).
+	 * @param endDate   The end of the date range (Timestamp).
+	 * @return An ArrayList of ArrayLists, where each inner list contains the raw
+	 *         data fields of a single reservation. Returns null on connection
+	 *         error.
+	 */
+	public ArrayList<ArrayList<Object>> getReservationsByDateRangeQuery(Timestamp startDate, Timestamp endDate) {
+		ArrayList<ArrayList<Object>> reservations = new ArrayList<>();
+		PooledConnection pConn = this.getConnection();
+
+		if (pConn == null) {
+			return null;
+		}
+
+		Connection conn = pConn.getConnection();
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+
+		try {
+			// Select all reservations where the reservationDate is between the start and
+			// end timestamps
+			String query = "SELECT * FROM table_reservations WHERE reservationDate >= ? AND reservationDate <= ?";
+
+			ps = conn.prepareStatement(query);
+			ps.setTimestamp(1, startDate);
+			ps.setTimestamp(2, endDate);
+
+			rs = ps.executeQuery();
+
+			while (rs.next()) {
+				ArrayList<Object> row = new ArrayList<>();
+
+				// We must add these in the EXACT order your Controller expects them
+				row.add(rs.getInt("reservationID")); // 0
+				row.add(rs.getInt("tableId")); // 1
+				row.add(rs.getInt("numberOfDiners")); // 2
+				row.add(rs.getInt("confirmationCode")); // 3
+				row.add(rs.getInt("customerId")); // 4
+				row.add(rs.getTimestamp("reservationDate")); // 5
+				row.add(rs.getTimestamp("dateOfMakeReservation")); // 6
+				row.add(rs.getTimestamp("arrivalTime")); // 7
+				row.add(rs.getTimestamp("leavingTime")); // 8
+				row.add(rs.getString("status")); // 9
+
+				reservations.add(row);
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			closeResources(ps, rs);
+			releaseConnection(pConn);
+		}
+
+		return reservations;
+	}
+
+	/**
+	 * Retrieves reservations matching a specific dynamic criterion.
+	 * <p>
+	 * <b>Security & Safety Measures:</b>
+	 * <ul>
+	 * <li><b>SQL Injection Prevention:</b> The column name (attribute) is validated
+	 * against a hardcoded whitelist (Switch statement). Raw strings are never
+	 * concatenated into the query.</li>
+	 * <li><b>Type Validation:</b> The value parameter is explicitly checked to
+	 * ensure it is either an <code>Integer</code> or a <code>String</code> before
+	 * execution.</li>
+	 * </ul>
+	 * </p>
+	 *
+	 * @param attribute The name of the database column (e.g., "status", "tableId").
+	 * @param value     The value to search for. Must be an Integer or a String.
+	 * @return An ArrayList of ArrayLists containing the raw data, or null on
+	 *         error/invalid type.
+	 */
+	public ArrayList<ArrayList<Object>> getReservationsByAttributeQuery(String attribute, Object value) {
+		ArrayList<ArrayList<Object>> reservations = new ArrayList<>();
+
+		// 1. Validate the value type immediately
+		if (!(value instanceof Integer) && !(value instanceof String)) {
+			System.out.println("Error: Invalid parameter type. 'value' must be Integer or String. Received: "
+					+ (value == null ? "null" : value.getClass().getSimpleName()));
+			return null;
+		}
+
+		PooledConnection pConn = this.getConnection();
+
+		if (pConn == null) {
+			return null;
+		}
+
+		Connection conn = pConn.getConnection();
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+
+		try {
+			String query = "";
+
+			// 2. SECURITY MEASURES: Whitelist the column names (Prevents SQL Injection)
+			// We cannot use '?' for column identifiers in PreparedStatement, so we use a
+			// switch
+			// to ensure only valid, pre-defined column names are used in the query string.
+			switch (attribute) {
+			case "status":
+				query = "SELECT * FROM table_reservations WHERE status = ?";
+				break;
+			case "tableId":
+				query = "SELECT * FROM table_reservations WHERE tableId = ?";
+				break;
+			case "numberOfDiners":
+				query = "SELECT * FROM table_reservations WHERE numberOfDiners = ?";
+				break;
+			default:
+				System.out.println("Error: Invalid attribute requested: " + attribute);
+				return null;
+			}
+
+			ps = conn.prepareStatement(query);
+
+			// 3. Set the parameter safely
+			// Since we validated above that value is Integer or String, setObject will
+			// correctly
+			// map it to the SQL Types (INT or VARCHAR/ENUM).
+			ps.setObject(1, value);
+
+			rs = ps.executeQuery();
+
+			while (rs.next()) {
+				ArrayList<Object> row = new ArrayList<>();
+
+				// Standard mapping
+				row.add(rs.getInt("reservationID")); // 0
+				row.add(rs.getInt("tableId")); // 1
+				row.add(rs.getInt("numberOfDiners")); // 2
+				row.add(rs.getInt("confirmationCode")); // 3
+				row.add(rs.getInt("customerId")); // 4
+				row.add(rs.getTimestamp("reservationDate")); // 5
+				row.add(rs.getTimestamp("dateOfMakeReservation")); // 6
+				row.add(rs.getTimestamp("arrivalTime")); // 7
+				row.add(rs.getTimestamp("leavingTime")); // 8
+				row.add(rs.getString("status")); // 9
+
+				reservations.add(row);
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			closeResources(ps, rs);
+			releaseConnection(pConn);
+		}
+
+		return reservations;
 	}
 
 }
