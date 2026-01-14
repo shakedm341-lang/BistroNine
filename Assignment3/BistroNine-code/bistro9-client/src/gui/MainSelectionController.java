@@ -54,7 +54,7 @@ public class MainSelectionController {
             loginController.setClient(client);
             loginController.setMode(LoginController.Mode.REMOTE);
             
-            // Create a completely new Stage for the Remote Mode application
+            // Create a completely new Stage for the Remote mode application
             Stage remoteStage = new Stage();
             remoteStage.setTitle("BistroNine Client - Login");
 
@@ -68,13 +68,13 @@ public class MainSelectionController {
             Stage currentStage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             currentStage.close();
 
-            // Show and center the new remote stage
-            System.out.println("Opening standalone Remote Login window...");
+            // Show and center the new Remote mode stage
+            System.out.println("Opening standalone Remote mode login window...");
             remoteStage.show();
             remoteStage.centerOnScreen();
             
         } catch (Exception e) {
-            System.out.println("Error launching Remote Mode window:");
+            System.out.println("Error launching Remote mode window:");
             e.printStackTrace();
         }
     }
@@ -90,16 +90,22 @@ public class MainSelectionController {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/ConnectToServerGui.fxml"));
             Parent root = loader.load();
 
-            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            stage.setTitle("BistroNine Client - Connection to Server");
+            // Create a new Stage for the Connection screen
+            Stage connectionStage = new Stage();
+            connectionStage.setTitle("BistroNine Client - Connection to Server");
             Scene scene = new Scene(root);
             String cssPath = getClass().getResource("/gui/styles.css").toExternalForm();
             scene.getStylesheets().add(cssPath);
-            stage.setScene(scene);
-            stage.setResizable(false);
-            stage.setMaximized(false);
-            stage.show();
-            stage.centerOnScreen();
+            connectionStage.setScene(scene);
+            connectionStage.setResizable(false);
+            
+            // Close the current (Main Selection) stage
+            Stage currentStage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            currentStage.close();
+
+            // Show and center the new stage
+            connectionStage.show();
+            connectionStage.centerOnScreen();
 
         } catch (Exception e) {
             System.out.println("Error returning to Connection Screen:");

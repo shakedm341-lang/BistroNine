@@ -100,6 +100,7 @@ public class SubscribersViewController implements Initializable {
     }
     
     public void updateSubscriberTable(ArrayList<Subscriber> subscribers) {
+        System.out.println("DEBUG: Received " + (subscribers != null ? subscribers.size() : 0) + " subscribers from server.");
         Platform.runLater(() -> {
             // 1. Clear the existing data in the observable list
             subscriberList.clear();

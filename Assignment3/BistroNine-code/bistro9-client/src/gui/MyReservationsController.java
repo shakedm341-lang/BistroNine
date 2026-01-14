@@ -8,12 +8,10 @@ import java.util.ArrayList;
 import java.util.ResourceBundle;
 
 import controller.ClientController;
+import data.HistoryReservation;
 import data.Command;
-import data.Message;
 import data.Subscriber;
-import data.TableReservation;
 import data.TypeMessage;
-import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -25,33 +23,41 @@ import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.paint.Color;
 import javafx.util.Callback;
 
-public class MyReservationsController implements Initializable, IReservationViewer,IReservationDeleter {
+public class MyReservationsController implements Initializable, IReservationDeleter, IReservationViewer {
 
 	@FXML
-	private TableView<TableReservation> reservationsTable;
+	private TableView<HistoryReservation> reservationsTable;
 
 	@FXML
-	private TableColumn<TableReservation, Timestamp> colDateTime;
+	private TableColumn<HistoryReservation, Timestamp> colDateTime;
 
 	@FXML
-	private TableColumn<TableReservation, Integer> colGuests;
+	private TableColumn<HistoryReservation, Integer> colGuests;
 
 	@FXML
-	private TableColumn<TableReservation, Integer> colConfirmationCode;
+	private TableColumn<HistoryReservation, Integer> colConfirmationCode;
 
 	@FXML
-	private TableColumn<TableReservation, String> colStatus;
+	private TableColumn<HistoryReservation, String> colStatus;
 
 	@FXML
-	private TableColumn<TableReservation, Void> colAction;
+	private TableColumn<HistoryReservation, Double> colTotal;
 
-	private ObservableList<TableReservation> reservationList = FXCollections.observableArrayList();
+	@FXML
+	private TableColumn<HistoryReservation, Double> colDiscount;
+
+	@FXML
+	private TableColumn<HistoryReservation, String> colPayment;
+
+	@FXML
+	private TableColumn<HistoryReservation, Void> colAction;
+
+	private ObservableList<HistoryReservation> reservationList = FXCollections.observableArrayList();
 
 	private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
-
+	// Dependencies
 	private ClientController clientController;
 	private Subscriber currentUser;
 
@@ -68,7 +74,7 @@ public class MyReservationsController implements Initializable, IReservationView
 
 		colDateTime.setCellValueFactory(new PropertyValueFactory<>("reservationDate"));
 
-		colDateTime.setCellFactory(column -> new TableCell<TableReservation, Timestamp>() {
+		colDateTime.setCellFactory(column -> new TableCell<HistoryReservation, Timestamp>() {
 			@Override
 			protected void updateItem(Timestamp item, boolean empty) {
 				super.updateItem(item, empty);
@@ -84,6 +90,45 @@ public class MyReservationsController implements Initializable, IReservationView
 		colConfirmationCode.setCellValueFactory(new PropertyValueFactory<>("confirmationCode"));
 
 		colStatus.setCellValueFactory(new PropertyValueFactory<>("status"));
+
+		colTotal.setCellValueFactory(new PropertyValueFactory<>("totalAmountAfterDiscount"));
+		colTotal.setCellFactory(column -> new TableCell<HistoryReservation, Double>() {
+			@Override
+			protected void updateItem(Double item, boolean empty) {
+				super.updateItem(item, empty);
+				if (empty || item == null || item == 0) {
+					setText("-");
+				} else {
+					setText(String.format("%.2f", item));
+				}
+			}
+		});
+
+		colDiscount.setCellValueFactory(new PropertyValueFactory<>("discountSize"));
+		colDiscount.setCellFactory(column -> new TableCell<HistoryReservation, Double>() {
+			@Override
+			protected void updateItem(Double item, boolean empty) {
+				super.updateItem(item, empty);
+				if (empty || item == null || item == 0) {
+					setText("-");
+				} else {
+					setText(String.format("%.0f%%", item));
+				}
+			}
+		});
+
+		colPayment.setCellValueFactory(new PropertyValueFactory<>("paymentMethod"));
+		colPayment.setCellFactory(column -> new TableCell<HistoryReservation, String>() {
+			@Override
+			protected void updateItem(String item, boolean empty) {
+				super.updateItem(item, empty);
+				if (empty || item == null) {
+					setText("-");
+				} else {
+					setText(item);
+				}
+			}
+		});
 		
 		// Add the "Cancel" button to the table
 		addButtonToTable();
@@ -97,11 +142,11 @@ public class MyReservationsController implements Initializable, IReservationView
 	private void addButtonToTable() {
 		
 		// Define a cell factory to create the "Cancel" button in each row
-		Callback<TableColumn<TableReservation, Void>, TableCell<TableReservation, Void>> cellFactory = new Callback<>() {
+		Callback<TableColumn<HistoryReservation, Void>, TableCell<HistoryReservation, Void>> cellFactory = new Callback<>() {
 			
 			@Override
 			// Create a new TableCell with a "Cancel" button
-			public TableCell<TableReservation, Void> call(final TableColumn<TableReservation, Void> param) {
+			public TableCell<HistoryReservation, Void> call(final TableColumn<HistoryReservation, Void> param) {
 				// Return a new TableCell instance
 				return new TableCell<>() {
 
@@ -111,7 +156,7 @@ public class MyReservationsController implements Initializable, IReservationView
 					{
 						btn.getStyleClass().addAll("btn-table-action", "btn-table-delete");
 						btn.setOnAction((event) -> {
-							TableReservation data = getTableView().getItems().get(getIndex());
+							HistoryReservation data = getTableView().getItems().get(getIndex());
 							handleCancelReservation(data);
 						});
 					}
@@ -123,7 +168,7 @@ public class MyReservationsController implements Initializable, IReservationView
 						if (empty) {
 							setGraphic(null);
 						} else {
-							TableReservation res = getTableView().getItems().get(getIndex());
+							HistoryReservation res = getTableView().getItems().get(getIndex());
 
 							LocalDateTime resDate = res.getReservationDate().toLocalDateTime();
 							boolean isFuture = resDate.isAfter(LocalDateTime.now());
@@ -152,7 +197,7 @@ public class MyReservationsController implements Initializable, IReservationView
 	public void setDependencies(Subscriber user, ClientController controller) {
 		this.currentUser = user;
 		this.clientController = controller;
-		controller.MyReservation = this;
+		ClientController.MyReservation = this;
 
 		loadReservationsData();
 	}
@@ -171,15 +216,12 @@ public class MyReservationsController implements Initializable, IReservationView
 	    params.add(customerId);
 	    
 	    if (clientController != null) {
-	        
-	        // Set this controller as the reservation viewer
 	        clientController.setReservationViewer(this);
-	        
 	        // Request all reservations for the current customer
 	        clientController.handleMessageFromBoundary(
 	                TypeMessage.RESERVATION, // The broad category
 	                params, // The data (now includes type + ID)
-	                Command.GET_ALL_RESERVATIONS_BY_CUSTOMER // The specific command
+	                Command.GET_HISTORY_RESERVATION_BY_CUSTOMER_ID // The specific command
 	        );
 	    } else {
 	        System.err.println("Error: Client connection is null.");
@@ -189,7 +231,8 @@ public class MyReservationsController implements Initializable, IReservationView
 	/**
 	 * Sets the list of reservations to be displayed in the table.
 	 */
-	public void setReservationsList(ArrayList<TableReservation> reservations) {
+	@Override
+	public void setReservationsList(ArrayList<HistoryReservation> reservations) {
 		javafx.application.Platform.runLater(() ->{
 			if (reservations != null) {
 				if (reservations.size() == 0) {
@@ -207,7 +250,7 @@ public class MyReservationsController implements Initializable, IReservationView
 	 * 
 	 * @param res The reservation to be cancelled.
 	 */
-	private void handleCancelReservation(TableReservation res) {
+	private void handleCancelReservation(HistoryReservation res) {
 
 		// Prepare parameters for the delete reservation request
 		ArrayList<Object> params = new ArrayList<>();

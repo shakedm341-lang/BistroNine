@@ -21,7 +21,7 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 
-public class VisitHistoryController implements Initializable, IReservationViewer {
+public class VisitHistoryController implements Initializable {
 
     @FXML
     private TableView<TableReservation> historyTable;
@@ -98,6 +98,7 @@ public class VisitHistoryController implements Initializable, IReservationViewer
     public void setDependencies(Subscriber user, ClientController controller) {
         this.currentUser = user;
         this.clientController = controller;
+        ClientController.visitHistoryController = this;
         loadHistoryData();
     }
 
@@ -108,7 +109,6 @@ public class VisitHistoryController implements Initializable, IReservationViewer
         params.add("subscriber");
         params.add(currentUser.getCustomerId());
 
-        clientController.setReservationViewer(this);
         clientController.handleMessageFromBoundary(
                 TypeMessage.RESERVATION,
                 params,
@@ -116,7 +116,6 @@ public class VisitHistoryController implements Initializable, IReservationViewer
         );
     }
 
-    @Override
     public void setReservationsList(ArrayList<TableReservation> reservations) {
         javafx.application.Platform.runLater(() -> {
             if (reservations != null) {
@@ -131,4 +130,3 @@ public class VisitHistoryController implements Initializable, IReservationViewer
         });
     }
 }
-

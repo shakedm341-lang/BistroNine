@@ -37,7 +37,12 @@
                </children>
             </VBox>
             
-            <Button mnemonicParsing="false" onAction="#connectToServer" prefHeight="45.0" prefWidth="200.0" styleClass="btn-primary" text="Connect to Server" />
+            <VBox alignment="CENTER" spacing="10.0">
+               <children>
+                  <Button mnemonicParsing="false" onAction="#connectToServer" prefHeight="45.0" prefWidth="200.0" styleClass="btn-primary" text="Connect to Server" />
+                  <Button mnemonicParsing="false" onAction="#exitApplication" prefHeight="45.0" prefWidth="200.0" styleClass="btn-danger-outline" text="Exit" />
+               </children>
+            </VBox>
          </children>
          <padding>
             <Insets bottom="40.0" left="50.0" right="50.0" top="40.0" />

@@ -27,15 +27,15 @@
                      </graphic>
                   </Button>
                   
-                  <Button fx:id="btnRemoteAccess" contentDisplay="TOP" mnemonicParsing="false" onAction="#enterRemoteAccess" prefHeight="220.0" prefWidth="240.0" styleClass="tile-btn, tile-green" text="Remote Access">
+                  <Button fx:id="btnRemoteAccess" contentDisplay="TOP" mnemonicParsing="false" onAction="#enterRemoteAccess" prefHeight="220.0" prefWidth="240.0" styleClass="tile-btn, tile-green" text="Remote mode">
                      <graphic>
-                        <Label style="-fx-font-size: 50px;" text="📱" />
+                        <Label style="-fx-font-size: 50px;" text="💻" />
                      </graphic>
                   </Button>
                </children>
             </HBox>
             
-            <Label styleClass="subtitle-text" text="Terminal Mode is for on-site self-service | Remote Access is for staff and customers" />
+            <Label styleClass="subtitle-text" text="Terminal Mode is for on-site self-service | Remote mode is for staff and customers" />
             
             <Button mnemonicParsing="false" onAction="#handleBackToConnection" prefHeight="40.0" prefWidth="220.0" styleClass="btn-danger-outline" text="Back to Server Connection" />
          </children>

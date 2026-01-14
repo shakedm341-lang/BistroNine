@@ -6,6 +6,7 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 
 import data.*;
+import data.HistoryReservation;
 import gui.LoginController;
 import gui.MyReservationsController;
 import gui.ReservationBoundry;
@@ -39,8 +40,10 @@ public class ClientController extends AbstractClient {
     public static gui.PayBillController payBillController;
     public static gui.UserDashboardController userDashboardController;
     public static gui.ReportsController reportsController;
+    public static gui.VisitHistoryController visitHistoryController;
     private gui.IReservationViewer currentReservationViewer;
     private gui.IReservationDeleter currentReservationDeleter;
+    
     
     
     
@@ -113,8 +116,15 @@ public class ClientController extends AbstractClient {
     // 2. Second Switch: Handle Reservation related commands
     private void handleReservationResponse(Message message) {
         switch (message.command) {
+            case GET_ALL_RESERVATIONS:
+            case GET_RESERVATION_BY_ATTRIBUTE:
+            case GET_ALL_RESERVATIONS_BY_DATE_RANGE:
+            case GET_HISTORY_RESERVATION_BY_CUSTOMER_ID:
+                handleReservationListResponse(message);
+                break;
+
             case GET_ALL_RESERVATIONS_BY_CUSTOMER:
-                handleGetAllReservationsByCustomer(message);
+                handleVisitHistoryResponse(message);
                 break;
 
             case UPDATE_RESERVATION_DETAILS:
@@ -302,15 +312,22 @@ public class ClientController extends AbstractClient {
         }
     }
 
-    // Helper method for handling the list of reservations
-    private void handleGetAllReservationsByCustomer(Message message) {
+    // Helper method for handling the list of reservations (HistoryReservation)
+    private void handleReservationListResponse(Message message) {
         if (currentReservationViewer != null) {
             @SuppressWarnings("unchecked")
-            ArrayList<TableReservation> list = (ArrayList<TableReservation>) message.content;
-            currentReservationViewer.setReservationsList(list);  
-            
+            ArrayList<HistoryReservation> list = (ArrayList<HistoryReservation>) message.content;
+            currentReservationViewer.setReservationsList(list);
             currentReservationViewer = null; // Reset after use
-            }
+        }
+    }
+
+    private void handleVisitHistoryResponse(Message message) {
+        if (visitHistoryController != null) {
+            @SuppressWarnings("unchecked")
+            ArrayList<TableReservation> list = (ArrayList<TableReservation>) message.content;
+            visitHistoryController.setReservationsList(list);
+        }
     }
 
     // Helper method for handling the update response
@@ -341,6 +358,7 @@ public class ClientController extends AbstractClient {
         if (subscribersViewController != null) {
             @SuppressWarnings("unchecked")
             ArrayList<Subscriber> list = (ArrayList<Subscriber>) message.content;
+            System.out.println("DEBUG: Received " + (list != null ? list.size() : 0) + " subscribers from server.");
             subscribersViewController.updateSubscriberTable(list); // Update the subscribers table in the boundary
         }
     }
@@ -439,7 +457,7 @@ public class ClientController extends AbstractClient {
             getTableController.onRecoverCodesResponse(message.content); // Notify the Kiosk boundary about recovery status
         }
     }
-
+    
     // Helper method for handling the check-in (get table) response
     private void handleCheckInResponse(Message message) {
         if (getTableController != null) {

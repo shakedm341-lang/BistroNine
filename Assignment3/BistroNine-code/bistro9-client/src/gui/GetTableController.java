@@ -147,8 +147,21 @@ public class GetTableController extends BaseTerminalController {
         String phone = recoveryPhoneField.getText().trim();
         String email = recoveryEmailField.getText().trim();
 
+        // Health Checks for Lost Codes Recovery
         if (phone.isEmpty() && email.isEmpty()) {
             TerminalUtils.showError("Input Error", "Please provide either your phone number or email address.");
+            return;
+        }
+
+        // Validate Phone if provided: Must be exactly 10 digits
+        if (!phone.isEmpty() && !phone.matches("^\\d{10}$")) {
+            TerminalUtils.showError("Invalid Phone", "Phone number must be exactly 10 digits.");
+            return;
+        }
+
+        // Validate Email if provided
+        if (!email.isEmpty() && !email.matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")) {
+            TerminalUtils.showError("Invalid Email", "Please enter a valid email (e.g. name@example.com).");
             return;
         }
 

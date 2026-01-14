@@ -27,9 +27,12 @@
                 <TableColumn fx:id="colDateTime" prefWidth="180.0" text="Date &amp; Time" />
                 <TableColumn fx:id="colGuests" prefWidth="80.0" text="Guests" />
                 <TableColumn fx:id="colConfirmationCode" prefWidth="120.0" text="Conf. Code" />
-                <TableColumn fx:id="colStatus" prefWidth="120.0" text="Status" />
+                <TableColumn fx:id="colStatus" prefWidth="100.0" text="Status" />
+                <TableColumn fx:id="colTotal" prefWidth="100.0" text="Total Amount" />
+                <TableColumn fx:id="colDiscount" prefWidth="80.0" text="Discount" />
+                <TableColumn fx:id="colPayment" prefWidth="120.0" text="Payment Method" />
                 
-                <TableColumn fx:id="colAction" prefWidth="140.0" text="Action" />
+                <TableColumn fx:id="colAction" prefWidth="100.0" text="Action" />
             </columns>
             
             <columnResizePolicy>

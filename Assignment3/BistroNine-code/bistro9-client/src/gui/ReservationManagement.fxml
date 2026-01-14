@@ -2,6 +2,8 @@
 
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.DatePicker?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.TableColumn?>
@@ -21,15 +23,44 @@
             <Insets top="20" right="20" bottom="20" left="20"/>
         </padding>
 
-        <VBox spacing="8.0">
-            <Label text="Search Customer Reservations" styleClass="subtitle-text" style="-fx-font-weight: bold;"/>
+        <VBox spacing="10.0">
+            <Label text="Reservation Management Operations" styleClass="subtitle-text" style="-fx-font-weight: bold;"/>
             
-            <HBox spacing="10.0" alignment="CENTER_LEFT">
-                <TextField fx:id="customerIdField" promptText="Enter Customer ID" 
-                           styleClass="text-field-modern" prefWidth="250" />
+            <HBox spacing="15.0" alignment="CENTER_LEFT">
+                <VBox spacing="5.0">
+                    <Label text="Search Mode" style="-fx-font-size: 11px; -fx-text-fill: #777;"/>
+                    <ComboBox fx:id="searchModeCombo" prefWidth="180" promptText="Select Search Mode" 
+                              style="-fx-background-color: white; -fx-border-color: #CBD5E0; -fx-border-radius: 5;" />
+                </VBox>
                 
-                <Button text="Search" onAction="#handleSearchByCustomer" 
-                        styleClass="btn-primary" prefWidth="100"/>
+                <Separator orientation="VERTICAL" />
+                
+                <!-- Mode: Show All -->
+                <HBox fx:id="allBox" spacing="10.0" alignment="CENTER_LEFT" visible="false" managed="false">
+                    <Button text="Fetch All Reservations" onAction="#handleGetAll" 
+                            styleClass="btn-secondary" prefWidth="180"/>
+                </HBox>
+                
+                <!-- Mode: By Attribute -->
+                <HBox fx:id="attributeBox" spacing="10.0" alignment="CENTER_LEFT" visible="false" managed="false">
+                    <ComboBox fx:id="attributeCombo" promptText="Select Attribute" prefWidth="150" 
+                              style="-fx-background-color: white; -fx-border-color: #CBD5E0; -fx-border-radius: 5;" />
+                    <StackPane>
+                        <TextField fx:id="attributeValueField" promptText="Enter Value" prefWidth="150" styleClass="text-field-modern" />
+                        <ComboBox fx:id="statusComboBox" promptText="Select Status" prefWidth="150" visible="false" managed="false" 
+                                  style="-fx-background-color: white; -fx-border-color: #CBD5E0; -fx-border-radius: 5;" />
+                    </StackPane>
+                    <Button text="Search" onAction="#handleSearchByAttribute" 
+                            styleClass="btn-primary" />
+                </HBox>
+                
+                <!-- Mode: By Date Range -->
+                <HBox fx:id="dateRangeBox" spacing="10.0" alignment="CENTER_LEFT" visible="false" managed="false">
+                    <DatePicker fx:id="startDatePicker" promptText="Start Date" prefWidth="140" styleClass="date-picker-modern" />
+                    <DatePicker fx:id="endDatePicker" promptText="End Date" prefWidth="140" styleClass="date-picker-modern" />
+                    <Button text="Filter by Date" onAction="#handleSearchByDateRange" 
+                            styleClass="btn-primary" />
+                </HBox>
             </HBox>
         </VBox>
 
@@ -41,6 +72,7 @@
                 <TableColumn fx:id="colGuests" text="Guests" prefWidth="80.0" />
                 <TableColumn fx:id="colConfirmationCode" text="Code" prefWidth="100.0" />
                 <TableColumn fx:id="colStatus" text="Status" prefWidth="100.0" />
+                <TableColumn fx:id="colTotalPaid" text="Total Paid" prefWidth="100.0" />
                 <TableColumn fx:id="colAction" text="Action" prefWidth="120.0" />
             </columns>
 

@@ -1,11 +1,11 @@
 package gui;
 
 import java.util.ArrayList;
-import data.TableReservation;
+import data.HistoryReservation;
 
 public interface IReservationViewer {
     /**
-     * מתודה שכל מסך חייב לממש כדי לקבל את רשימת ההזמנות
+     * Method for screens using HistoryReservation (e.g., ReservationManagementController, MyReservationsController)
      */
-    void setReservationsList(ArrayList<TableReservation> reservations);
+    void setReservationsList(ArrayList<HistoryReservation> reservations);
 }

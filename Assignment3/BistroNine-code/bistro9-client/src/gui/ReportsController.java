@@ -7,7 +7,6 @@ import java.util.ResourceBundle;
 
 import controller.ClientController;
 import data.Command;
-import data.Message;
 import data.SubscriberReport;
 import data.TimeReport;
 import data.TypeMessage;
@@ -22,6 +21,8 @@ import javafx.scene.chart.XYChart;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
+import javafx.scene.control.DateCell;
+import javafx.util.Callback;
 
 public class ReportsController implements Initializable {
 
@@ -54,6 +55,21 @@ public class ReportsController implements Initializable {
         LocalDate lastMonth = today.minusMonths(1);
         dpStart.setValue(lastMonth.withDayOfMonth(1));
         dpEnd.setValue(lastMonth.withDayOfMonth(lastMonth.lengthOfMonth()));
+
+        // Restrict dates to today or past
+        Callback<DatePicker, DateCell> dayCellFactory = dp -> new DateCell() {
+            @Override
+            public void updateItem(LocalDate item, boolean empty) {
+                super.updateItem(item, empty);
+                if (item.isAfter(LocalDate.now())) {
+                    setDisable(true);
+                    setStyle("-fx-background-color: #eeeeee;");
+                }
+            }
+        };
+
+        dpStart.setDayCellFactory(dayCellFactory);
+        dpEnd.setDayCellFactory(dayCellFactory);
     }
 
     public void setDependencies(ClientController client) {
@@ -68,6 +84,16 @@ public class ReportsController implements Initializable {
 
         if (reportType == null || start == null || end == null) {
             TerminalUtils.showError("Missing Selection", "Please select a report type and date range.");
+            return;
+        }
+
+        if (start.isAfter(LocalDate.now()) || end.isAfter(LocalDate.now())) {
+            TerminalUtils.showError("Invalid Date", "Reports cannot be generated for future dates.");
+            return;
+        }
+
+        if (start.isAfter(end)) {
+            TerminalUtils.showError("Invalid Range", "Start date must be before or equal to end date.");
             return;
         }
 
@@ -100,7 +126,8 @@ public class ReportsController implements Initializable {
                 waitingSeries.getData().add(new XYChart.Data<>(dateStr, row.getTotalWaiting()));
             }
 
-            reportChart.getData().addAll(reservationsSeries, waitingSeries);
+            reportChart.getData().add(reservationsSeries);
+            reportChart.getData().add(waitingSeries);
         });
     }
 
@@ -122,7 +149,8 @@ public class ReportsController implements Initializable {
                 leavingSeries.getData().add(new XYChart.Data<>(dateStr, row.getAvgLeaving()));
             }
 
-            reportChart.getData().addAll(arrivalSeries, leavingSeries);
+            reportChart.getData().add(arrivalSeries);
+            reportChart.getData().add(leavingSeries);
         });
     }
 }

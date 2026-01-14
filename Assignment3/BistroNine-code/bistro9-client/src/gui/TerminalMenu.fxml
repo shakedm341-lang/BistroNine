@@ -38,7 +38,7 @@
             
             <children>
                 <Button fx:id="btnGetTable" contentDisplay="TOP" mnemonicParsing="false" onAction="#handleGetTable" 
-                        styleClass="tile-btn, tile-blue" text="Get a Table" 
+                        styleClass="tile-btn, tile-blue" text="Check-In" 
                         GridPane.columnIndex="0" GridPane.rowIndex="0" maxWidth="Infinity" maxHeight="Infinity">
                     <graphic>
                         <Label text="🍽️" style="-fx-font-size: 40px;"/>
@@ -46,7 +46,7 @@
                 </Button>
 
                 <Button fx:id="btnJoinWaitlist" contentDisplay="TOP" mnemonicParsing="false" onAction="#handleJoinWaitlist" 
-                        styleClass="tile-btn, tile-green" text="Join Waitlist" 
+                        styleClass="tile-btn, tile-green" text="Walk-In" 
                         GridPane.columnIndex="1" GridPane.rowIndex="0" maxWidth="Infinity" maxHeight="Infinity">
                     <graphic>
                         <Label text="⏳" style="-fx-font-size: 40px;"/>

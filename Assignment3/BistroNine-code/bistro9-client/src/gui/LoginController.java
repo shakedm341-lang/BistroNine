@@ -42,6 +42,9 @@ public class LoginController {
     private Button btnScanTag;
 
     @FXML
+    private Button btnBack;
+
+    @FXML
     private HBox orSeparator;
 
     @FXML
@@ -93,6 +96,9 @@ public class LoginController {
                 btnScanTag.setManaged(true);
                 btnScanTag.setText("Scan Subscriber Card");
             }
+            if (btnBack != null) {
+                btnBack.setText("Close");
+            }
         } else {
             if (sidebar != null) {
                 sidebar.setVisible(true);
@@ -113,6 +119,9 @@ public class LoginController {
             if (btnScanTag != null) {
                 btnScanTag.setVisible(false);
                 btnScanTag.setManaged(false);
+            }
+            if (btnBack != null) {
+                btnBack.setText("Back to Main Menu");
             }
         }
     }
@@ -237,7 +246,7 @@ public class LoginController {
                 // Close the login popup
                 currentStage.close();
             } else {
-                // This is a standalone window (Remote Mode)
+                // This is a standalone window (Remote mode)
                 Scene scene = new Scene(root);
                 scene.getStylesheets().add(getClass().getResource("/gui/styles.css").toExternalForm());
                 currentStage.setScene(scene);

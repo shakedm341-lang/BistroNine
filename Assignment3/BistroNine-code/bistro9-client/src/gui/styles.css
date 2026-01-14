@@ -194,6 +194,91 @@
     -fx-border-width: 1px;
 }
 
+/* --- Charts Styling --- */
+.chart {
+    -fx-padding: 10px;
+    -fx-background-color: transparent;
+    /* Targeting internal JavaFX series colors */
+    CHART_COLOR_1: #2C5282;
+    CHART_COLOR_2: #059669;
+}
+
+.chart-content {
+    -fx-padding: 10px;
+}
+
+.chart-title {
+    -fx-text-fill: -text-dark;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+}
+
+.chart-legend {
+    -fx-background-color: transparent;
+    -fx-padding: 20px 0 0 0;
+}
+
+.chart-legend-item {
+    -fx-text-fill: -text-secondary;
+    -fx-font-size: 12px;
+}
+
+/* Axis Styling */
+.axis {
+    -fx-tick-label-fill: -text-secondary;
+    -fx-tick-length: 5;
+    -fx-minor-tick-visible: false;
+}
+
+.axis-label {
+    -fx-text-fill: -text-dark;
+    -fx-font-weight: bold;
+}
+
+/* Grid lines styling - making them subtle */
+.chart-vertical-grid-lines { -fx-stroke: #E2E8F0; -fx-stroke-dash-array: 2 2; }
+.chart-horizontal-grid-lines { -fx-stroke: #E2E8F0; -fx-stroke-dash-array: 2 2; }
+.chart-plot-background { -fx-background-color: transparent; }
+
+/* LineChart specific - High specificity to override Modena defaults */
+.chart .default-color0.chart-series-line { 
+    -fx-stroke: #2C5282; 
+    -fx-stroke-width: 3.5px; 
+}
+.chart .default-color0.chart-line-symbol { 
+    -fx-background-color: #2C5282, white; 
+    -fx-background-insets: 0, 2.5;
+    -fx-background-radius: 7px; 
+    -fx-padding: 7px; 
+}
+
+.chart .default-color1.chart-series-line { 
+    -fx-stroke: #059669; 
+    -fx-stroke-width: 3.5px; 
+}
+.chart .default-color1.chart-line-symbol { 
+    -fx-background-color: #059669, white; 
+    -fx-background-insets: 0, 2.5;
+    -fx-background-radius: 7px; 
+    -fx-padding: 7px; 
+}
+
+/* Legend items symbols */
+.chart .default-color0.chart-legend-item-symbol { 
+    -fx-background-color: #2C5282, white; 
+    -fx-background-insets: 0, 2;
+    -fx-background-radius: 4px;
+}
+.chart .default-color1.chart-legend-item-symbol { 
+    -fx-background-color: #059669, white; 
+    -fx-background-insets: 0, 2;
+    -fx-background-radius: 4px;
+}
+
+.chart-series-line {
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.15), 6, 0, 0, 3);
+}
+
 .sidebar-logo {
     -fx-font-size: 24px;
     -fx-font-weight: bold;

@@ -2,7 +2,6 @@ package gui;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 
 import controller.ClientController;
@@ -29,7 +28,6 @@ import javafx.scene.control.DatePicker;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
-import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Dialog;
@@ -61,16 +59,16 @@ public class SettingsController {
     @FXML private TableColumn<TimeSlot, String> standardOpenCol;
     @FXML private TableColumn<TimeSlot, String> standardCloseCol;
     @FXML private TableColumn<TimeSlot, Void> standardActionCol;
-    @FXML private TextField standardOpenTxt;
-    @FXML private TextField standardCloseTxt;
+    @FXML private ComboBox<LocalTime> standardOpenCombo;
+    @FXML private ComboBox<LocalTime> standardCloseCombo;
 
     @FXML private DatePicker specialDatePicker;
     @FXML private TableView<TimeSlot> specialHoursTable;
     @FXML private TableColumn<TimeSlot, String> specialOpenCol;
     @FXML private TableColumn<TimeSlot, String> specialCloseCol;
     @FXML private TableColumn<TimeSlot, Void> specialActionCol;
-    @FXML private TextField specialOpenTxt;
-    @FXML private TextField specialCloseTxt;
+    @FXML private ComboBox<LocalTime> specialOpenCombo;
+    @FXML private ComboBox<LocalTime> specialCloseCombo;
 
     // --- State Variables ---
     
@@ -95,6 +93,12 @@ public class SettingsController {
     /** Local cache of all special opening hours from the server */
     private ArrayList<OpeningHoursPerDay> allSpecialHours = new ArrayList<>();
     
+    /** Observable list for time selection options (every 30 minutes) */
+    private ObservableList<LocalTime> timeOptions = FXCollections.observableArrayList();
+    
+    /** Text node for the special hours table placeholder */
+    private Text specialPlaceholderText;
+    
     /** Temporary storage for a slot being deleted, to be removed from the list on success */
     private TimeSlot pendingDeleteSlot = null;
     
@@ -111,6 +115,18 @@ public class SettingsController {
         dayComboBox.setItems(FXCollections.observableArrayList(
             "SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"
         ));
+
+        // Setup time options for the ComboBoxes (every 30 minutes)
+        timeOptions.clear();
+        for (int h = 0; h < 24; h++) {
+            timeOptions.add(LocalTime.of(h, 0));
+            timeOptions.add(LocalTime.of(h, 30));
+        }
+        
+        standardOpenCombo.setItems(timeOptions);
+        standardCloseCombo.setItems(timeOptions);
+        specialOpenCombo.setItems(timeOptions);
+        specialCloseCombo.setItems(timeOptions);
 
         // Configure standard hours table columns
         setupTableColumns(standardHoursTable, standardOpenCol, standardCloseCol, standardActionCol, standardSlots, true);
@@ -131,14 +147,14 @@ public class SettingsController {
     private void setupTablePlaceholders() {
         // Placeholder for Standard Hours table
         StackPane standardPlaceholder = new StackPane();
-        Text standardPlaceholderText = new Text("the restaurant closes");
+        Text standardPlaceholderText = new Text("the restaurant is closed on this day");
         standardPlaceholderText.setStyle("-fx-font-size: 14px; -fx-fill: #666666;");
         standardPlaceholder.getChildren().add(standardPlaceholderText);
         standardHoursTable.setPlaceholder(standardPlaceholder);
         
         // Placeholder for Special Hours table
         StackPane specialPlaceholder = new StackPane();
-        Text specialPlaceholderText = new Text("no special hours defined for this date");
+        specialPlaceholderText = new Text("no special hours defined for this day");
         specialPlaceholderText.setStyle("-fx-font-size: 14px; -fx-fill: #666666;");
         specialPlaceholder.getChildren().add(specialPlaceholderText);
         specialHoursTable.setPlaceholder(specialPlaceholder);
@@ -349,12 +365,25 @@ public class SettingsController {
      */
     private void loadSpecialHours(LocalDate date) {
         specialSlots.clear();
+        boolean dateFound = false;
         for (OpeningHoursPerDay ohpd : allSpecialHours) {
             if (ohpd.getDay().equals(date)) {
+                dateFound = true;
                 if (ohpd.getSlots() != null && !ohpd.getSlots().isEmpty()) {
                     specialSlots.addAll(ohpd.getSlots());
                 }
                 break;
+            }
+        }
+        
+        // Update placeholder text dynamically
+        if (specialSlots.isEmpty()) {
+            if (dateFound) {
+                // If there's a record but no slots, the restaurant is explicitly closed
+                specialPlaceholderText.setText("the restaurant is closed on this date");
+            } else {
+                // If there's no record at all, no special hours are defined (standard hours apply)
+                specialPlaceholderText.setText("no special hours defined for this day");
             }
         }
     }
@@ -422,6 +451,7 @@ public class SettingsController {
             } else if (response instanceof ArrayList) {
                 @SuppressWarnings("unchecked")
                 ArrayList<Subscriber> conflicts = (ArrayList<Subscriber>) response;
+                System.out.println("DEBUG: Received " + conflicts.size() + " conflicting reservations from server.");
                 if (conflicts.isEmpty()) {
                     handleSuccess();
                 } else {
@@ -498,7 +528,7 @@ public class SettingsController {
      */
     @FXML
     void addStandardSlot(ActionEvent event) {
-        addSlotToList(standardOpenTxt, standardCloseTxt, standardSlots, true);
+        addSlotToList(standardOpenCombo, standardCloseCombo, standardSlots, true);
     }
 
     /**
@@ -506,7 +536,7 @@ public class SettingsController {
      */
     @FXML
     void addSpecialSlot(ActionEvent event) {
-        addSlotToList(specialOpenTxt, specialCloseTxt, specialSlots, false);
+        addSlotToList(specialOpenCombo, specialCloseCombo, specialSlots, false);
     }
 
     /**
@@ -557,8 +587,10 @@ public class SettingsController {
         grid.setVgap(10);
         grid.setPadding(new Insets(20, 150, 10, 10));
 
-        TextField openField = new TextField(slot.getOpen().toString());
-        TextField closeField = new TextField(slot.getClose().toString());
+        ComboBox<LocalTime> openField = new ComboBox<>(timeOptions);
+        openField.setValue(slot.getOpen());
+        ComboBox<LocalTime> closeField = new ComboBox<>(timeOptions);
+        closeField.setValue(slot.getClose());
 
         grid.add(new Label("Open Time:"), 0, 0);
         grid.add(openField, 1, 0);
@@ -573,24 +605,16 @@ public class SettingsController {
         // Convert the result to a TimeSlot object when save is clicked
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == saveButtonType) {
-                try {
-                    LocalTime newOpen = LocalTime.parse(openField.getText());
-                    LocalTime newClose = LocalTime.parse(closeField.getText());
+                LocalTime newOpen = openField.getValue();
+                LocalTime newClose = closeField.getValue();
+                if (newOpen != null && newClose != null) {
                     return new TimeSlot(newOpen, newClose);
-                } catch (DateTimeParseException e) {
-                    showAlert(AlertType.ERROR, "Invalid Format", "Please use HH:mm format (e.g., 08:00).");
-                    return null;
                 }
             }
             return null;
         });
 
         dialog.showAndWait().ifPresent(newSlot -> {
-            // Validate time range
-            if (newSlot.getClose().isBefore(newSlot.getOpen())) {
-                showAlert(AlertType.ERROR, "Invalid Time", "Closing time must be after opening time.");
-                return;
-            }
             sendUpdateToServer(slot, newSlot, isStandard);
         });
     }
@@ -638,29 +662,26 @@ public class SettingsController {
      * @param list The local list to update speculatively
      * @param isStandard Context (standard vs special)
      */
-    private void addSlotToList(TextField openTxt, TextField closeTxt, ObservableList<TimeSlot> list, boolean isStandard) {
-        try {
-            LocalTime open = LocalTime.parse(openTxt.getText());
-            LocalTime close = LocalTime.parse(closeTxt.getText());
-            
-            if (close.isBefore(open)) {
-                showAlert(AlertType.ERROR, "Invalid Time", "Closing time must be after opening time.");
-                return;
-            }
+    private void addSlotToList(ComboBox<LocalTime> openCombo, ComboBox<LocalTime> closeCombo, ObservableList<TimeSlot> list, boolean isStandard) {
+        LocalTime open = openCombo.getValue();
+        LocalTime close = closeCombo.getValue();
+        
+        if (open == null || close == null) {
+            showAlert(AlertType.WARNING, "Missing Data", "Please select both opening and closing times.");
+            return;
+        }
 
-            TimeSlot newSlot = new TimeSlot(open, close);
-            list.add(newSlot); // Speculative update
-            openTxt.clear();
-            closeTxt.clear();
+        TimeSlot newSlot = new TimeSlot(open, close);
+        list.add(newSlot); // Speculative update
+        
+        // Reset selections
+        openCombo.setValue(null);
+        closeCombo.setValue(null);
 
-            if (isStandard) {
-                addStandardSlotToServer(newSlot);
-            } else {
-                addSpecialSlotToServer(newSlot);
-            }
-
-        } catch (DateTimeParseException e) {
-            showAlert(AlertType.ERROR, "Invalid Format", "Please use HH:mm format (e.g., 08:00).");
+        if (isStandard) {
+            addStandardSlotToServer(newSlot);
+        } else {
+            addSpecialSlotToServer(newSlot);
         }
     }
 

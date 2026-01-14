@@ -65,9 +65,11 @@
                 <VBox spacing="10.0" style="-fx-background-color: #F8F9FA; -fx-background-radius: 8; -fx-padding: 10;">
                     <Label text="Add New Shift" style="-fx-font-weight: bold; -fx-text-fill: -primary-blue;"/>
                     <HBox alignment="CENTER_LEFT" spacing="15.0">
-                        <TextField fx:id="standardOpenTxt" promptText="08:00" styleClass="text-field-modern" prefWidth="100.0" prefHeight="35.0"/>
+                        <ComboBox fx:id="standardOpenCombo" promptText="Open Time" prefWidth="130.0" prefHeight="35.0"
+                                  style="-fx-background-color: white; -fx-border-color: #CBD5E0; -fx-border-radius: 5;"/>
                         <Label text="to" style="-fx-text-fill: -text-secondary;"/>
-                        <TextField fx:id="standardCloseTxt" promptText="23:00" styleClass="text-field-modern" prefWidth="100.0" prefHeight="35.0"/>
+                        <ComboBox fx:id="standardCloseCombo" promptText="Close Time" prefWidth="130.0" prefHeight="35.0"
+                                  style="-fx-background-color: white; -fx-border-color: #CBD5E0; -fx-border-radius: 5;"/>
                         
                         <Region HBox.hgrow="ALWAYS"/>
                         <Button onAction="#addStandardSlot" text="+ Add Shift" styleClass="btn-primary" prefHeight="35.0"/>
@@ -80,6 +82,7 @@
                 <HBox alignment="CENTER_LEFT" spacing="15.0">
                      <Label text="Select Date:" styleClass="input-label"/>
                      <DatePicker fx:id="specialDatePicker" onAction="#onDateSelected" prefWidth="200.0" prefHeight="35.0" promptText="Pick a date..." />
+                     <Button fx:id="btnCloseDay" onAction="#closeRestaurantForDay" text="Close Entire Day" styleClass="btn-danger" prefHeight="35.0"/>
                 </HBox>
                 
                 <TableView fx:id="specialHoursTable" styleClass="modern-table" prefHeight="130.0" VBox.vgrow="NEVER">
@@ -96,12 +99,13 @@
                 <VBox spacing="10.0" style="-fx-background-color: #F8F9FA; -fx-background-radius: 8; -fx-padding: 10;">
                     <Label text="Add Special Shift" style="-fx-font-weight: bold; -fx-text-fill: -primary-blue;"/>
                     <HBox alignment="CENTER_LEFT" spacing="15.0">
-                        <TextField fx:id="specialOpenTxt" promptText="08:00" styleClass="text-field-modern" prefWidth="100.0" prefHeight="35.0"/>
+                        <ComboBox fx:id="specialOpenCombo" promptText="Open Time" prefWidth="130.0" prefHeight="35.0"
+                                  style="-fx-background-color: white; -fx-border-color: #CBD5E0; -fx-border-radius: 5;"/>
                         <Label text="to" style="-fx-text-fill: -text-secondary;"/>
-                        <TextField fx:id="specialCloseTxt" promptText="23:00" styleClass="text-field-modern" prefWidth="100.0" prefHeight="35.0"/>
+                        <ComboBox fx:id="specialCloseCombo" promptText="Close Time" prefWidth="130.0" prefHeight="35.0"
+                                  style="-fx-background-color: white; -fx-border-color: #CBD5E0; -fx-border-radius: 5;"/>
                         
                         <Region HBox.hgrow="ALWAYS"/>
-                        <Button fx:id="btnCloseDay" onAction="#closeRestaurantForDay" text="Close Entire Day" styleClass="btn-danger" prefHeight="35.0"/>
                         <Button onAction="#addSpecialSlot" text="+ Add Shift" styleClass="btn-primary" prefHeight="35.0"/>
                     </HBox>
                 </VBox>

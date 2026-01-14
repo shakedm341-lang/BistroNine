@@ -200,28 +200,37 @@ public class TableManagementController implements Initializable {
                 fetchTables();
             } else if (response instanceof ArrayList) {
                 ArrayList<?> list = (ArrayList<?>) response;
+                System.out.println("DEBUG: Received " + list.size() + " items in response list (Conflicting reservations: " + list.size() + ")");
                 if (list.isEmpty()) {
                     showAlert(Alert.AlertType.INFORMATION, "Success", "Operation completed successfully.");
                     fetchTables();
                 } else {
-                    StringBuilder sb = new StringBuilder("Operation failed due to conflicting reservations for the following customers:\n\n");
+                    StringBuilder sb = new StringBuilder("Operation failed due to conflicting reservations.\n\nPlease contact the following customers:\n\n");
                     for (Object obj : list) {
                         if (obj instanceof Subscriber) {
                             Subscriber sub = (Subscriber) obj;
-                            // Handle cases where subscriber names might be null for regular guests
+                            // Build full name if available
                             String name = (sub.getFirstName() != null && !sub.getFirstName().isEmpty()) 
-                                        ? sub.getFirstName() 
+                                        ? sub.getFirstName() + (sub.getLastName() != null ? " " + sub.getLastName() : "")
                                         : "Guest #" + sub.getCustomerId();
                             
-                            // Add contact info if available to help staff reach out
-                            String contact = (sub.getPhoneNumber() != null && !sub.getPhoneNumber().isEmpty()) 
-                                           ? " (Phone: " + sub.getPhoneNumber() + ")" 
-                                           : (sub.getEmail() != null ? " (" + sub.getEmail() + ")" : "");
+                            // Collect all available contact methods
+                            ArrayList<String> contactMethods = new ArrayList<>();
+                            if (sub.getPhoneNumber() != null && !sub.getPhoneNumber().isEmpty()) {
+                                contactMethods.add("Phone: " + sub.getPhoneNumber());
+                            }
+                            if (sub.getEmail() != null && !sub.getEmail().isEmpty()) {
+                                contactMethods.add("Email: " + sub.getEmail());
+                            }
                             
-                            sb.append("• ").append(name).append(contact).append("\n");
+                            sb.append("• ").append(name);
+                            if (!contactMethods.isEmpty()) {
+                                sb.append(" (").append(String.join(", ", contactMethods)).append(")");
+                            }
+                            sb.append("\n");
                         }
                     }
-                    sb.append("\nPlease contact these customers to reassign their tables before proceeding.");
+                    sb.append("\nReassign their tables before attempting this operation again.");
                     showAlert(Alert.AlertType.WARNING, "Conflict Found", sb.toString());
                 }
             } else {

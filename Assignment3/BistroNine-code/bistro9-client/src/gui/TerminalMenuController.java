@@ -48,12 +48,12 @@ public class TerminalMenuController {
 
     @FXML
     void handleGetTable(ActionEvent event) {
-        switchScene(event, "/gui/GetTableScreen.fxml", "Terminal - Get a Table");
+        switchScene(event, "/gui/GetTableScreen.fxml", "Terminal - Check-In");
     }
 
     @FXML
     void handleJoinWaitlist(ActionEvent event) {
-        switchScene(event, "/gui/JoinWaitlistScreen.fxml", "Terminal - Join Waiting List");
+        switchScene(event, "/gui/JoinWaitlistScreen.fxml", "Terminal - Walk-In");
     }
 
     @FXML
