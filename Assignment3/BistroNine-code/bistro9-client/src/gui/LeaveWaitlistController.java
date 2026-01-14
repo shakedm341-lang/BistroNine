@@ -14,8 +14,19 @@ import javafx.scene.control.RadioButton;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 
+/**
+ * Controller class for the "Leave Waitlist" screen.
+ * <p>
+ * This class handles the logic for removing a guest or subscriber from the restaurant's waitlist.
+ * It supports two primary operating modes:
+ * <ul>
+ *   <li><b>Terminal Mode:</b> Used at the physical restaurant terminal by walk-in guests or logged-in subscribers.</li>
+ *   <li><b>Dashboard Mode:</b> Used by subscribers logged into their personal dashboard.</li>
+ * </ul>
+ */
 public class LeaveWaitlistController extends BaseTerminalController {
 
+    // FXML UI Components
     @FXML private RadioButton rbGuest;
     @FXML private RadioButton rbSubscriber;
     @FXML private Label lblInstruction;
@@ -27,21 +38,29 @@ public class LeaveWaitlistController extends BaseTerminalController {
     @FXML private Button btnBack;
     @FXML private Button btnRemove;
 
+    /** Flag indicating if the controller is being used within the Subscriber Dashboard */
     private boolean isDashboardMode = false;
+    
+    /** The subscriber currently using the dashboard, if applicable */
     private Subscriber dashboardUser;
 
+    /**
+     * Initializes the controller. This method is automatically called after the FXML file has been loaded.
+     * Sets up visibility listeners for user type selection and configures the initial state.
+     */
     @FXML
     public void initialize() {
-        // Register this controller instance globally for message routing
+        // Register this controller instance globally for message routing from the ClientController
         ClientController.leaveWaitlistController = this;
 
-        // Hide radio buttons by default (will be managed in init/setDependencies)
+        // Radio buttons are used internally to manage logic but are often hidden from the user 
+        // to simplify the interface based on their login status.
         rbGuest.setVisible(false);
         rbGuest.setManaged(false);
         rbSubscriber.setVisible(false);
         rbSubscriber.setManaged(false);
 
-        // Show/hide fields based on selection
+        // Dynamic UI: Show/hide relevant input fields based on which radio button is selected
         rbGuest.selectedProperty().addListener((obs, oldVal, newVal) -> {
             guestFields.setVisible(newVal);
             guestFields.setManaged(newVal);
@@ -51,19 +70,25 @@ public class LeaveWaitlistController extends BaseTerminalController {
             subscriberFields.setManaged(newVal);
         });
 
-        // Set initial state based on Terminal Mode (default)
+        // Set initial state based on Terminal Mode (default if not explicitly set to Dashboard)
         if (!isDashboardMode) {
             setupTerminalMode();
         }
     }
 
+    /**
+     * Configures the UI for Terminal Mode.
+     * 
+     * @param isTerminal True if the app is running in terminal mode.
+     */
     public void setTerminalMode(boolean isTerminal) {
         if (isTerminal) {
             Platform.runLater(() -> {
+                // Hide back button in terminal mode to maintain flow
                 btnBack.setVisible(false);
                 btnBack.setManaged(false);
                 
-                // For casual guests in terminal mode, we should pre-select guest type if not already
+                // For walk-in guests at the terminal, pre-select guest type
                 if (BaseTerminalController.currentUserType == BaseTerminalController.UserType.GUEST) {
                     rbGuest.setSelected(true);
                     rbSubscriber.setDisable(true);
@@ -72,8 +97,12 @@ public class LeaveWaitlistController extends BaseTerminalController {
         }
     }
 
+    /**
+     * Internal helper to set up the UI based on the current user's session type (Subscriber vs Guest).
+     */
     private void setupTerminalMode() {
         if (BaseTerminalController.currentUserType == BaseTerminalController.UserType.SUBSCRIBER) {
+            // User is a logged-in subscriber
             rbSubscriber.setSelected(true);
             rbGuest.setSelected(false);
             rbGuest.setDisable(true);
@@ -83,9 +112,11 @@ public class LeaveWaitlistController extends BaseTerminalController {
             subscriberFields.setVisible(true);
             subscriberFields.setManaged(true);
             
+            // Pre-fill and lock the ID field for the logged-in user
             subscriberIdField.setText(BaseTerminalController.currentSubscriberId != null ? BaseTerminalController.currentSubscriberId : "");
             subscriberIdField.setEditable(false);
         } else {
+            // User is a walk-in guest
             rbGuest.setSelected(true);
             rbSubscriber.setSelected(false);
             rbSubscriber.setDisable(true);
@@ -95,18 +126,19 @@ public class LeaveWaitlistController extends BaseTerminalController {
             subscriberFields.setVisible(false);
             subscriberFields.setManaged(false);
             
-            // For guest mode, button is disabled until at least one field is filled
+            // Validate input immediately to set button state
             updateLeaveButtonState();
         }
 
-        // Add listeners to enable/disable remove button as user types
+        // Add listeners to enable/disable remove button as user types for real-time validation
         phoneField.textProperty().addListener((obs, old, newValue) -> updateLeaveButtonState());
         emailField.textProperty().addListener((obs, old, newValue) -> updateLeaveButtonState());
     }
 
     /**
-     * Updates the REMOVE FROM WAITLIST button state based on the presence of contact information.
-     * Guests must provide at least a phone number or an email.
+     * Updates the state of the "REMOVE FROM WAITLIST" button.
+     * Guests must provide at least a phone number or an email to be identifiable.
+     * Subscribers are always enabled because their ID is pre-filled.
      */
     private void updateLeaveButtonState() {
         if (!isDashboardMode && BaseTerminalController.currentUserType == BaseTerminalController.UserType.GUEST) {
@@ -120,7 +152,10 @@ public class LeaveWaitlistController extends BaseTerminalController {
     }
 
     /**
-     * Called when the screen is loaded from the User Dashboard.
+     * Configures the controller for use within the Subscriber Dashboard.
+     * 
+     * @param client The ClientController for server communication.
+     * @param user The Subscriber object for the current user.
      */
     public void setDashboardDependencies(ClientController client, Subscriber user) {
         this.client = client;
@@ -129,38 +164,43 @@ public class LeaveWaitlistController extends BaseTerminalController {
         ClientController.leaveWaitlistController = this;
 
         Platform.runLater(() -> {
-            // Hide guest option entirely
+            // Hide selection UI as dashboard users are always subscribers
             rbGuest.setVisible(false);
             rbGuest.setManaged(false);
             rbSubscriber.setVisible(false);
             rbSubscriber.setManaged(false);
             rbSubscriber.setSelected(true);
 
-            // Hide guest fields
+            // Hide guest input fields
             guestFields.setVisible(false);
             guestFields.setManaged(false);
 
-            // Show subscriber fields but hide the scanner
+            // Show subscriber input fields
             subscriberFields.setVisible(true);
             subscriberFields.setManaged(true);
 
-            // Pre-fill and lock subscriber ID
+            // Pre-fill and lock subscriber ID from the dashboard user object
             subscriberIdField.setText(String.valueOf(user.getCustomerId()));
             subscriberIdField.setEditable(false);
 
-            // Hide Back button as requested
+            // Hide Back button in dashboard view
             btnBack.setVisible(false);
             btnBack.setManaged(false);
         });
     }
 
+    /**
+     * FXML Action handler for the "Remove" button.
+     * 
+     * @param event The action event.
+     */
     @FXML
     void handleLeave(ActionEvent event) {
         String type = rbSubscriber.isSelected() ? "subscriber" : "customer";
         
+        // Security check for terminal mode subscribers
         if (rbSubscriber.isSelected() && !isDashboardMode) {
             if (BaseTerminalController.currentSubscriberId == null || BaseTerminalController.currentSubscriberId.isEmpty()) {
-                // Should not happen in terminal mode anymore
                 TerminalUtils.showError("Identification Required", "Please login at the beginning.");
                 return;
             }
@@ -168,21 +208,30 @@ public class LeaveWaitlistController extends BaseTerminalController {
         performLeave(type);
     }
 
+    /**
+     * Overrides the standard back button behavior to handle dashboard constraints.
+     */
     @FXML
     @Override
     protected void handleBack(ActionEvent event) {
         if (isDashboardMode) {
-            // Do nothing, or we could switch back to a default view if the button was visible
+            // In dashboard mode, the back navigation is handled by the main dashboard container
             return;
         }
         super.handleBack(event);
     }
 
+    /**
+     * Gathers user input, performs validation, and sends the deletion request to the server.
+     * 
+     * @param type The type of user attempting to leave ("subscriber" or "customer").
+     */
     private void performLeave(String type) {
         Object identifier = null;
         String email = null;
 
         if (type.equals("subscriber")) {
+            // Handle Subscriber Identification
             String subIdText;
             if (isDashboardMode) {
                 subIdText = String.valueOf(dashboardUser.getCustomerId());
@@ -198,22 +247,23 @@ public class LeaveWaitlistController extends BaseTerminalController {
                 return;
             }
         } else {
+            // Handle Guest Identification and Validation
             String phone = phoneField.getText().trim();
             email = emailField.getText().trim();
 
-            // Health Checks for Guest Mode
+            // Check if identity fields are empty
             if (phone.isEmpty() && email.isEmpty()) {
                 TerminalUtils.showError("Input Error", "Please provide at least a Phone Number or an Email.");
                 return;
             }
 
-            // Validate Phone if provided: Must be exactly 10 digits
+            // Validate Phone: Exactly 10 digits
             if (!phone.isEmpty() && !phone.matches("^\\d{10}$")) {
                 TerminalUtils.showError("Invalid Phone", "Phone number must be exactly 10 digits.");
                 return;
             }
 
-            // Validate Email if provided
+            // Validate Email format
             if (!email.isEmpty() && !email.matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")) {
                 TerminalUtils.showError("Invalid Email", "Please enter a valid email (e.g. name@example.com).");
                 return;
@@ -223,22 +273,30 @@ public class LeaveWaitlistController extends BaseTerminalController {
             email = email.isEmpty() ? null : email;
         }
 
+        // Prepare server message content: [type, phone/subId, email]
         ArrayList<Object> content = new ArrayList<>();
-        content.add(type);       // 0: type
-        content.add(identifier); // 1: phone/subscriberId
-        content.add(email);      // 2: email
+        content.add(type);       // 0: user type
+        content.add(identifier); // 1: phone string or subscriber ID integer
+        content.add(email);      // 2: email string (if provided)
 
         if (client != null) {
+            // Send DELETE_FROM_WAIT_LIST command to server
             client.handleMessageFromBoundary(TypeMessage.WAITLIST, content, Command.DELETE_FROM_WAIT_LIST);
         } else {
             TerminalUtils.showError("Error", "Client is not connected.");
         }
     }
 
+    /**
+     * Callback method called when the server responds to the deletion request.
+     * 
+     * @param response Boolean response indicating success or failure.
+     */
     public void onDeleteResponse(Object response) {
         Platform.runLater(() -> {
             if (Boolean.TRUE.equals(response)) {
                 TerminalUtils.showSuccess("Success", "You have been removed from the waitlist successfully.");
+                // In terminal mode, return to previous screen after success
                 if (!isDashboardMode) {
                     handleBack(new ActionEvent(rbSubscriber, null));
                 }
@@ -248,4 +306,3 @@ public class LeaveWaitlistController extends BaseTerminalController {
         });
     }
 }
-

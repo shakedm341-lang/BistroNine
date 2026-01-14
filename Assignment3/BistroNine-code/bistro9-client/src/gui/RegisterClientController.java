@@ -13,24 +13,38 @@ import data.Command;
 import data.Subscriber;
 import data.TypeMessage;
 
+/**
+ * Controller class for the Client Registration screen.
+ * This class handles the registration of new subscribers into the system,
+ * including input validation, communication with the server, and feedback display.
+ */
 public class RegisterClientController {
 
+    // --- FXML UI Components ---
     @FXML private TextField txtFirstName;
     @FXML private TextField txtLastName;
     @FXML private TextField txtPhone;
     @FXML private TextField txtEmail;
     @FXML private TextArea txtPersonalInfo;
-    
     @FXML private TextField txtUsername;
     @FXML private PasswordField txtPassword;
     @FXML private ComboBox<String> cmbType;
-    
     @FXML private Label lblMessage;
     
+    /** The client controller used to send messages to the server */
     private ClientController client;
 
+    /**
+     * Event handler for the registration button.
+     * Validates all mandatory fields and formats (phone, email) before sending
+     * the registration request to the server.
+     * 
+     * @param event The action event triggered by clicking the registration button.
+     */
     @FXML
     void getRegistrationBtn(ActionEvent event) {
+        
+        // --- Validation Section ---
         
         // Check for empty mandatory fields first
         if(txtFirstName.getText().trim().isEmpty()) {
@@ -59,7 +73,7 @@ public class RegisterClientController {
             return;
         }
         
-        // Validate phone: check if empty first, then validate format
+        // Validate phone: check if empty first, then validate format (10 digits)
         String phone = txtPhone.getText().trim();
         if (phone.isEmpty()) {
             lblMessage.setText("Please enter Phone Number.");
@@ -72,7 +86,7 @@ public class RegisterClientController {
             return;
         }
 
-        // Validate email: check if empty first, then validate format
+        // Validate email: check if empty first, then validate format via regex
         String email = txtEmail.getText().trim();
         if (email.isEmpty()) {
             lblMessage.setText("Please enter Email Address.");
@@ -85,6 +99,7 @@ public class RegisterClientController {
             return;
         }
 
+        // --- Data Packaging Section ---
         
         ArrayList<Object> subscriberData = new ArrayList<>();
         
@@ -94,15 +109,17 @@ public class RegisterClientController {
         subscriberData.add(txtPersonalInfo.getText().trim());    // Index 3: Personal Info 
         subscriberData.add(txtUsername.getText().trim());        // Index 4: Username
         subscriberData.add(txtPassword.getText());        // Index 5: Password
-        subscriberData.add(phone);           // Index 6: Phone (use trimmed and validated value)
-        subscriberData.add(email);           // Index 7: Email (use trimmed and validated value)
+        subscriberData.add(phone);           // Index 6: Phone
+        subscriberData.add(email);           // Index 7: Email
 
        
+        // --- Server Communication Section ---
+        
         if (client != null) {
             client.handleMessageFromBoundary(
-                TypeMessage.CUSTOMER,            // The broad category
-                subscriberData,                 // The data of the subscriber
-                Command.ADD_NEW_SUBSCRIBER // The specific command
+                TypeMessage.CUSTOMER,            // Broad category: CUSTOMER
+                subscriberData,                 // Subscriber details payload
+                Command.ADD_NEW_SUBSCRIBER      // Action: Add new subscriber
             );
         } else {
         	lblMessage.setText("Error: Client is not connected.");
@@ -114,6 +131,11 @@ public class RegisterClientController {
         lblMessage.setStyle("-fx-text-fill: green;");
     }
     
+    /**
+     * Sets the ClientController dependency and registers this controller as the active one.
+     * 
+     * @param client The ClientController instance.
+     */
     public void setClientController(ClientController client) {
 		this.client = client;
 		ClientController.registerClientController = this;
@@ -121,9 +143,8 @@ public class RegisterClientController {
     
     /**
      * Initialization hook called by JavaFX after FXML loading.
-     * Currently, representatives can only register subscribers,
-     * so we pre-select 'subscriber' and disable changing the type.
-     * The other values remain in the ComboBox items for future use.
+     * Configures default values for the registration form.
+     * Pre-selects 'subscriber' as the default client type and disables the dropdown.
      */
     @FXML
     public void initialize() {
@@ -133,7 +154,12 @@ public class RegisterClientController {
         }
     }
     
-   
+    /**
+     * Processes the registration response received from the server.
+     * Updates the UI message label on the JavaFX application thread.
+     * 
+     * @param msg The message object received from the server (expected to be Subscriber or Integer error code).
+     */
     public void handleServerResponse(Object msg) {
        
         javafx.application.Platform.runLater(() -> {
@@ -145,34 +171,41 @@ public class RegisterClientController {
                 return;
             }
 
+            // If a Subscriber object is returned, it means registration was successful
             if (msg instanceof Subscriber) {
                 Subscriber newSub = (Subscriber) msg;
 
-                // Some server/database flows may set subscriberId to -1 on failure
+                // Check for failure indicated by an ID of -1
                 if (newSub.getSubscriberId() == -1) {
                     lblMessage.setText("Error: Registration failed on server side. Please try again.");
                     lblMessage.setStyle("-fx-text-fill: red;");
                     return;
                 }
                 
+                // Success: Display the new subscriber's ID
                 lblMessage.setText("Success! Subscriber ID: " + newSub.getSubscriberId() + " added.");
                 lblMessage.setStyle("-fx-text-fill: green;");
                 
+                // Clear the form for the next entry
                 clearFormFields();
 
-                // Keep success message for 10 seconds, then clear it
+                // Keep success message for 10 seconds, then clear it automatically
                 PauseTransition pause = new PauseTransition(Duration.seconds(10));
                 pause.setOnFinished(e -> lblMessage.setText(""));
                 pause.play();
                 
             } else {
+                // Unexpected response type
                 lblMessage.setText("Error: Registration failed. Please check inputs or try again.");
                 lblMessage.setStyle("-fx-text-fill: red;");
             }
         });
     }
 
-    
+    /**
+     * Clears all input fields in the registration form to prepare for a new entry.
+     * Resets the client type ComboBox to 'subscriber'.
+     */
     private void clearFormFields() {
         txtFirstName.clear();
         txtLastName.clear();
@@ -183,6 +216,5 @@ public class RegisterClientController {
         txtPassword.clear();
         cmbType.setValue("subscriber"); // Reset to subscriber (locked value)
     }
-    
     
 }

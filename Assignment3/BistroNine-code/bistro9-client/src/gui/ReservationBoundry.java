@@ -27,38 +27,63 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
+/**
+ * Boundary class for the Reservation screen.
+ * This class handles user interaction for creating new table reservations.
+ * It supports different user modes: logged-in Subscribers, Guests, and 
+ * Representatives booking on behalf of customers.
+ */
 public class ReservationBoundry {
 
+    // --- FXML UI Components ---
     @FXML private DatePicker datePicker;
     @FXML private TextField txtDiners;
     @FXML private ListView<String> timeList;
-    @FXML private Button btnCheckAvailability; // Added reference to the new button
-
+    @FXML private Button btnCheckAvailability;
     @FXML private TextField phoneTxt;
     @FXML private Button btnCreate;
     @FXML private TextField emailTxt;
     @FXML private Button btnReturnToLogin;
 
-    private int diners = 1; // Default diners count
+    // --- Controller State ---
+    /** Current number of diners selected (default is 1) */
+    private int diners = 1; 
+    /** The currently logged-in user (null for guests) */
     private Subscriber currentUser;
+    /** The client controller for server communication */
     private ClientController client;
 
-    
+    /** Flag indicating if the screen is being used by a Representative to book for a customer */
     private boolean isRepMod = false;
+    /** Flag indicating if the screen is embedded within another UI component */
     private boolean isEmbedded = false;
     
+    /**
+     * Overloaded initData for simple customer mode initialization.
+     * 
+     * @param user The Subscriber object.
+     * @param custMod true if in Representative/Customer mode.
+     */
     public void initData(Subscriber user, boolean custMod) {
         initData(user, custMod, false);
     }
 
+    /**
+     * Initializes the controller with user data and operation mode.
+     * Configures field visibility and editability based on whether the user is a 
+     * Subscriber or a Guest/Representative.
+     * 
+     * @param user The Subscriber object (can be null for Guests).
+     * @param custMod true if the operator is a Representative booking for a customer.
+     * @param isEmbedded true if the view is embedded in another screen (e.g., Dashboard).
+     */
     public void initData(Subscriber user, boolean custMod, boolean isEmbedded) {
         this.currentUser = user;
         this.isRepMod = custMod;
         this.isEmbedded = isEmbedded;
 
         if (user != null && !custMod) {
-            // mode: SUBSCRIBER
-
+            // --- Subscriber Mode ---
             // 1. Pre-fill the fields with subscriber details
             phoneTxt.setText(user.getPhoneNumber());
             emailTxt.setText(user.getEmail());
@@ -71,8 +96,7 @@ public class ReservationBoundry {
             btnReturnToLogin.setVisible(false);
 
         } else {
-            // mode: GUEST USER
-
+            // --- Guest or Representative Mode ---
             // 1. Clear any previous data to ensure a clean form
             phoneTxt.clear();
             emailTxt.clear();
@@ -92,44 +116,47 @@ public class ReservationBoundry {
         }
     }
 
+    /**
+     * Initialization hook called by JavaFX.
+     * Sets up date restrictions and initial values.
+     */
     @FXML
     void initialize() {
-
-    	// FIX: Restrict date selection to a specific range (Today to 1 month from now)
+    	// Restrict date selection: Today up to 1 month from now
         datePicker.setDayCellFactory(picker -> new javafx.scene.control.DateCell() {
             @Override
             public void updateItem(LocalDate date, boolean empty) {
                 super.updateItem(date, empty);
                 
                 LocalDate today = LocalDate.now();
-                LocalDate oneMonthFromNow = today.plusMonths(1); // Calculate the upper limit date
+                LocalDate oneMonthFromNow = today.plusMonths(1);
 
-                // Disable the date if:
-                // 1. It is empty
-                // 2. It is in the past (before today)
-                // 3. It is beyond the allowed booking window (1 month from today)
+                // Disable if empty, in the past, or >1 month away
                 setDisable(empty || date.isBefore(today) || !date.isBefore(oneMonthFromNow));
             }
         });
         
-        // Initialize diners text
+        // Initialize diners display
         txtDiners.setText(String.valueOf(diners));
     }
 
     /**
-     * Triggered when the date is changed.
-     * Now it only clears the list to indicate that the user needs to check availability again.
+     * Event handler for date selection changes.
+     * Clears available time slots to force a fresh availability check.
+     * 
+     * @param event The action event.
      */
     @FXML
     void onDateSelected(ActionEvent event) {
-        // Clear previous results to avoid confusion
         timeList.getItems().clear();
         btnCreate.setDisable(true); 
     }
 
     /**
-     * New method linked to the "Check Availability" button.
-     * This handles the server communication.
+     * Communicates with the server to check for available table slots.
+     * Validates that a date is selected before sending the request.
+     * 
+     * @param event The action event from the "Check Availability" button.
      */
     @FXML
     void checkAvailability(ActionEvent event) {
@@ -141,28 +168,21 @@ public class ReservationBoundry {
             return;
         }
 
-        // Clear list before new request
+        // Reset UI state for new request
         timeList.getItems().clear();
         btnCreate.setDisable(true);
 
-        // Prepare the parameters list for the server
-        // Server expects: [0] = numberOfDiners (int), [1] = reservationDate (Timestamp)
+        // Prepare parameters: [Diners (int), Date (LocalDate)]
         ArrayList<Object> params = new ArrayList<>();
-        
-        // Add number of diners
         params.add(diners); 
-       
-        //Send LocalDate directly
-       params.add(selectedDate);
+        params.add(selectedDate);
 
-        
-
-        // Send the request to the server
+        // Send request to server
         if (client != null) {
             client.handleMessageFromBoundary(
-                TypeMessage.RESERVATION,      // The broad category
-                params,                       // The data (diners + date)
-                Command.CHECK_TABLE_AVAILABILITY // The specific command
+                TypeMessage.RESERVATION,
+                params,
+                Command.CHECK_TABLE_AVAILABILITY
             );
         } else {
             System.err.println("Error: Client connection is null.");
@@ -170,71 +190,83 @@ public class ReservationBoundry {
         System.out.println("Sending request: Date=" + selectedDate + ", Diners=" + diners);
     }
     
+    /**
+     * Callback method to update the UI with available time slots from the server.
+     * Filters out slots that are too close to the current time for same-day bookings.
+     * 
+     * @param availableTimes List of LocalTime slots returned by the server.
+     */
     public void updateAvailableHours(ArrayList<LocalTime> availableTimes) {
-        // Run on JavaFX Application Thread to avoid "Not on FX application thread" exception
+        // Ensure UI updates happen on the JavaFX Application Thread
         javafx.application.Platform.runLater(() -> {
             if (availableTimes == null || availableTimes.isEmpty()) {
                   showAlert(AlertType.INFORMATION, "No Availability", "No available tables found for this date.");
                  return;
             }
 
-            // Convert LocalTime to simple String format (HH:mm) for the ListView
             ObservableList<String> formattedTimes = FXCollections.observableArrayList();
             
             LocalDate selectedDate = datePicker.getValue();
             LocalDate today = LocalDate.now();
-            LocalTime cutoffTime = LocalTime.now().plusHours(1); // Define minimum booking time (1 hour from now)
+            // Minimum 1 hour lead time for same-day bookings
+            LocalTime cutoffTime = LocalTime.now().plusHours(1);
 
             for (LocalTime time : availableTimes) {
-                
-                // if date is TODAY
                 if (selectedDate != null && selectedDate.equals(today)) {
-                	
-                    // Only add times that are at least 1 hour in the future
+                    // Filter same-day slots by cutoff time
                     if (time.isAfter(cutoffTime)) {
                         formattedTimes.add(time.toString());
                     }
                 } else {
-                    // For future dates, add all available times returned by the server
+                    // Future dates show all available slots
                     formattedTimes.add(time.toString());
                 }
             }
 
-            // If no times remain after filtering (e.g., it's too late in the day)
+            // Handle case where all today's slots were filtered out
             if (formattedTimes.isEmpty()) {
                  showAlert(AlertType.INFORMATION, "No Availability", "No available times left for today (too late to book).");
             }
 
-            // Update the ListView
+            // Update the ListView display
             timeList.setItems(formattedTimes);
             System.out.println("Updated time list with " + formattedTimes.size() + " slots.");
         });
     }
 
+    /**
+     * Increases the number of diners (max 12).
+     * Clears previous availability results.
+     */
     @FXML
     void increaseDiners(ActionEvent event) {
         if (diners < 12) { 
             diners++;
             txtDiners.setText(String.valueOf(diners));
             
-            // Clear list when diners change, user must click check availability again
             timeList.getItems().clear();
             btnCreate.setDisable(true);
         }
     }
 
+    /**
+     * Decreases the number of diners (min 1).
+     * Clears previous availability results.
+     */
     @FXML
     void decreaseDiners(ActionEvent event) {
         if (diners > 1) {
             diners--;
             txtDiners.setText(String.valueOf(diners));
             
-            // Clear list when diners change, user must click check availability again
             timeList.getItems().clear();
             btnCreate.setDisable(true);
         }
     }
 
+    /**
+     * Enables the "Create Reservation" button once a time slot is selected.
+     */
     @FXML
     void onTimeSelected(MouseEvent event) {
         String selectedTime = timeList.getSelectionModel().getSelectedItem();
@@ -243,74 +275,70 @@ public class ReservationBoundry {
         }
     }
 
-    
+    /**
+     * Validates all inputs and sends a reservation creation request to the server.
+     * Handles different data packaging for Subscribers vs Guests.
+     * 
+     * @param event The action event from the "Create" button.
+     */
     @FXML
     void createReservation(ActionEvent event) {
         LocalDate date = datePicker.getValue();
         String timeStr = timeList.getSelectionModel().getSelectedItem();
         
-        // 1. Validation: Ensure both date and time are selected
+        // 1. Basic Validation
         if (date == null || timeStr == null) {
             showAlert(AlertType.WARNING, "Missing Details", "Please select a date and time first.");
             return;
         }
 
-        // Get contact info (trim to handle accidental spaces)
         String phone = phoneTxt.getText().trim(); 
         String email = emailTxt.getText().trim();
 
-        // 2. Health Checks for Guest/Representative Mode
+        // 2. Contact Info Validation (for Guests or Representative Mode)
         if (currentUser == null || isRepMod) {
-            // Check if both are empty
             if (phone.isEmpty() && email.isEmpty()) {
                 showAlert(AlertType.WARNING, "Missing Contact Info", "Please enter at least a phone number or an email address.");
                 return;
             }
 
-            // Validate Phone if provided: Must be exactly 10 digits
+            // Validate Phone: 10 digits
             if (!phone.isEmpty() && !phone.matches("^\\d{10}$")) {
                 showAlert(AlertType.WARNING, "Invalid Phone", "Phone number must be exactly 10 digits.");
                 return;
             }
 
-            // Validate Email if provided: Must contain @ and a dot suffix (e.g., .com, .co.il)
+            // Validate Email format
             if (!email.isEmpty() && !email.matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")) {
                 showAlert(AlertType.WARNING, "Invalid Email", "Please enter a valid email (e.g. name@example.com).");
                 return;
             }
         }
 
-        // 3. Prepare Data for Server
+        // 3. Prepare Payload for Server
         ArrayList<Object> params = new ArrayList<>();
 
-        // --- Handle User Type & Contact Info ---
+        // Handle Identity & Contact details
         if (currentUser != null && !isRepMod) {
-            // Case A: Subscriber/ Representative for self
+            // Logged-in Subscriber
             params.add("subscriber");                  // Index 0: Type
             params.add(currentUser.getCustomerId()); // Index 1: Customer ID
-            params.add(null);                          // Index 2: Placeholder (Server skips this for subscribers)
+            params.add(null);                          // Index 2: Placeholder
         } else {
-            // Case B: Guest or Representative creating for a customer
+            // Guest or external customer
             params.add("customer");                    // Index 0: Type
             params.add(phone);                         // Index 1: Phone
             params.add(email);                         // Index 2: Email
         }
 
-        //Add Number of Diners
-        params.add(diners); // Index 3
+        params.add(diners); // Index 3: Diners count
 
-        // --- Convert Date + Time String to SQL Timestamp ---
+        // Convert Date + Time String to SQL Timestamp
         try {
-            
-            // Combine LocalDate and selected time string into LocalDateTime
             LocalTime time = LocalTime.parse(timeStr); 
             LocalDateTime dateTime = LocalDateTime.of(date, time);
-            
-            // Convert to SQL Timestamp
             Timestamp reservationTimestamp = Timestamp.valueOf(dateTime);
-            
-            // Add to params
-            params.add(reservationTimestamp); // Index 4
+            params.add(reservationTimestamp); // Index 4: Timestamp
             
         } catch (Exception e) {
             e.printStackTrace();
@@ -320,7 +348,7 @@ public class ReservationBoundry {
 
         System.out.println("Sending Reservation Request: " + params);
 
-        // 4. Send to Server
+        // 4. Send request
         if (client != null) {
             client.handleMessageFromBoundary(
                 TypeMessage.RESERVATION, 
@@ -331,29 +359,25 @@ public class ReservationBoundry {
     }
     
     /**
-     * Resets the reservation form to its initial state.
+     * Resets the reservation form to its initial state after a successful booking
+     * or to clear all fields.
      */
     private void resetForm() {
-        // 1. Reset date picker
         datePicker.setValue(null);
-        
-        // 2. Reset diners count
         diners = 1;
         txtDiners.setText(String.valueOf(diners));
-        
-        // 3. Clear time slots
         timeList.getItems().clear();
-        
-        // 4. Reset create button
         btnCreate.setDisable(true);
         
-        // 5. Re-initialize based on current user mode (to handle field clearing/pre-filling)
+        // Refresh based on mode
         initData(currentUser, isRepMod, isEmbedded);
     }
 
     /**
-     * Callback method to handle the server's response.
-     * The server now returns an Integer (Confirmation Code) on success, or null on failure.
+     * Callback method called by ClientController upon receiving a reservation response.
+     * Displays success with confirmation code or failure message.
+     * 
+     * @param response The response from server (Integer code on success).
      */
     public void onReservationCreationResponse(Object response) {
         javafx.application.Platform.runLater(() -> {
@@ -373,25 +397,21 @@ public class ReservationBoundry {
         });
     }
 
-    // --- MOCK SERVER LOGIC (No longer used automatically) ---
-    private void loadAvailableHours(LocalDate date) {
-        ObservableList<String> hours = FXCollections.observableArrayList();
-        
-        // Mock logic: even days have evening slots, odd days have midday slots
-        if (date.getDayOfMonth() % 2 == 0) {
-            hours.addAll("18:00", "18:30", "19:00", "20:30", "21:00");
-        } else {
-            hours.addAll("12:00", "12:30", "13:00", "14:00", "19:30", "20:00");
-        }
-        
-        timeList.setItems(hours);
-    }
-    
+    /**
+     * Sets the ClientController and registers this boundary for callbacks.
+     * 
+     * @param client The ClientController instance.
+     */
     public void setClient(ClientController client) {
         this.client = client;
         client.reservationBoundry = this;
     }
 
+    /**
+     * Event handler to return to the Login screen.
+     * 
+     * @param event The action event.
+     */
     @FXML
     void returnToLogin(ActionEvent event) {
         try {
@@ -414,6 +434,13 @@ public class ReservationBoundry {
         }
     }
 
+    /**
+     * Utility to show alert dialogs.
+     * 
+     * @param type The AlertType.
+     * @param title The dialog title.
+     * @param content The message content.
+     */
     private void showAlert(AlertType type, String title, String content) {
         Alert alert = new Alert(type);
         alert.setTitle(title);

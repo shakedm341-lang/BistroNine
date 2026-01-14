@@ -27,50 +27,102 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 
 /**
- * Controller for the Pay Bill screen.
- * This screen is generic and can be called from the Terminal or the User Dashboard.
+ * Controller for the Pay Bill screen in the BistroNine application.
+ * This class handles the logic for searching, displaying, and processing bill payments.
+ * It is designed to be reusable across different contexts, such as the Guest Terminal
+ * or the User Dashboard.
+ * 
+* Key functionalities include:
+ * - Searching for bills using a reservation confirmation code.
+ * - Displaying detailed bill information including discounts.
+ * - Simulating credit card payment processing through a dialog.
+ * - Handling communication with the server for bill retrieval and payment.
+
  */
 public class PayBillController extends BaseTerminalController implements Initializable {
 
+    // --- FXML UI Components ---
+
+    /** Section for searching a bill by code */
     @FXML
     private VBox searchSection;
+    
+    /** Input field for the reservation confirmation code */
     @FXML
     private TextField txtConfCode;
+    
+    /** Button to trigger the bill search */
     @FXML
     private Button btnSearch;
 
+    /** Section for displaying bill details after a successful search */
     @FXML
     private VBox billDetailsSection;
+    
+    /** Label to show the unique bill ID */
     @FXML
     private Label lblBillId;
+    
+    /** Label to show the associated reservation ID */
     @FXML
     private Label lblReservationId;
+    
+    /** Label for the base amount before discounts */
     @FXML
     private Label lblOriginalAmount;
+    
+    /** Label showing the calculated discount amount */
     @FXML
     private Label lblDiscount;
+    
+    /** Label for the type of discount applied (e.g., Subscriber) */
     @FXML
     private Label lblDiscountType;
+    
+    /** Label for the final amount to be paid */
     @FXML
     private Label lblTotalAmount;
+    
+    /** Dropdown for selecting the payment method (Credit Card, Cash, etc.) */
     @FXML
     private ComboBox<String> comboPaymentMethod;
+    
+    /** Button to initiate the payment process */
     @FXML
     private Button btnPay;
+    
+    /** Back button specifically for the terminal flow */
     @FXML
     private Button btnBackOnly;
 
+    // --- State Variables ---
+
+    /** The currently logged-in subscriber (null if in guest mode) */
     private Subscriber currentUser;
+    
+    /** Reference to the dashboard controller if called from a user dashboard */
     private UserDashboardController dashboardController;
+    
+    /** The bill object currently being viewed or paid */
     private Bill currentBill;
 
+    /**
+     * Initializes the controller class. Sets up the payment method options
+     * and ensures the initial UI state is correct.
+     * 
+     * @param location  The location used to resolve relative paths for the root object.
+     * @param resources The resources used to localize the root object.
+     */
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+    	// Register this controller instance with the client for server callbacks
     	ClientController.payBillController = this;
+    	
+    	// Populate payment method dropdown
     	comboPaymentMethod.setItems(FXCollections.observableArrayList("Credit Card", "Cash", "App"));
         comboPaymentMethod.getSelectionModel().selectFirst();
         
-        // Initial UI state
+        // Ensure UI starts in the search state
         billDetailsSection.setVisible(false);
         billDetailsSection.setManaged(false);
         searchSection.setVisible(true);
@@ -79,17 +131,26 @@ public class PayBillController extends BaseTerminalController implements Initial
         btnBackOnly.setManaged(true);
     }
 
+    /**
+     * Sets the client controller for server communication.
+     * 
+     * @param client The ClientController instance.
+     */
     @Override
     public void setClient(ClientController client) {
         super.setClient(client);
     }
 
     /**
-     * Sets dependencies when called from Guest Terminal.
+     * Configures the controller for use within the Guest Terminal.
+     * Hides dashboard-specific UI elements.
+     * 
+     * @param client The ClientController instance.
      */
     public void setTerminalDependencies(ClientController client) {
         setClient(client);
         
+        // Hide terminal back button if we are deep in the terminal flow
         Platform.runLater(() -> {
             btnBackOnly.setVisible(false);
             btnBackOnly.setManaged(false);
@@ -97,40 +158,48 @@ public class PayBillController extends BaseTerminalController implements Initial
     }
 
     /**
-     * Sets dependencies when called from User Dashboard.
+     * Configures the controller for use within a Subscriber's User Dashboard.
+     * 
+     * @param client             The ClientController instance.
+     * @param user               The current Subscriber user.
+     * @param dashboard The parent dashboard controller.
      */
     public void setDependencies(ClientController client, Subscriber user, UserDashboardController dashboard) {
         setClient(client);
         this.currentUser = user;
         this.dashboardController = dashboard;
         
-        // Hide terminal back button when inside dashboard
+        // Navigation within the dashboard is handled by the dashboard controller
         btnBackOnly.setVisible(false);
         btnBackOnly.setManaged(false);
     }
 
     /**
-     * Handles searching for a bill by confirmation code.
+     * Handles the ActionEvent triggered by the search button.
+     * Validates the input code and sends a request to the server to fetch the bill.
+     * 
+     * @param event The ActionEvent from the search button.
      */
     @FXML
     void handleSearch(ActionEvent event) {
         String codeStr = txtConfCode.getText().trim();
+        
+        // Input validation: Check if empty
         if (codeStr.isEmpty()) {
             TerminalUtils.showError("Input Error", "Please enter a confirmation code.");
             return;
         }
 
         try {
+            // Parse the code and prepare the message for the server
             int confCode = Integer.parseInt(codeStr);
             ArrayList<Object> params = new ArrayList<>();
             params.add(confCode);
 
-            // Register this controller with ClientController (assuming static field exists or will be added)
-            // For now, we assume ClientController will be updated by the responsible party.
-            // ClientController.payBillController = this; 
-
+            // Request the bill details from the server
             client.handleMessageFromBoundary(TypeMessage.BILL, params, Command.SHOW_BILL);
             
+            // Update UI state to reflect loading
             btnSearch.setDisable(true);
             btnSearch.setText("Searching...");
         } catch (NumberFormatException e) {
@@ -139,7 +208,10 @@ public class PayBillController extends BaseTerminalController implements Initial
     }
 
     /**
-     * Displays the bill details in the UI.
+     * Updates the UI to display the details of the retrieved bill.
+     * Handles cases where the bill is not found or already paid.
+     * 
+     * @param bill The Bill object to display, or null if not found.
      */
     public void displayBill(Bill bill) {
         Platform.runLater(() -> {
@@ -147,25 +219,30 @@ public class PayBillController extends BaseTerminalController implements Initial
             btnSearch.setDisable(false);
             btnSearch.setText("Fetch Bill");
 
+            // Handle missing bill
             if (bill == null) {
                 TerminalUtils.showError("Not Found", "No bill found for the provided confirmation code.");
                 return;
             }
 
+            // Handle already paid bill
             if (bill.isPaid()) {
                 TerminalUtils.showSuccess("Already Paid", "This bill has already been paid.");
                 return;
             }
 
+            // Populate text labels with bill data
             lblBillId.setText(String.valueOf(bill.getBillId()));
             lblReservationId.setText(String.valueOf(bill.getReservationId()));
             lblOriginalAmount.setText(String.format("%.2f ₪", bill.getTotalAmount()));
             lblDiscountType.setText(bill.getDiscountType() != null ? bill.getDiscountType() : "Standard");
-            lblDiscount.setText(String.format("%.0f%% (-%.2f ₪)", 
-                bill.getDiscountSize(), 
-                bill.getTotalAmount() - bill.getTotalAmountAfterDiscount()));
+            
+            // Calculate and show the discount details
+            double discountAmount = bill.getTotalAmount() - bill.getTotalAmountAfterDiscount();
+            lblDiscount.setText(String.format("%.0f%% (-%.2f ₪)", bill.getDiscountSize(), discountAmount));
             lblTotalAmount.setText(String.format("%.2f ₪", bill.getTotalAmountAfterDiscount()));
 
+            // Switch view from Search to Bill Details
             searchSection.setVisible(false);
             searchSection.setManaged(false);
             billDetailsSection.setVisible(true);
@@ -176,13 +253,17 @@ public class PayBillController extends BaseTerminalController implements Initial
     }
 
     /**
-     * Handles the payment process.
+     * Handles the "PAY NOW" button click.
+     * Triggers either the credit card simulation popup or direct processing for other methods.
+     * 
+     * @param event The ActionEvent from the pay button.
      */
     @FXML
     void handlePay(ActionEvent event) {
         String method = comboPaymentMethod.getValue();
         System.out.println("Debug: Payment method selected: [" + method + "]");
         
+        // Credit card requires additional simulation steps
         if (method != null && method.trim().equalsIgnoreCase("Credit Card")) {
             simulateCreditCardPopup(event);
         } else {
@@ -191,19 +272,24 @@ public class PayBillController extends BaseTerminalController implements Initial
     }
 
     /**
-     * Simulates a credit card entry popup.
+     * Displays a simulation dialog for entering credit card details.
+     * Validates that all fields are filled before proceeding with payment.
+     * 
+     * @param event The original pay action event to find the owner window.
      */
     private void simulateCreditCardPopup(ActionEvent event) {
         Dialog<ButtonType> dialog = new Dialog<>();
         dialog.setTitle("Credit Card Simulation");
         dialog.setHeaderText("Please enter your card details");
         
-        // Set the owner so it pops up in front of the current window
+        // Ensure the dialog appears correctly centered on the app window
         dialog.initOwner(((Node) event.getSource()).getScene().getWindow());
 
+        // Setup dialog buttons
         ButtonType payButtonType = new ButtonType("Confirm Payment", ButtonType.OK.getButtonData());
         dialog.getDialogPane().getButtonTypes().addAll(payButtonType, ButtonType.CANCEL);
 
+        // Build the simulation form layout
         GridPane grid = new GridPane();
         grid.setHgap(10);
         grid.setVgap(10);
@@ -225,11 +311,13 @@ public class PayBillController extends BaseTerminalController implements Initial
 
         dialog.getDialogPane().setContent(grid);
 
+        // Process the dialog result
         Optional<ButtonType> result = dialog.showAndWait();
         if (result.isPresent() && result.get() == payButtonType) {
+            // Simple validation for empty fields
             if (cardNumber.getText().isEmpty() || cvv.getText().isEmpty() || expiry.getText().isEmpty()) {
                 TerminalUtils.showError("Validation Error", "All fields are required.");
-                simulateCreditCardPopup(event); // Re-open
+                simulateCreditCardPopup(event); // Re-open the dialog if validation fails
             } else {
                 processPayment("Credit");
             }
@@ -237,13 +325,15 @@ public class PayBillController extends BaseTerminalController implements Initial
     }
 
     /**
-     * Sends the payment request to the server.
+     * Sends the finalized payment request to the server.
+     * 
+     * @param method The payment method used (normalized to lowercase for the server).
      */
     private void processPayment(String method) {
         ArrayList<Object> params = new ArrayList<>();
         params.add(currentBill.getBillId());
         
-        // Convert to lowercase to match server-side expectations (e.g., "credit", "cash", "app")
+        // Standardize the method name for the server
         String formattedMethod = (method != null) ? method.trim().toLowerCase() : "credit";
         params.add(formattedMethod);
 
@@ -252,12 +342,16 @@ public class PayBillController extends BaseTerminalController implements Initial
         } else {
             TerminalUtils.showError("Error", "Client is not connected.");
         }
+        
+        // Disable UI to prevent double-clicks
         btnPay.setDisable(true);
         btnPay.setText("Processing...");
     }
 
     /**
-     * Handles the server response for showing bill details.
+     * Callback method called by the ClientController when the server returns bill data.
+     * 
+     * @param bill The bill retrieved from the database.
      */
     public void handleShowBillResponse(Bill bill) {
         Platform.runLater(() -> {
@@ -266,23 +360,28 @@ public class PayBillController extends BaseTerminalController implements Initial
     }
 
     /**
-     * Handles the server response for the payment process.
+     * Callback method called by the ClientController after a payment attempt.
+     * 
+     * @param success True if the payment was successful, false otherwise.
      */
     public void handlePayBillResponse(boolean success) {
         Platform.runLater(() -> {
             btnPay.setDisable(false);
             btnPay.setText("PAY NOW");
             if (success) {
-                TerminalUtils.showSuccess("Payment Successful", "Thank you! Your bill has been paid and your table is now available.");
+                TerminalUtils.showSuccess("Payment Successful", 
+                    "Thank you! Your bill has been paid and your table is now available.");
                 resetUI();
             } else {
-                TerminalUtils.showError("Payment Failed", "There was an error processing your payment. Please try again.");
+                TerminalUtils.showError("Payment Failed", 
+                    "There was an error processing your payment. Please try again.");
             }
         });
     }
 
     /**
-     * Resets the UI to its initial search state and clears all data.
+     * Resets the UI to its initial search state and clears all displayed data.
+     * Used after a successful payment or when going back from the bill view.
      */
     private void resetUI() {
         billDetailsSection.setVisible(false);
@@ -290,10 +389,11 @@ public class PayBillController extends BaseTerminalController implements Initial
         searchSection.setVisible(true);
         searchSection.setManaged(true);
         
-        // Maintain back button visibility based on mode
+        // Back button logic depends on whether we are in a dashboard or the terminal
         btnBackOnly.setVisible(dashboardController == null);
         btnBackOnly.setManaged(dashboardController == null);
         
+        // Clear all fields
         txtConfCode.clear();
         lblBillId.setText("-");
         lblReservationId.setText("-");
@@ -304,17 +404,25 @@ public class PayBillController extends BaseTerminalController implements Initial
         currentBill = null;
     }
 
+    /**
+     * Handles the back navigation logic. 
+     * If the user is viewing a bill, it returns them to the search screen.
+     * If they are already on the search screen, it navigates back to the main menu.
+     * 
+     * @param event The ActionEvent from the back button.
+     */
     @FXML
     @Override
     protected void handleBack(ActionEvent event) {
         if (billDetailsSection.isVisible()) {
+            // If viewing a bill, return to search
             resetUI();
         } else {
-            // If in terminal mode and at search screen, go back to menu
+            // If on search screen, use base terminal back logic (e.g., return to Terminal Menu)
             if (dashboardController == null) {
                 super.handleBack(event);
             }
-            // In dashboard mode, we don't handle navigation here
+            // Navigation inside user dashboard is handled by the dashboard's own menu
         }
     }
 }

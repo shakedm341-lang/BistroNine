@@ -18,72 +18,104 @@ import javafx.scene.layout.VBox;
 /**
  * Controller for the 'Get Table' screen in Terminal Mode.
  * Handles customer check-in via confirmation code or ReaderTag identification.
+ * This controller manages both guest and subscriber check-in workflows, including
+ * reservation retrieval for subscribers and code recovery for lost codes.
  */
 public class GetTableController extends BaseTerminalController {
 
+    /** The main container for the screen's layout. */
     @FXML
     private StackPane mainStack;
 
+    /** Field for entering the 6-digit confirmation code. */
     @FXML
     private TextField confCodeField;
 
+    /** Field for entering phone number during code recovery. */
     @FXML
     private TextField recoveryPhoneField;
+    
+    /** Field for entering email address during code recovery. */
     @FXML
     private TextField recoveryEmailField;
     
+    /** View container for the main check-in interface. */
     @FXML private VBox checkInView;
+    
+    /** View container for the lost code recovery interface. */
     @FXML private VBox recoveryView;
+    
+    /** Container for the subscriber-specific reservation list. */
     @FXML private VBox subscriberCodesBox;
+    
+    /** List view displaying active reservation codes for identified subscribers. */
     @FXML private ListView<String> codesListView;
     
+    /** Title label for the check-in view. */
     @FXML private Label checkInTitle;
+    
+    /** Guidance text for the check-in view. */
     @FXML private Label checkInGuidance;
+    
+    /** Button to trigger the lost code recovery view. */
     @FXML private Button lostCodeButton;
     
+    /**
+     * Initializes the controller. Sets up the UI state based on whether the current user 
+     * is a Guest or a Subscriber. For subscribers, it shows a list of their active codes.
+     */
     @FXML
     public void initialize() {
         // Register this controller instance globally for message routing
         ClientController.getTableController = this;
         
-        // Default UI state
+        // Reset UI to default check-in state
         checkInView.setVisible(true);
         recoveryView.setVisible(false);
         subscriberCodesBox.setVisible(false);
         subscriberCodesBox.setManaged(false);
         
-        // Initial state logic based on Terminal Mode
+        // Customize UI based on the type of user identified at the terminal
         if (BaseTerminalController.currentUserType == BaseTerminalController.UserType.SUBSCRIBER) {
-            // Subscriber check-in options
+            // Identified Subscriber mode
             checkInTitle.setText("Reservation Check-In");
             checkInGuidance.setText("Select an active reservation or enter your code manually.");
             
+            // Subscribers don't need 'Lost Code' as their codes are retrieved automatically
             lostCodeButton.setVisible(false);
             lostCodeButton.setManaged(false);
 
-            // Show and request codes list
+            // Show the list of their active reservation codes
             subscriberCodesBox.setVisible(true);
             subscriberCodesBox.setManaged(true);
             
-            // Add selection listener to ListView
+            // Populate the input field automatically when a code is selected from the list
             codesListView.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
                 if (newVal != null) {
                     confCodeField.setText(newVal);
                 }
             });
         } else {
-            // Guest check-in options (default)
+            // Anonymous Guest mode
             checkInTitle.setText("Enter Confirmation Code");
             checkInGuidance.setText("Please enter your confirmation code below.");
+            
+            // Guests can use the recovery feature if they lost their code
             lostCodeButton.setVisible(true);
             lostCodeButton.setManaged(true);
         }
     }
 
+    /**
+     * Sets the client controller and triggers subscriber data retrieval if applicable.
+     * 
+     * @param client The {@link ClientController} instance for server communication.
+     */
     @Override
     public void setClient(ClientController client) {
         super.setClient(client);
-        // If we are a subscriber, request the codes now that we have the client
+        
+        // If the user is an identified subscriber, automatically fetch their active codes from the server
         if (BaseTerminalController.currentUserType == BaseTerminalController.UserType.SUBSCRIBER && client != null && currentSubscriberId != null) {
             ArrayList<Object> content = new ArrayList<>();
             try {
@@ -96,7 +128,9 @@ public class GetTableController extends BaseTerminalController {
     }
 
     /**
-     * Navigates to the 'Lost Code' recovery view.
+     * Switches the UI to show the 'Lost Code' recovery view.
+     * 
+     * @param event The ActionEvent from the 'Lost Code' button.
      */
     @FXML
     public void handleShowRecovery(ActionEvent event) {
@@ -105,7 +139,9 @@ public class GetTableController extends BaseTerminalController {
     }
 
     /**
-     * Navigates back to the main Check-In view.
+     * Switches the UI back to the main Check-In view.
+     * 
+     * @param event The ActionEvent from the 'Back' button in recovery view.
      */
     @FXML
     public void handleShowCheckIn(ActionEvent event) {
@@ -114,17 +150,22 @@ public class GetTableController extends BaseTerminalController {
     }
 
     /**
-     * Attempts check-in using the manually entered 6-digit confirmation code.
+     * Validates and processes the manually entered confirmation code for check-in.
+     * 
+     * @param event The ActionEvent from the 'Check-In' button.
      */
     @FXML
     public void handleCheckInByCode(ActionEvent event) {
         String codeText = confCodeField.getText().trim();
+        
+        // Basic validation for empty input
         if (codeText.isEmpty()) {
             TerminalUtils.showError("Input Error", "Please enter your confirmation code.");
             return;
         }
 
         try {
+            // Attempt to parse the code as a number and send the request
             int code = Integer.parseInt(codeText);
             sendCheckInRequest(code);
         } catch (NumberFormatException e) {
@@ -132,6 +173,11 @@ public class GetTableController extends BaseTerminalController {
         }
     }
 
+    /**
+     * Standard back navigation to the terminal menu.
+     * 
+     * @param event The ActionEvent from the 'Back' button.
+     */
     @Override
     @FXML
     public void handleBack(ActionEvent event) {
@@ -139,32 +185,34 @@ public class GetTableController extends BaseTerminalController {
     }
 
     /**
-     * Handles the 'Recover Lost Codes' action.
-     * Requests the server to send codes via SMS/Email using the provided contact info.
+     * Processes the request to recover lost confirmation codes via SMS or Email.
+     * 
+     * @param event The ActionEvent from the 'Send My Codes' button.
      */
     @FXML
     public void handleRecoverLostCodes(ActionEvent event) {
         String phone = recoveryPhoneField.getText().trim();
         String email = recoveryEmailField.getText().trim();
 
-        // Health Checks for Lost Codes Recovery
+        // Ensure at least one contact method is provided
         if (phone.isEmpty() && email.isEmpty()) {
             TerminalUtils.showError("Input Error", "Please provide either your phone number or email address.");
             return;
         }
 
-        // Validate Phone if provided: Must be exactly 10 digits
+        // Validate Phone format: Must be exactly 10 numeric digits
         if (!phone.isEmpty() && !phone.matches("^\\d{10}$")) {
             TerminalUtils.showError("Invalid Phone", "Phone number must be exactly 10 digits.");
             return;
         }
 
-        // Validate Email if provided
+        // Validate Email format using a standard regex pattern
         if (!email.isEmpty() && !email.matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")) {
             TerminalUtils.showError("Invalid Email", "Please enter a valid email (e.g. name@example.com).");
             return;
         }
 
+        // Prepare request parameters for the server
         ArrayList<Object> content = new ArrayList<>();
         content.add("customer");
         content.add(phone.isEmpty() ? null : phone);
@@ -179,6 +227,8 @@ public class GetTableController extends BaseTerminalController {
 
     /**
      * Sends a check-in request to the server with the provided confirmation code.
+     * 
+     * @param conferenceCode The unique reservation confirmation code.
      */
     private void sendCheckInRequest(int conferenceCode) {
         ArrayList<Object> content = new ArrayList<>();
@@ -192,26 +242,36 @@ public class GetTableController extends BaseTerminalController {
     }
 
     /**
-     * Handles the server's response with all active confirmation codes for a subscriber.
+     * Callback handled by ClientController when reservation codes are received.
+     * Updates the UI list with the retrieved codes.
+     * 
+     * @param response The server response, expected to be an ArrayList of Integers.
      */
     public void onCodesResponse(Object response) {
         Platform.runLater(() -> {
             if (response instanceof ArrayList) {
+                @SuppressWarnings("unchecked")
                 ArrayList<Integer> list = (ArrayList<Integer>) response;
                 codesListView.getItems().clear();
+                
                 if(list.isEmpty()) {
                     TerminalUtils.showError("Retrieval Error", "No active reservations found");
                     return;
                 }
+                
+                // Add each code to the list view for selection
                 for (Integer code : list) {
                     codesListView.getItems().add(String.valueOf(code));
                 }
             }
         });
     }
+
     /**
-     * Handles the server's response to a check-in attempt.
-     * Redirects the user to their table or notifies waitlist status.
+     * Callback handled by ClientController when a check-in response is received.
+     * Navigates the user based on their reservation status (ready table or waitlist).
+     * 
+     * @param response The server response, expected to be a {@link TableReservation} object.
      */
     public void onCheckInResponse(Object response) {
         Platform.runLater(() -> {
@@ -219,14 +279,18 @@ public class GetTableController extends BaseTerminalController {
                 TerminalUtils.showError("Action Failed", "Invalid code or identification failed.");
             } else if (response instanceof TableReservation) {
                 TableReservation res = (TableReservation) response;
-                //check if the reservation is active or arrived
+                
+                // Determine user guidance based on reservation status
                 if ("arrived".equals(res.getStatus()) || "active".equals(res.getStatus())) {
+                    // Table is ready for seating
                     TerminalUtils.showSuccess("Welcome!", "Your table is ready!\nPlease proceed to Table No. " + res.getTableId());
                     handleBack(new ActionEvent(confCodeField, null));
                 } else if ("waiting".equals(res.getStatus())) {
+                    // User is confirmed but still on waitlist
                     TerminalUtils.showSuccess("Still Waiting", "You are still on the waitlist. We will notify you when a table is ready.");
                     handleBack(new ActionEvent(confCodeField, null));
                 } else {
+                    // Unexpected status
                     TerminalUtils.showError("Check-In Error", "Reservation status: " + res.getStatus());
                 }
             }
@@ -234,15 +298,19 @@ public class GetTableController extends BaseTerminalController {
     }
 
     /**
-     * Handles the server's response to a code recovery request.
+     * Callback handled by ClientController when a code recovery response is received.
+     * 
+     * @param response The server response, expected to be a Boolean indicating success.
      */
     public void onRecoverCodesResponse(Object response) {
         Platform.runLater(() -> {
             if (response instanceof Boolean) {
                 if ((Boolean) response) {
+                    // Recovery successful
                     TerminalUtils.showSuccess("Codes Sent", "We have sent your active confirmation codes to your registered email and phone number.");
                     handleShowCheckIn(new ActionEvent(confCodeField, null));
                 } else {
+                    // No records found for provided contact info
                     TerminalUtils.showError("Identification Failed", "We could not find any active reservations for your account for today.");
                 }
             } else {
