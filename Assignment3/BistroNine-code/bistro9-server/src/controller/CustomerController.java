@@ -225,6 +225,9 @@ public class CustomerController
 
 		Subscriber sub = new Subscriber();
 
+
+
+
 		//subscriberId give by DB auto increment
 
 		// Setting first Name from the list we got from the message content
@@ -291,10 +294,23 @@ public class CustomerController
 			return null;
 		}
 
-		sub.setCustomerId(DBC.getCustomerId(sub));//return get customer id if exists in customer table else set new customer id
+		int customerId = DBC.getCustomerId(sub); 
+		sub.setCustomerId(customerId);//return get customer id if exists in customer table else set new customer id
+
+
+		String currentType = DBC.getCustomerType(customerId);
+
+		if (currentType != null && currentType.equalsIgnoreCase("subscriber")) 
+		{
+			System.out.println("Error: Customer ID " + customerId + " is already a subscriber!");
+			return null; 
+
+		}
+
+
 		//Adding the new subscriber to the DB and getting the subscriberId assigned by the DB
 		sub.setSubscriberId(DBC.addNewSubscriber(sub));
-		System.out.println("added sucss new subscriber with subscriber id: "+sub.getCustomerId());
+		System.out.println("added success new subscriber with subscriber id: " + sub.getSubscriberId());
 		return sub;
 	}
 
@@ -359,7 +375,7 @@ public class CustomerController
 	 * @return An ArrayList of Subscriber objects representing all subscribers in
 	 *         the database.
 	 */
-	private ArrayList<Subscriber> getAllSubscribers()
+	public static ArrayList<Subscriber> getAllSubscribers()
 	{
 
 		ArrayList<Subscriber> subListAsSubscriber = new ArrayList<>();

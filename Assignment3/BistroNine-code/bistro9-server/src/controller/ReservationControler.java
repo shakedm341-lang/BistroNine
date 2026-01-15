@@ -738,18 +738,47 @@ public class ReservationControler
 	 */
 	private ArrayList<HistoryReservation> getHistoryReservationByCustomerId(Message msg)
 	{
+		@SuppressWarnings("unchecked")
+		ArrayList<Object> list = (ArrayList<Object>) msg.content;
+
+		int customerId = 0;
+		int subscriberId=0;
+
+		if (list != null && !list.isEmpty() && list.get(1) instanceof Integer) 
+		{
+			customerId = (int) list.get(1);
+		} 
+		else 
+		{
+			System.out.println("Error: Message does not contain a valid Customer ID.");
+			return new ArrayList<>(); 
+		}
+		
+		ArrayList<Subscriber> allSub =  CustomerController.getAllSubscribers();
+		for (Subscriber sub : allSub)
+		{
+			if (sub.getCustomerId() == customerId ) 
+			{
+				subscriberId = sub.getSubscriberId();
+				break;
+			}
+		}
+		ArrayList<Object> listContent = new ArrayList<>();
+		listContent.add(subscriberId);
+		msg.content= listContent;
+
 		ArrayList<TableReservation> reservation =  getAllReservationsByCustomerId(msg);
 		if (reservation == null) {
-	        return new ArrayList<>(); //Return an empty list if there are no reservations
-	    }
-		
+			return new ArrayList<>(); //Return an empty list if there are no reservations
+		}
+
 		ArrayList<HistoryReservation> historyResreservations= getAllReservationsAsHistoryReservation(reservation);
-		
+
 		if (historyResreservations == null) 
 		{
 			return null;  
 		}
-        
+
 		return historyResreservations;
 	}
 	
@@ -847,9 +876,7 @@ public class ReservationControler
 	 *
 	 * @param msg The message containing the customer details. The content of the
 	 *            message is expected to be an ArrayList<Object> with the following
-	 *            order: [Location 0 :typeCustomer (String), if
-	 *            customer Location 1,2: phone number(String) and/or email(String) if 
-	 *            subscribers Location 1:customerId ]
+	 *            order: [Location 0 :subscriberId (Integer)]
 	 * 
 	 * @return An ArrayList of TableReservation objects representing all
 	 *         reservations for the specified customer.
@@ -863,76 +890,35 @@ public class ReservationControler
 		@SuppressWarnings("unchecked") 
 		ArrayList<Object> list = (ArrayList<Object>) msg.content;//get the reservation details from the message content
 		int customerId=0;
+		int subscriberId=0;
 
-		String typeCustomer= new String();
-		//Setting customer type from the list we got from the message content
-		if (list.get(0) instanceof String) 
+		//Setting subscriberId from the list we got from the message content
+		if (list.get(0) instanceof Integer) 
 		{
-			typeCustomer = (String) list.get(0);
+			subscriberId = (Integer) list.get(0);
 		} else 
 		{
-			System.out.println("Error: Index 0 is not a String!");
+			System.out.println("Error: Index 0 is not a Integer!");
 			return null;
 		}
-
-
-		if (typeCustomer.equals("customer")) 
+		ArrayList<Subscriber> allSub =  CustomerController.getAllSubscribers();
+		for (Subscriber sub : allSub)
 		{
-			Customer customer = new Customer();
-
-			if (list.get(1) instanceof String) 
+			if (sub.getSubscriberId() == subscriberId) 
 			{
-				customer.setPhoneNumber((String) list.get(1))  ;// Setting phone Number from the list we got from the message content
-				if (list.get(2) instanceof String) 
-				{
-					customer.setEmail((String) list.get(2));// Setting email from the list we got from the message content
-				}
-				else if (list.get(2)==null)//if the email is null
-				{
-					customer.setEmail(null);
-				}
-				else 
-				{
-					System.out.println("Error: Index 2 is not a String!");
-					return null;
-				}
-			}
-			else if (list.get(1)==null)//if the phone number is null
-			{
-				customer.setPhoneNumber(null);
-				if (list.get(2) instanceof String) 
-				{
-					customer.setEmail((String) list.get(2))  ;//Setting email from the list we got from the message content
-				}
-				else 
-				{
-					System.out.println("Error: Index 2 is not a String!");
-					return null;
-				}
-			}
-			else 
-			{
-				System.out.println("Error: Index 1 is not a String!");
-				return null;
-			}
-
-			//return customer ID from the DB . if customer not exists he created in the DB and return his ID else return his ID
-			customerId=DBC.getCustomerId(customer);//Getting customer ID from the DB based on the phone number or email provided
-
-		}
-
-		else if (typeCustomer.equals("subscriber")) 
-		{
-			// Setting subscriber ID from the list we got from the message content
-			if (list.get(1) instanceof Integer) {
-				customerId = (int) list.get(1);
-			} else {
-				System.out.println("Error: Index 1 is not a Integer!");
-				return null;
+				customerId = sub.getCustomerId();
+				break;
 			}
 		}
 
-
+		//Getting customer ID from the DB based on the subscriber ID provided
+		//		customerId = DBC.getCustomerIdBySubscriberId(subscriberId);
+		
+		if (customerId == 0) 
+	    {
+	        System.out.println("Warning: Subscriber ID " + subscriberId + " exists, but has no linked Customer ID.");
+	        return null; 
+	    }
 		allReservations = DBC.getAllReservationsQueryByCustomerId(customerId);//Get all reservations from the DB as a list of lists of objects
 		reservationsListAsTableRes=	getAllReservationsAsTableReservation(allReservations);//Convert the list of reservations from the DB into list of TableReservation objects
 

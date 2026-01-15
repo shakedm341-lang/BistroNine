@@ -114,24 +114,22 @@ public class Init_All {
 
     private static void initSpecialHours(Connection con, Statement stmt) throws SQLException {
         // --- ינואר 2026 ---
-    	stmt.executeUpdate("INSERT INTO special_hours VALUES ('2025-12-25', '00:00:00', '00:00:00')");
+        stmt.executeUpdate("INSERT INTO special_hours VALUES ('2025-12-25', '00:00:00', '00:00:00')");
         // 1. ה-1 לינואר (שנה אזרחית) - היה סגור (בדיקת עבר)
         stmt.executeUpdate("INSERT INTO special_hours VALUES ('2026-01-01', '00:00:00', '00:00:00')");
 
         // 2. ה-15 לינואר (יום קצר) - פתוח רק בבוקר/צהריים (עד 14:00)
-        // טוב לבדיקה: נסה להזמין לערב ביום הזה ותראה שנכשל
         stmt.executeUpdate("INSERT INTO special_hours VALUES ('2026-01-15', '08:00:00', '14:00:00')");
 
         // 3. ה-20 לינואר (אירוע פרטי בערב) - נפתח רק ב-19:00
-        // טוב לבדיקה: נסה להזמין לצהריים ביום הזה ותראה שנכשל
-        stmt.executeUpdate("INSERT INTO special_hours VALUES ('2026-01-20', '19:00:00', '23:59:59')");
+        stmt.executeUpdate("INSERT INTO special_hours VALUES ('2026-01-20', '19:00:00', '00:00:00')");
 
         // 4. ה-28 לינואר (שיפוצים) - סגור כל היום
         stmt.executeUpdate("INSERT INTO special_hours VALUES ('2026-01-28', '00:00:00', '00:00:00')");
 
         stmt.executeUpdate("INSERT INTO special_hours VALUES ('2026-01-25', '08:00:00', '12:00:00')");
         stmt.executeUpdate("INSERT INTO special_hours VALUES ('2026-01-25', '16:00:00', '23:00:00')");
-        // --- תאריכים כלליים נוספים משאר השנה (מהקוד הקודם) ---
+        // --- תאריכים כלליים נוספים משאר השנה ---
         stmt.executeUpdate("INSERT INTO special_hours VALUES ('2026-02-14', '10:00:00', '23:59:00')"); // ולנטיין
         stmt.executeUpdate("INSERT INTO special_hours VALUES ('2026-04-01', '08:00:00', '13:00:00')"); // ערב חג
         stmt.executeUpdate("INSERT INTO special_hours VALUES ('2026-04-22', '00:00:00', '00:00:00')"); // יום עצמאות
@@ -155,30 +153,30 @@ public class Init_All {
         try (PreparedStatement psCust = con.prepareStatement(insertCust, Statement.RETURN_GENERATED_KEYS);
              PreparedStatement psSub = con.prepareStatement(insertSub)) {
 
-            // 1. יצירת מנהל (Manager) - שם קבוע
+            // 1. יצירת מנהל (Manager)
             psCust.setString(1, "0500000001");
             psCust.setString(2, "manager@rest.com");
             psCust.executeUpdate();
             ResultSet rs = psCust.getGeneratedKeys();
             if (rs.next()) {
                 psSub.setInt(1, rs.getInt(1));
-                psSub.setString(2, "Moti");      // שם פרטי
-                psSub.setString(3, "Manager");   // שם משפחה
+                psSub.setString(2, "Moti");      
+                psSub.setString(3, "Manager");   
                 psSub.setString(4, "restaurant manager");
                 psSub.setString(5, "man");
                 psSub.setString(6, "1");
                 psSub.executeUpdate();
             }
 
-            // 2. יצירת נציג שירות (Representative) - שם קבוע
+            // 2. יצירת נציג שירות (Representative)
             psCust.setString(1, "0500000002");
             psCust.setString(2, "rep@rest.com");
             psCust.executeUpdate();
             rs = psCust.getGeneratedKeys();
             if (rs.next()) {
                 psSub.setInt(1, rs.getInt(1));
-                psSub.setString(2, "Sarah");     // שם פרטי
-                psSub.setString(3, "Service");   // שם משפחה
+                psSub.setString(2, "Sarah");     
+                psSub.setString(3, "Service");   
                 psSub.setString(4, "restaurant representative");
                 psSub.setString(5, "rep");
                 psSub.setString(6, "1");
@@ -193,11 +191,8 @@ public class Init_All {
                 rs = psCust.getGeneratedKeys();
                 if (rs.next()) {
                     psSub.setInt(1, rs.getInt(1));
-                    
-                    // לקיחת שם מהמערך לפי האינדקס (כדי שיהיה מגוון)
                     psSub.setString(2, firstNames[i % firstNames.length]); 
                     psSub.setString(3, lastNames[i % lastNames.length]);
-                    
                     psSub.setString(4, "subscriber");
                     psSub.setString(5, firstNames[i % firstNames.length]);
                     psSub.setString(6, "1");
@@ -223,7 +218,7 @@ public class Init_All {
 
             int confCode = 5000;
             
-            // תאריך התחלה: 01.12.2025 (כפי שביקשת קודם)
+            // תאריך התחלה: 01.12.2025
             LocalDate startDate = LocalDate.of(2025, 12, 1);
             
             // תאריך סיום: היום הנוכחי + חודש אחד קדימה
@@ -232,17 +227,16 @@ public class Init_All {
             // חישוב מספר הימים שיש בין ההתחלה לסיום
             long daysToCreate = ChronoUnit.DAYS.between(startDate, endDate);
 
-            // לולאה שרצה בדיוק על הטווח הזה
             for (int i = 0; i <= daysToCreate; i++) { 
                 createDailyReservations(con, psRes, psBill, psWaitHistory, custIds, startDate.plusDays(i), confCode);
-                confCode += 30; // קידום קוד האישור
+                confCode += 30; 
             }
         }
         System.out.println("Reservations created from 2025-12-01 until one month from now.");
     }
 
     private static void createDailyReservations(Connection con, PreparedStatement psRes, PreparedStatement psBill, PreparedStatement psWaitHistory, List<Integer> custIds, LocalDate date, int startConfCode) throws SQLException {
-        // דילוג אם זה יום סגור או היום הנוכחי (כדי ש-LiveDining יטפל בהיום)
+        // דילוג אם זה יום סגור או היום הנוכחי
         if (isDayClosed(con, date) || date.equals(LocalDate.now())) return;
 
         boolean isFutureDate = date.isAfter(LocalDate.now());
@@ -251,27 +245,23 @@ public class Init_All {
         List<LocalDate> peakDates = Arrays.asList(LocalDate.of(2026, 1, 15), LocalDate.of(2026, 1, 20), LocalDate.of(2026, 1, 25));
         boolean isPeakDay = peakDates.contains(date);
 
-        // 1. עומס מלא (Peak Days)
+        // 1. עומס מלא (Peak Days) - יוצר 10 הזמנות
         if (isPeakDay) {
             LocalTime peakHour;
 
-            // --- לוגיקה חדשה לבחירת שעת השיא לפי שעות הפתיחה של אותו יום ---
+            // בחירת שעת שיא לפי היום
             boolean isFriday = date.getDayOfWeek() == java.time.DayOfWeek.FRIDAY;
             boolean isSaturday = date.getDayOfWeek() == java.time.DayOfWeek.SATURDAY;
             boolean isEarlyClosingDate = date.equals(LocalDate.of(2026, 1, 15)) || date.equals(LocalDate.of(2026, 4, 1));
             boolean isLateOpeningDate = date.equals(LocalDate.of(2026, 1, 20));
 
             if (isFriday || isEarlyClosingDate) {
-                // ימים שנסגרים ב-14:00 -> נעשה את העומס ב-12:00 בצהריים
                 peakHour = LocalTime.of(12, 0); 
             } else if (isSaturday || isLateOpeningDate) {
-                // ימים שנפתחים רק בערב (20:00 או 19:00) -> נעשה את העומס ב-21:00
                 peakHour = LocalTime.of(21, 0);
             } else {
-                // ימים רגילים -> עומס בערב
                 peakHour = LocalTime.of(19, 0);
             }
-            // -------------------------------------------------------------
 
             for (int i = 0; i < 10; i++) {
                 int custId = custIds.get(random.nextInt(custIds.size()));
@@ -296,25 +286,19 @@ public class Init_All {
         }
 
         // 2. הזמנות מפוזרות
-        int dailyRes = isPeakDay ? 2 : (isFutureDate ? 6 : (8 + random.nextInt(5)));
+        // אם זה יום שיא, dailyRes = 0 כדי שיהיו בדיוק 10 הזמנות
+        int dailyRes = isPeakDay ? 0 : (isFutureDate ? 6 : (8 + random.nextInt(5)));
         int currentCode = startConfCode;
 
         for (int i = 0; i < dailyRes; i++) {
             LocalTime rTime = getRandomOpenTime(con, date);
             if (rTime == null) continue;
             
-            // תיקון: אם זה יום שיא בערב, לא נקבע הזמנות נוספות שמתנגשות עם ה-Peak Hour שבחרנו
-            if (isPeakDay) {
-                // אם בחרנו שעת שיא 19:00, נזיז את המפוזרים לצהריים
-                // אם בחרנו שעת שיא 12:00 (יום שישי), זה בסדר כי הרנדום יפזר אותם
-                 if (rTime.getHour() == 19) rTime = rTime.minusHours(3);
-            }
-
             LocalDateTime scheduled = LocalDateTime.of(date, rTime);
             int custId = custIds.get(random.nextInt(custIds.size()));
             int diners = 2 + random.nextInt(4);
 
-            // גיוון בזמנים (מגיעים מוקדם/מאוחר/בזמן)
+            // גיוון בזמנים
             LocalDateTime actualArrival;
             LocalDateTime actualLeaving;
             double arrChance = random.nextDouble();
@@ -373,6 +357,7 @@ public class Init_All {
             }
         }
     }
+    
     private static void createBill(PreparedStatement psBill, PreparedStatement psRes, boolean isPaid) throws SQLException {
         ResultSet rs = psRes.getGeneratedKeys();
         if (rs.next()) {
@@ -389,9 +374,8 @@ public class Init_All {
 
     private static void initLiveDiningForNow(Connection con) throws SQLException {
         LocalDateTime now = LocalDateTime.now();
-        int[] tables = {1, 2, 3, 4}; // שולחנות שנשתמש בהם
+        int[] tables = {1, 2, 3, 4}; 
         
-        // 1. שליפת מזהי לקוחות קיימים מהמערכת כדי למנוע שגיאת Foreign Key
         List<Integer> validCustomerIds = new ArrayList<>();
         try (Statement s = con.createStatement(); 
              ResultSet rs = s.executeQuery("SELECT customerId FROM customer LIMIT 4")) {
@@ -400,7 +384,6 @@ public class Init_All {
             }
         }
 
-        // בדיקת הגנה: אם אין מספיק לקוחות במערכת, נשתמש בלקוח מס' 1 כברירת מחדל
         while (validCustomerIds.size() < 4) {
             validCustomerIds.add(1);
         }
@@ -420,8 +403,6 @@ public class Init_All {
                 psRes.setInt(1, tables[i]); 
                 psRes.setInt(2, 2); 
                 psRes.setInt(3, 9000 + i); 
-                
-                // --- התיקון כאן: שימוש ב-ID אמיתי שנשלף מהדאטה בייס ---
                 psRes.setInt(4, validCustomerIds.get(i)); 
                 
                 psRes.setTimestamp(5, Timestamp.valueOf(randomTime)); 
@@ -444,78 +425,75 @@ public class Init_All {
         System.out.println("Created exactly 4 'arrived' reservations for existing customers.");
     }
 
-    /*private static void initWaitingListForToday(Connection con) {
-        // מבוטל
-    }*/
-
- // פונקציה חכמה שמגרילה שעה בהתאם לשעות הפתיחה והחוק של "שעתיים לפני סגירה"
+    // פונקציה חכמה שמגרילה שעה בהתאם לשעות הפתיחה והחוק של "שעתיים לפני סגירה"
+ // פונקציה משודרגת התומכת בדקות (למשל סגירה ב-23:30)
     private static LocalTime getRandomOpenTime(Connection con, LocalDate date) {
-        int startHour = 8;  // שעת פתיחה ברירת מחדל
-        int closeHour = 23; // שעת סגירה ברירת מחדל
+        LocalTime openTime = LocalTime.of(8, 0);   // פתיחה ברירת מחדל
+        LocalTime closeTime = LocalTime.of(23, 0); // סגירה ברירת מחדל
 
         java.time.DayOfWeek day = date.getDayOfWeek();
         
-        // 1. בדיקת ימים מיוחדים
+        // --- 1. הגדרת שעות פתיחה וסגירה מדויקות לכל יום ---
+        
         if (date.equals(LocalDate.of(2026, 1, 15)) || date.equals(LocalDate.of(2026, 4, 1))) {
-            // ימים שנסגרים ב-14:00 (חגים/ימים קצרים)
-            closeHour = 14; 
+            closeTime = LocalTime.of(14, 0); 
         } else if (date.equals(LocalDate.of(2026, 1, 20))) {
-            // יום שנפתח מאוחר (אירוע בערב)
-            startHour = 19;
-            closeHour = 24; // חצות
+            openTime = LocalTime.of(19, 0);
+            closeTime = LocalTime.of(23, 59); // כמעט חצות
         } else if (date.equals(LocalDate.of(2026, 1, 25))) {
-            // יום עם פיצול (נניח שנבחר רק מהערב לצורך הפשטות)
-            startHour = 16;
-            closeHour = 23;
+            openTime = LocalTime.of(16, 0);
+            closeTime = LocalTime.of(23, 0);
         } 
-        // 2. בדיקת ימי שגרה
         else if (day == java.time.DayOfWeek.FRIDAY) {
-            closeHour = 14;
+            closeTime = LocalTime.of(14, 0);
         } else if (day == java.time.DayOfWeek.SATURDAY) {
-            startHour = 20;
-            closeHour = 24;
+            openTime = LocalTime.of(20, 0);
+            // שים לב: אם הסגירה היא אחרי חצות (למשל 01:00), צריך לטפל בזה כיום למחרת
+            // לצורך הפשטות נניח סגירה בחצות או ב-23:59 בקובץ הזה
+            closeTime = LocalTime.of(23, 59); 
         } else if (day == java.time.DayOfWeek.TUESDAY) {
-            // יום שלישי מפוצל (08-12, 16-23).
-            // נגריל: אם יוצא מספר נמוך נלך לבוקר, אחרת לערב
+            // יום שלישי מפוצל
             if (random.nextBoolean()) {
-                closeHour = 12; // משמרת בוקר
+                closeTime = LocalTime.of(12, 0); 
             } else {
-                startHour = 16; // משמרת ערב
-                closeHour = 23;
+                openTime = LocalTime.of(16, 0); 
+                closeTime = LocalTime.of(23, 30); // הנה דוגמה ל-23:30!
             }
         }
 
-        // --- יישום החוק: מקסימום הזמנה = שעתיים לפני הסגירה ---
-        int maxReservationHour = closeHour - 2;
+        // --- 2. חישוב הזמן האחרון האפשרי להזמנה (סגירה פחות שעתיים) ---
+        // אם הסגירה היא ב-23:30, המקסימום הוא 21:30
+        LocalTime maxStartTime = closeTime.minusHours(2);
 
-        // הגנה: אם בטעות נוצר מצב ששעת ההתחלה גדולה מהמקסימום (למשל נפתח ב-20:00 ונסגר ב-21:00)
-        if (startHour > maxReservationHour) {
-            return null; 
+        // הגנה: אם זמן הפתיחה מאוחר מהזמן המקסימלי להזמנה
+        if (openTime.isAfter(maxStartTime)) {
+            return null;
         }
 
-        // הגרלת שעה בטווח המותר
-        int randomHour = startHour + random.nextInt(maxReservationHour - startHour + 1);
+        // --- 3. הגרלת שעה ודקות בצורה בטוחה ---
         
-        // הגרלת דקות (00, 15, 30, 45)
-        int randomMinute = random.nextInt(4) * 15;
-
-        return LocalTime.of(randomHour, randomMinute);
+        // חישוב טווח הדקות הכולל בין הפתיחה למקסימום
+        long minutesRange = ChronoUnit.MINUTES.between(openTime, maxStartTime);
+        
+        // הגרלת מספר דקות רנדומלי בתוך הטווח
+        // אנחנו רוצים קפיצות של 15 דקות (0, 15, 30, 45)
+        long randomSlots = minutesRange / 15; // כמה "בלוקים" של 15 דקות נכנסים
+        long chosenSlot = random.nextInt((int) randomSlots + 1);
+        
+        // הוספת הדקות שנבחרו לשעת הפתיחה
+        return openTime.plusMinutes(chosenSlot * 15);
     }
 
     private static boolean isDayClosed(Connection con, LocalDate date) {
-        // רשימת ימים סגורים (כולל חגים ושיפוצים)
         return date.equals(LocalDate.of(2025, 12, 25)) || 
                date.equals(LocalDate.of(2026, 1, 1)) || 
                date.equals(LocalDate.of(2026, 1, 28)) || 
                date.equals(LocalDate.of(2026, 4, 22));
     }
 
-  
-
     private static void initReports(Connection con, Statement stmt) throws SQLException {
         System.out.println("Initializing historical reports for November...");
 
-        // --- דוח 1: דוח זמנים (Time Report) לנובמבר ---
         String sqlTimeMgr = "INSERT INTO report_manager (startDay, endDay, reportRange, reportType) VALUES ('2025-11-01', '2025-11-30', 'monthly', 'time')";
         int timeReportId = -1;
         
@@ -525,7 +503,6 @@ public class Init_All {
             if (rs.next()) timeReportId = rs.getInt(1);
         }
 
-        // --- דוח 2: דוח ביצועים/מנויים (Subscriber Report) לנובמבר ---
         String sqlSubMgr = "INSERT INTO report_manager (startDay, endDay, reportRange, reportType) VALUES ('2025-11-01', '2025-11-30', 'monthly', 'subscriber')";
         int subReportId = -1;
 
@@ -535,7 +512,6 @@ public class Init_All {
             if (rs.next()) subReportId = rs.getInt(1);
         }
 
-        // --- מילוי הנתונים היומיים בטבלאות הפירוט ---
         if (timeReportId != -1 && subReportId != -1) {
             String insertTimeDetail = "INSERT INTO time_report (reportId, reportDate, avgArrival, avgLeaving) VALUES (?, ?, ?, ?)";
             String insertSubDetail = "INSERT INTO subscriber_report (reportId, reportDate, totalReservations, totalWaiting) VALUES (?, ?, ?, ?)";
@@ -546,21 +522,17 @@ public class Init_All {
                 LocalDate start = LocalDate.of(2025, 11, 1);
                 LocalDate end = LocalDate.of(2025, 11, 30);
 
-                // לולאה על כל יום בנובמבר
                 for (LocalDate date = start; !date.isAfter(end); date = date.plusDays(1)) {
-                    
-                    // 1. נתונים לדוח זמנים
                     psTime.setInt(1, timeReportId);
                     psTime.setDate(2, java.sql.Date.valueOf(date));
-                    psTime.setInt(3, random.nextInt(30)); // איחור ממוצע (0-30 דקות)
-                    psTime.setInt(4, 60 + random.nextInt(90)); // זמן שהייה ממוצע (60-150 דקות)
+                    psTime.setInt(3, random.nextInt(30)); 
+                    psTime.setInt(4, 60 + random.nextInt(90)); 
                     psTime.executeUpdate();
 
-                    // 2. נתונים לדוח ביצועים
                     psSub.setInt(1, subReportId);
                     psSub.setDate(2, java.sql.Date.valueOf(date));
-                    psSub.setInt(3, 10 + random.nextInt(20)); // סה"כ הזמנות באותו יום
-                    psSub.setInt(4, random.nextInt(5));       // כמה אנשים חיכו בתור
+                    psSub.setInt(3, 10 + random.nextInt(20)); 
+                    psSub.setInt(4, random.nextInt(5));       
                     psSub.executeUpdate();
                 }
             }

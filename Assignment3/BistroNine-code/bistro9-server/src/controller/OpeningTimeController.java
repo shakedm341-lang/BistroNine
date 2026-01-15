@@ -125,12 +125,12 @@ public class OpeningTimeController
 			// Convert Timestamp to LocalDateTime
 			LocalDateTime resDateTime = dbTimestamp.toLocalDateTime();
 
-			// Extract the specific LocalDate from the reservation ---
+			// Extract the specific LocalDate from the reservation
 			LocalDate resDate = resDateTime.toLocalDate();
 
 			LocalTime resStartTime = resDateTime.toLocalTime();
 			LocalTime resEndTime = resStartTime.plusMinutes(RESERVATION_DURATION_MINUTES);
-			boolean endsNextDay = resEndTime.isBefore(resStartTime);// check if the reservation ends the next day
+			boolean endsNextDay = resEndTime.isBefore(resStartTime); // check if the reservation ends the next day
 
 			// Check if the reservation date matches the special opening hours date
 			if (resDate.equals(openingHours.getDay())) 
@@ -139,14 +139,29 @@ public class OpeningTimeController
 				if (openingHours.getSlots() != null && !openingHours.getSlots().isEmpty()) 
 				{
 					TimeSlot slot = openingHours.getSlots().get(0); 
+					
+					// Determine if this is an overnight shift (e.g., 12:00 to 08:00)
+					boolean isOvernight = slot.getOpen().isAfter(slot.getClose());
+					boolean conflict = false;
 
-					// Check if reservation starts before slot closes
-					boolean startsBeforeSlotCloses = resStartTime.isBefore(slot.getClose());
+					if (isOvernight) 
+					{
+						// Overnight Logic: Conflict if reservation touches morning part OR evening part
+						boolean touchesMorningPart = resStartTime.isBefore(slot.getClose());
+						boolean touchesEveningPart = endsNextDay || resEndTime.isAfter(slot.getOpen());
+						
+						conflict = touchesMorningPart || touchesEveningPart;
+					} 
+					else 
+					{
+						// Standard Logic: Conflict if reservation overlaps the single interval
+						boolean startsBeforeSlotCloses = resStartTime.isBefore(slot.getClose());
+						boolean endsAfterSlotOpens = endsNextDay || resEndTime.isAfter(slot.getOpen());
+						
+						conflict = startsBeforeSlotCloses && endsAfterSlotOpens;
+					}
 
-					// Check if reservation ends after slot opens
-					boolean endsAfterSlotOpens = endsNextDay || resEndTime.isAfter(slot.getOpen());
-
-					if (startsBeforeSlotCloses && endsAfterSlotOpens)//the reservation time conflicts with the opening time slot 
+					if (conflict)
 					{
 						conflictedReservations.add(res);
 					}
@@ -171,7 +186,7 @@ public class OpeningTimeController
 		//get all active reservations from the DB
 		ArrayList<TableReservation> reservations = ReservationControler.getAllReservationsActive();
 
-		final long RESERVATION_DURATION_MINUTES = 120;//assuming each reservation lasts for 2 hours
+		final long RESERVATION_DURATION_MINUTES = 120; //assuming each reservation lasts for 2 hours
 
 		if (reservations == null || reservations.isEmpty()) 
 		{
@@ -215,14 +230,29 @@ public class OpeningTimeController
 				if (openingHours.getSlots() != null && !openingHours.getSlots().isEmpty()) 
 				{
 					TimeSlot slot = openingHours.getSlots().get(0); //assuming only one time slot per day for simplicity;
+					
+					// Determine if this is an overnight shift
+					boolean isOvernight = slot.getOpen().isAfter(slot.getClose());
+					boolean conflict = false;
 
-					// Check if reservation starts before slot closes and ends after slot opens
-					boolean startsBeforeSlotCloses = resStartTime.isBefore(slot.getClose());
+					if (isOvernight) 
+					{
+						// Overnight Logic
+						boolean touchesMorningPart = resStartTime.isBefore(slot.getClose());
+						boolean touchesEveningPart = endsNextDay || resEndTime.isAfter(slot.getOpen());
+						
+						conflict = touchesMorningPart || touchesEveningPart;
+					} 
+					else 
+					{
+						// Standard Logic
+						boolean startsBeforeSlotCloses = resStartTime.isBefore(slot.getClose());
+						boolean endsAfterSlotOpens = endsNextDay || resEndTime.isAfter(slot.getOpen());
+						
+						conflict = startsBeforeSlotCloses && endsAfterSlotOpens;
+					}
 
-					// Does the order end after the slot (that we want to delete) starts?
-					boolean endsAfterSlotOpens = endsNextDay || resEndTime.isAfter(slot.getOpen());
-
-					if (startsBeforeSlotCloses && endsAfterSlotOpens) //the reservation time conflicts with the opening time slot
+					if (conflict) 
 					{
 						conflictedReservations.add(res);
 					}
@@ -230,7 +260,7 @@ public class OpeningTimeController
 			}
 		}
 
-		return conflictedReservations;//return the list of conflicting reservations 
+		return conflictedReservations; //return the list of conflicting reservations 
 	}
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////Logic methods//////////////////////////////////////////////////////////////////////
