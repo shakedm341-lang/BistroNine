@@ -28,7 +28,7 @@
             <VBox spacing="2.0">
                <children>
                   <Button maxWidth="Infinity" mnemonicParsing="false" onAction="#goToNewReservation" styleClass="nav-btn" text="New Order / Reservation" />
-                  <Button maxWidth="Infinity" mnemonicParsing="false" onAction="#goToLeaveWaitlist" styleClass="nav-btn" text="Leave Waitlist" />
+                  <Button maxWidth="Infinity" mnemonicParsing="false" onAction="#goToCancelRegistration" styleClass="nav-btn" text="Cancel Registration" />
                   <Button maxWidth="Infinity" mnemonicParsing="false" onAction="#goToPayBill" styleClass="nav-btn" text="Pay Bill" />
                </children>
             </VBox>

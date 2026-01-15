@@ -67,22 +67,22 @@ public class GuestTerminalController {
     }
 
     /**
-     * Navigates the guest to the Leave Waitlist screen.
+     * Navigates the guest to the Cancel Registration screen.
      * 
      * @param event The action event that triggered this method
      */
     @FXML
-    void goToLeaveWaitlist(ActionEvent event) {
+    void goToCancelRegistration(ActionEvent event) {
         try {
             // Unsubscribe existing boundary if any
             ClientController.unsubscribeReservationBoundry(null);
 
-            // Load the Leave Waitlist FXML
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/LeaveWaitlistScreen.fxml"));
+            // Load the Cancel Registration FXML
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/CancelRegistrationScreen.fxml"));
             Parent root = loader.load();
 
             // Configure the controller
-            LeaveWaitlistController controller = loader.getController();
+            CancelRegistrationController controller = loader.getController();
             controller.setClient(client);
             controller.setTerminalMode(true);
 

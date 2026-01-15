@@ -61,8 +61,8 @@
                     </graphic>
                 </Button>
 
-                <Button fx:id="btnLeaveWaitlist" contentDisplay="TOP" mnemonicParsing="false" onAction="#handleLeaveWaitlist" 
-                        styleClass="tile-btn, tile-gray" text="Leave Waitlist" 
+                <Button fx:id="btnCancelRegistration" contentDisplay="TOP" mnemonicParsing="false" onAction="#handleCancelRegistration" 
+                        styleClass="tile-btn, tile-gray" text="Cancel Registration" 
                         GridPane.columnIndex="1" GridPane.rowIndex="1" maxWidth="Infinity" maxHeight="Infinity">
                     <graphic>
                         <Label text="❌" style="-fx-font-size: 40px;"/>

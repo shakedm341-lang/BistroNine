@@ -91,8 +91,8 @@ public class ClientController extends AbstractClient {
     /** Controller for joining the waiting list. */
     public static gui.JoinWaitlistController joinWaitlistController;
     
-    /** Controller for leaving the waiting list. */
-    public static gui.LeaveWaitlistController leaveWaitlistController;
+    /** Controller for cancel registration (waitlist or reservation). */
+    public static gui.CancelRegistrationController cancelRegistrationController;
     
     /** Controller for paying the bill. */
     public static gui.PayBillController payBillController;
@@ -704,8 +704,11 @@ public class ClientController extends AbstractClient {
         if (tabWaitingListController != null) {
             tabWaitingListController.updateTableData(message.content); 
         }
-        if (leaveWaitlistController != null) {
-            leaveWaitlistController.onDeleteResponse(message.content); 
+        if (cancelRegistrationController != null) {
+            cancelRegistrationController.onDeleteResponse(message.content); 
+        }
+        if (userDashboardController != null) {
+            userDashboardController.onWaitlistDeleteResponse(message.content);
         }
     }
     

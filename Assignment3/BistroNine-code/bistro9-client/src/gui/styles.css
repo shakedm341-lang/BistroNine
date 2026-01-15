@@ -325,6 +325,33 @@
     -fx-background-color: #FFF5F5;
 }
 
+/* Segmented Control / Toggle Group Styling */
+.segmented-control {
+    -fx-background-color: #EDF2F7;
+    -fx-background-radius: 10px;
+    -fx-padding: 4px;
+}
+
+.segmented-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #718096;
+    -fx-font-weight: bold;
+    -fx-padding: 10 25;
+    -fx-background-radius: 8px;
+    -fx-cursor: hand;
+    -fx-font-size: 14px;
+}
+
+.segmented-button:selected {
+    -fx-background-color: white;
+    -fx-text-fill: -primary-blue;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 5, 0, 0, 2);
+}
+
+.segmented-button:hover:not(:selected) {
+    -fx-background-color: #E2E8F0;
+}
+
 /* 
  * MAIN CONTENT AREA STYLING
  * Area where primary page data is rendered.

@@ -88,8 +88,8 @@ public class TerminalMenuController {
      * @param event The ActionEvent from the button click
      */
     @FXML
-    void handleLeaveWaitlist(ActionEvent event) {
-        switchScene(event, "/gui/LeaveWaitlistScreen.fxml", "Terminal - Leave Waiting List");
+    void handleCancelRegistration(ActionEvent event) {
+        switchScene(event, "/gui/CancelRegistrationScreen.fxml", "Terminal - Cancel Registration");
     }
 
     /**

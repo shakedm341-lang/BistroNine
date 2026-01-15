@@ -11,22 +11,30 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.RadioButton;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 
 /**
- * Controller class for the "Leave Waitlist" screen.
+ * Controller class for the "Cancel Registration" screen.
  * <p>
- * This class handles the logic for removing a guest or subscriber from the restaurant's waitlist.
+ * This class handles the logic for removing a guest or subscriber from the restaurant's waitlist
+ * or cancelling an existing reservation by confirmation code.
  * It supports two primary operating modes:
  * <ul>
  *   <li><b>Terminal Mode:</b> Used at the physical restaurant terminal by walk-in guests or logged-in subscribers.</li>
  *   <li><b>Dashboard Mode:</b> Used by subscribers logged into their personal dashboard.</li>
  * </ul>
  */
-public class LeaveWaitlistController extends BaseTerminalController {
+public class CancelRegistrationController extends BaseTerminalController implements IReservationDeleter {
 
     // FXML UI Components
+    @FXML private ToggleButton rbWaitlist;
+    @FXML private ToggleButton rbReservation;
+    @FXML private VBox waitlistModeContainer;
+    @FXML private VBox reservationModeContainer;
+    
     @FXML private RadioButton rbGuest;
     @FXML private RadioButton rbSubscriber;
     @FXML private Label lblInstruction;
@@ -35,8 +43,11 @@ public class LeaveWaitlistController extends BaseTerminalController {
     @FXML private TextField phoneField;
     @FXML private TextField emailField;
     @FXML private TextField subscriberIdField;
+    
+    @FXML private TextField confCodeField;
+    
     @FXML private Button btnBack;
-    @FXML private Button btnRemove;
+    @FXML private Button btnAction;
 
     /** Flag indicating if the controller is being used within the Subscriber Dashboard */
     private boolean isDashboardMode = false;
@@ -51,24 +62,42 @@ public class LeaveWaitlistController extends BaseTerminalController {
     @FXML
     public void initialize() {
         // Register this controller instance globally for message routing from the ClientController
-        ClientController.leaveWaitlistController = this;
+        ClientController.cancelRegistrationController = this;
 
-        // Radio buttons are used internally to manage logic but are often hidden from the user 
-        // to simplify the interface based on their login status.
+        // Mode Toggling: Exit Waitlist vs Cancel Reservation
+        rbWaitlist.selectedProperty().addListener((obs, oldVal, newVal) -> {
+            waitlistModeContainer.setVisible(newVal);
+            waitlistModeContainer.setManaged(newVal);
+            updateButtonState();
+        });
+        rbReservation.selectedProperty().addListener((obs, oldVal, newVal) -> {
+            reservationModeContainer.setVisible(newVal);
+            reservationModeContainer.setManaged(newVal);
+            updateButtonState();
+        });
+
+        // Radio buttons for User Type (within Waitlist mode)
+        rbGuest.selectedProperty().addListener((obs, oldVal, newVal) -> {
+            guestFields.setVisible(newVal);
+            guestFields.setManaged(newVal);
+            updateButtonState();
+        });
+        rbSubscriber.selectedProperty().addListener((obs, oldVal, newVal) -> {
+            subscriberFields.setVisible(newVal);
+            subscriberFields.setManaged(newVal);
+            updateButtonState();
+        });
+
+        // Hide user type radios by default in some modes
         rbGuest.setVisible(false);
         rbGuest.setManaged(false);
         rbSubscriber.setVisible(false);
         rbSubscriber.setManaged(false);
 
-        // Dynamic UI: Show/hide relevant input fields based on which radio button is selected
-        rbGuest.selectedProperty().addListener((obs, oldVal, newVal) -> {
-            guestFields.setVisible(newVal);
-            guestFields.setManaged(newVal);
-        });
-        rbSubscriber.selectedProperty().addListener((obs, oldVal, newVal) -> {
-            subscriberFields.setVisible(newVal);
-            subscriberFields.setManaged(newVal);
-        });
+        // Real-time validation listeners
+        phoneField.textProperty().addListener((obs, old, newValue) -> updateButtonState());
+        emailField.textProperty().addListener((obs, old, newValue) -> updateButtonState());
+        confCodeField.textProperty().addListener((obs, old, newValue) -> updateButtonState());
 
         // Set initial state based on Terminal Mode (default if not explicitly set to Dashboard)
         if (!isDashboardMode) {
@@ -127,27 +156,28 @@ public class LeaveWaitlistController extends BaseTerminalController {
             subscriberFields.setManaged(false);
             
             // Validate input immediately to set button state
-            updateLeaveButtonState();
+            updateButtonState();
         }
-
-        // Add listeners to enable/disable remove button as user types for real-time validation
-        phoneField.textProperty().addListener((obs, old, newValue) -> updateLeaveButtonState());
-        emailField.textProperty().addListener((obs, old, newValue) -> updateLeaveButtonState());
     }
 
     /**
-     * Updates the state of the "REMOVE FROM WAITLIST" button.
-     * Guests must provide at least a phone number or an email to be identifiable.
-     * Subscribers are always enabled because their ID is pre-filled.
+     * Updates the state of the main action button based on the selected mode and input validity.
      */
-    private void updateLeaveButtonState() {
-        if (!isDashboardMode && BaseTerminalController.currentUserType == BaseTerminalController.UserType.GUEST) {
-            boolean hasPhone = !phoneField.getText().trim().isEmpty();
-            boolean hasEmail = !emailField.getText().trim().isEmpty();
-            btnRemove.setDisable(!hasPhone && !hasEmail);
+    private void updateButtonState() {
+        if (rbWaitlist.isSelected()) {
+            btnAction.setText("REMOVE FROM WAITLIST");
+            if (!isDashboardMode && BaseTerminalController.currentUserType == BaseTerminalController.UserType.GUEST) {
+                boolean hasPhone = !phoneField.getText().trim().isEmpty();
+                boolean hasEmail = !emailField.getText().trim().isEmpty();
+                btnAction.setDisable(!hasPhone && !hasEmail);
+            } else {
+                btnAction.setDisable(false);
+            }
         } else {
-            // Subscribers or dashboard mode (pre-filled ID) are always enabled
-            btnRemove.setDisable(false);
+            btnAction.setText("CANCEL RESERVATION");
+            String codeText = confCodeField.getText().trim();
+            boolean hasCode = !codeText.isEmpty() && codeText.matches("\\d+");
+            btnAction.setDisable(!hasCode);
         }
     }
 
@@ -161,7 +191,7 @@ public class LeaveWaitlistController extends BaseTerminalController {
         this.client = client;
         this.dashboardUser = user;
         this.isDashboardMode = true;
-        ClientController.leaveWaitlistController = this;
+        ClientController.cancelRegistrationController = this;
 
         Platform.runLater(() -> {
             // Hide selection UI as dashboard users are always subscribers
@@ -190,22 +220,26 @@ public class LeaveWaitlistController extends BaseTerminalController {
     }
 
     /**
-     * FXML Action handler for the "Remove" button.
+     * FXML Action handler for the main action button.
      * 
      * @param event The action event.
      */
     @FXML
-    void handleLeave(ActionEvent event) {
-        String type = rbSubscriber.isSelected() ? "subscriber" : "customer";
-        
-        // Security check for terminal mode subscribers
-        if (rbSubscriber.isSelected() && !isDashboardMode) {
-            if (BaseTerminalController.currentSubscriberId == null || BaseTerminalController.currentSubscriberId.isEmpty()) {
-                TerminalUtils.showError("Identification Required", "Please login at the beginning.");
-                return;
+    void handleAction(ActionEvent event) {
+        if (rbWaitlist.isSelected()) {
+            String type = rbSubscriber.isSelected() ? "subscriber" : "customer";
+            
+            // Security check for terminal mode subscribers
+            if (rbSubscriber.isSelected() && !isDashboardMode) {
+                if (BaseTerminalController.currentSubscriberId == null || BaseTerminalController.currentSubscriberId.isEmpty()) {
+                    TerminalUtils.showError("Identification Required", "Please login at the beginning.");
+                    return;
+                }
             }
+            performLeave(type);
+        } else {
+            performCancelReservation();
         }
-        performLeave(type);
     }
 
     /**
@@ -215,14 +249,13 @@ public class LeaveWaitlistController extends BaseTerminalController {
     @Override
     protected void handleBack(ActionEvent event) {
         if (isDashboardMode) {
-            // In dashboard mode, the back navigation is handled by the main dashboard container
             return;
         }
         super.handleBack(event);
     }
 
     /**
-     * Gathers user input, performs validation, and sends the deletion request to the server.
+     * Gathers user input, performs validation, and sends the deletion request for waitlist to the server.
      * 
      * @param type The type of user attempting to leave ("subscriber" or "customer").
      */
@@ -231,15 +264,7 @@ public class LeaveWaitlistController extends BaseTerminalController {
         String email = null;
 
         if (type.equals("subscriber")) {
-            // Handle Subscriber Identification
-            String subIdText;
-            if (isDashboardMode) {
-                subIdText = String.valueOf(dashboardUser.getCustomerId());
-            } else {
-                subIdText = BaseTerminalController.currentSubscriberId;
-            }
-            
-            subscriberIdField.setText(subIdText);
+            String subIdText = isDashboardMode ? String.valueOf(dashboardUser.getCustomerId()) : BaseTerminalController.currentSubscriberId;
             try {
                 identifier = Integer.parseInt(subIdText);
             } catch (NumberFormatException e) {
@@ -247,23 +272,19 @@ public class LeaveWaitlistController extends BaseTerminalController {
                 return;
             }
         } else {
-            // Handle Guest Identification and Validation
             String phone = phoneField.getText().trim();
             email = emailField.getText().trim();
 
-            // Check if identity fields are empty
             if (phone.isEmpty() && email.isEmpty()) {
                 TerminalUtils.showError("Input Error", "Please provide at least a Phone Number or an Email.");
                 return;
             }
 
-            // Validate Phone: Exactly 10 digits
             if (!phone.isEmpty() && !phone.matches("^\\d{10}$")) {
                 TerminalUtils.showError("Invalid Phone", "Phone number must be exactly 10 digits.");
                 return;
             }
 
-            // Validate Email format
             if (!email.isEmpty() && !email.matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")) {
                 TerminalUtils.showError("Invalid Email", "Please enter a valid email (e.g. name@example.com).");
                 return;
@@ -273,18 +294,57 @@ public class LeaveWaitlistController extends BaseTerminalController {
             email = email.isEmpty() ? null : email;
         }
 
-        // Prepare server message content: [type, phone/subId, email]
         ArrayList<Object> content = new ArrayList<>();
         content.add(type);       // 0: user type
         content.add(identifier); // 1: phone string or subscriber ID integer
         content.add(email);      // 2: email string (if provided)
 
         if (client != null) {
-            // Send DELETE_FROM_WAIT_LIST command to server
             client.handleMessageFromBoundary(TypeMessage.WAITLIST, content, Command.DELETE_FROM_WAIT_LIST);
         } else {
             TerminalUtils.showError("Error", "Client is not connected.");
         }
+    }
+
+    /**
+     * Gathers the confirmation code and sends a reservation deletion request to the server.
+     */
+    private void performCancelReservation() {
+        String codeText = confCodeField.getText().trim();
+        if (codeText.isEmpty() || !codeText.matches("\\d+")) {
+            TerminalUtils.showError("Input Error", "Please enter a valid confirmation code (digits only).");
+            return;
+        }
+
+        int code;
+        try {
+            code = Integer.parseInt(codeText);
+        } catch (NumberFormatException e) {
+            TerminalUtils.showError("Input Error", "Invalid Confirmation Code.");
+            return;
+        }
+
+        ArrayList<Object> content = new ArrayList<>();
+        content.add(code); // 0: confirmation code
+
+        if (client != null) {
+            // Register this controller as the deleter to receive the response
+            client.setReservationDeleter(this);
+            // Note: DELETE_RESERVATION handles both waitlist and fixed reservations on the server side
+            client.handleMessageFromBoundary(TypeMessage.RESERVATION, content, Command.DELETE_RESERVATION);
+        } else {
+            TerminalUtils.showError("Error", "Client is not connected.");
+        }
+    }
+
+    /**
+     * Implementation of IReservationDeleter callback.
+     * 
+     * @param isDeleted true if successfully deleted.
+     */
+    @Override
+    public void handleDeleteReservationResponse(boolean isDeleted) {
+        onDeleteResponse(isDeleted);
     }
 
     /**
@@ -295,13 +355,18 @@ public class LeaveWaitlistController extends BaseTerminalController {
     public void onDeleteResponse(Object response) {
         Platform.runLater(() -> {
             if (Boolean.TRUE.equals(response)) {
-                TerminalUtils.showSuccess("Success", "You have been removed from the waitlist successfully.");
-                // In terminal mode, return to previous screen after success
+                String msg = rbWaitlist.isSelected() ? 
+                    "You have been removed from the waitlist successfully." : 
+                    "Your reservation has been cancelled successfully.";
+                TerminalUtils.showSuccess("Success", msg);
                 if (!isDashboardMode) {
-                    handleBack(new ActionEvent(rbSubscriber, null));
+                    handleBack(new ActionEvent(btnAction, null));
                 }
             } else {
-                TerminalUtils.showError("Error", "We couldn't find your entry on the waitlist or an error occurred.");
+                String msg = rbWaitlist.isSelected() ? 
+                    "We couldn't find your entry on the waitlist or an error occurred." : 
+                    "Invalid confirmation code or reservation not found.";
+                TerminalUtils.showError("Error", msg);
             }
         });
     }

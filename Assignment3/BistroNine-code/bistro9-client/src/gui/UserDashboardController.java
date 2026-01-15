@@ -259,47 +259,62 @@ public class UserDashboardController {
     }
 
     /**
-     * Handles the request to leave the waitlist after user confirmation.
-     * @param event The action event from the Leave Waitlist button.
+     * Handles the request to leave the waitlist directly from the dashboard.
+     * Shows a confirmation dialog and then sends a request to the server.
+     * @param event The action event from the button.
      */
     @FXML
-    void handleExitWaitlist(ActionEvent event) {
-        setActiveButton((Button) event.getSource());
+    void handleLeaveWaitlist(ActionEvent event) {
         Alert alert = new Alert(AlertType.CONFIRMATION);
         alert.setTitle("Leave Waitlist");
-        alert.setHeaderText("Confirmation");
-        alert.setContentText("Are you sure you want to leave the waitlist?");
+        alert.setHeaderText("Are you sure you want to leave the waitlist?");
+        alert.setContentText("This will remove your current entry from the restaurant waitlist.");
 
         Optional<ButtonType> result = alert.showAndWait();
         if (result.isPresent() && result.get() == ButtonType.OK) {
             ArrayList<Object> content = new ArrayList<>();
-            content.add("subscriber"); 
-            content.add(currentUser.getCustomerId());
-            content.add(null);
+            content.add("subscriber");                 // 0: user type
+            content.add(currentUser.getCustomerId());  // 1: subscriber ID
+            content.add(null);                         // 2: email (optional)
 
-            // Send request to server to remove user from waitlist
             if (client != null) {
                 client.handleMessageFromBoundary(TypeMessage.WAITLIST, content, Command.DELETE_FROM_WAIT_LIST);
             } else {
-                TerminalUtils.showError("Error", "Client is not connected.");
+                showError("Connection Error", "Client is not connected to the server.");
             }
         }
     }
 
     /**
-     * Callback method triggered when the server responds to a waitlist deletion request.
+     * Callback from ClientController when a waitlist deletion response is received.
      * @param response Boolean indicating success or failure.
      */
     public void onWaitlistDeleteResponse(Object response) {
-        // Run on UI thread to update status
         Platform.runLater(() -> {
             if (Boolean.TRUE.equals(response)) {
-                TerminalUtils.showSuccess("Success", "You have been removed from the waitlist successfully.");
+                Alert alert = new Alert(AlertType.INFORMATION);
+                alert.setTitle("Success");
+                alert.setHeaderText(null);
+                alert.setContentText("You have been successfully removed from the waitlist.");
+                alert.showAndWait();
             } else {
-                TerminalUtils.showError("Waitlist Info", "We couldn't find your entry on the waitlist or an error occurred.");
+                Alert alert = new Alert(AlertType.ERROR);
+                alert.setTitle("Error");
+                alert.setHeaderText("Failed to leave waitlist");
+                alert.setContentText("We couldn't find your entry on the waitlist or an error occurred.");
+                alert.showAndWait();
             }
         });
     }
+
+    private void showError(String title, String content) {
+        Alert alert = new Alert(AlertType.ERROR);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(content);
+        alert.showAndWait();
+    }
+
 
     /**
      * Switches the content area to the Live Dashboard (Manager/Representative only).
