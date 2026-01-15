@@ -1344,68 +1344,68 @@ public class ReservationControler
 					// Send the cancellation notifications using the variables
 					EmailSendController.sendEmail(sub.getEmail(), emailSubject, emailBody);
 					SmsSendController.sendSms(sub.getPhoneNumber(), emailSubject, emailBody);
-					
+
 					ArrayList<Table> allTables = TableController.getTableInRestaurant();
-	                
-	                if (allTables != null) 
-	                {
-	                    for (Table table : allTables) 
-	                    {
-	                       
-	                        if (table.getStatus().equalsIgnoreCase("available")) 
-	                        {
-	                        	//find match in the waiting list for the freed table
-	                            WaitList waiter = WaitListController.findMatchInWaitingList(table);
-	                            
-	                            if (waiter != null) 
-	                            {
-	                               
-	                            	//status of the table is already  occupied from the last customer that was seated from the waiting list
-	                				TableReservation waiterRes=new TableReservation();
-	                				waiterRes.setReservationId(waiter.getReservationId());
-	                				if (!DBC.getReservationByReservationId(waiterRes))// update the reservation object with the details from the
-	                					// DB and return true if found else false
-	                				{
-	                					System.out.println("Error: could not find reservation for waitlist entry " );
-	                					break ;
-	                				}
 
-	                				ReservationControler.updateReservation(waiterRes, "reservationDate", new Timestamp(System.currentTimeMillis()));// set reservation date to now
+					if (allTables != null) 
+					{
+						for (Table table : allTables) 
+						{
+
+							if (table.getStatus().equalsIgnoreCase("available")) 
+							{
+								//find match in the waiting list for the freed table
+								WaitList waiter = WaitListController.findMatchInWaitingList(table);
+
+								if (waiter != null) 
+								{
+
+									//status of the table is already  occupied from the last customer that was seated from the waiting list
+									TableReservation waiterRes=new TableReservation();
+									waiterRes.setReservationId(waiter.getReservationId());
+									if (!DBC.getReservationByReservationId(waiterRes))// update the reservation object with the details from the
+										// DB and return true if found else false
+									{
+										System.out.println("Error: could not find reservation for waitlist entry " );
+										break ;
+									}
+
+									ReservationControler.updateReservation(waiterRes, "reservationDate", new Timestamp(System.currentTimeMillis()));// set reservation date to now
 
 
-	                				Subscriber subW = new Subscriber();
-	                				subW.setCustomerId( waiterRes.getCustomerId());
+									Subscriber subW = new Subscriber();
+									subW.setCustomerId( waiterRes.getCustomerId());
 
-	                				if (!DBC.getCustomerByCustomerId(subW))
-	                				{
-	                					System.out.println("Error: could not find customer " );
-	                					break ;
-	                				}
+									if (!DBC.getCustomerByCustomerId(subW))
+									{
+										System.out.println("Error: could not find customer " );
+										break ;
+									}
 
-	                				String emailSubjectW = "Your table is ready 🍽️";
-	                				String emailBodyW;
+									String emailSubjectW = "Your table is ready 🍽️";
+									String emailBodyW;
 
-	                				if (DBC.getCustomerType(subW.getCustomerId()).equals("customer"))
-	                				{
-	                					emailBodyW = "Hey customer, good news! A table has become available for " + waiterRes.getNumberOfDiners() + " diners at Bistro 9 .\r\n"
-	                							+ "Looking forward to seeing you at the entrance!";
-	                				}
-	                				else
-	                				{
-	                					emailBodyW = "Hey " + subW.getFirstName() + " " + subW.getLastName() + ", good news! A table has become available for " + waiterRes.getNumberOfDiners() + " diners at Bistro 9 .\r\n"
-	                							+ "Looking forward to seeing you at the entrance!";
-	                				}
+									if (DBC.getCustomerType(subW.getCustomerId()).equals("customer"))
+									{
+										emailBodyW = "Hey customer, good news! A table has become available for " + waiterRes.getNumberOfDiners() + " diners at Bistro 9 .\r\n"
+												+ "Looking forward to seeing you at the entrance!";
+									}
+									else
+									{
+										emailBodyW = "Hey " + subW.getFirstName() + " " + subW.getLastName() + ", good news! A table has become available for " + waiterRes.getNumberOfDiners() + " diners at Bistro 9 .\r\n"
+												+ "Looking forward to seeing you at the entrance!";
+									}
 
-	                				// Send notifications using the variables
-	                				EmailSendController.sendEmail(subW.getEmail(), emailSubjectW, emailBodyW);
-	                				SmsSendController.sendSms(subW.getPhoneNumber(), emailSubjectW, emailBodyW);
-	                                
-	                                 break;
-	                            }
-	                        }
-	                    }
-	                }
-					
+									// Send notifications using the variables
+									EmailSendController.sendEmail(subW.getEmail(), emailSubjectW, emailBodyW);
+									SmsSendController.sendSms(subW.getPhoneNumber(), emailSubjectW, emailBodyW);
+
+									break;
+								}
+							}
+						}
+					}
+
 
 				}
 			}
