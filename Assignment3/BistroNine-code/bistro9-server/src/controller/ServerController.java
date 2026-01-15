@@ -45,7 +45,7 @@ public class ServerController extends AbstractServer {
 		this.billController = new BillController();
 		this.tableController = new TableController();
 		this.waitListController = new WaitListController();
-		this.openingTimeController = new OpeningTimeController();
+		this.openingTimeController = new OpeningTimeController(this);
 		this.timeReportController = new TimeReportController();
 		this.subscriberReportController = new SubscriberReportController();
 
@@ -415,5 +415,21 @@ public class ServerController extends AbstractServer {
 			System.out.println("Could not read private socket: " + e.getMessage());
 		}
 		return "Unknown";
+	}
+	
+	/**
+	 * Sends a Message object to all connected clients.
+	 *
+	 * @param msg The Message object to send.
+	 */
+	public void sendToAll(Message msg)
+	{
+	    try {
+	       
+	        byte[] data = KryoUtil.serialize(msg);
+	        sendToAllClients(data);// OCSF method to send byte[] to all clients 
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
 	}
 }

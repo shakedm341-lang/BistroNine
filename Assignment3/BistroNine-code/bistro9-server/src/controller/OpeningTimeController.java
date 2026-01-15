@@ -6,7 +6,8 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-
+import data.Command;
+import data.TypeMessage;
 import data.Message;
 import data.OpeningHours;
 import data.OpeningHoursPerDay;
@@ -17,15 +18,14 @@ import data.TimeSlot;
 
 public class OpeningTimeController 
 {
-
+	private static ServerController server;
 	private static DataBaseController DBC=DataBaseController.getInstance();//Interfacing with the DB Controller
 	/**
 	 * Default constructor
 	 */
-	public OpeningTimeController() 
-	{
-
-	}
+	public OpeningTimeController(ServerController server) {
+		OpeningTimeController.server = server;
+    }
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//////////////////////////managing messages //////////////////////////////////////////////////////////////////
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -75,8 +75,20 @@ public class OpeningTimeController
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	////////////////////////////////Helper methods//////////////////////////////////////////////////////////////////
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////	
+	public static void SendBroadcast(TypeMessage type, Object content, Command command) 
+	{
+		Message broadcastMsg = new Message();
+        broadcastMsg.type = type;
+        broadcastMsg.content = content;
+        broadcastMsg.command = command;
 
-
+        
+        if (server != null) 
+        {
+            server.sendToAll(broadcastMsg);
+        }
+		
+	}
 	/**
 	 * Retrieves the opening time slots for a specific date from the database.Special Hours or Weekly Hours
 	 *
@@ -501,6 +513,7 @@ public class OpeningTimeController
 		// get old hours and change to new hours in the DB return true if successful 	else false
 		if (DBC.updateSpecialOpeningTimeQuery(oldHours, newHours)) 
 		{
+			SendBroadcast( TypeMessage.OPENING_TIME,null,Command.BROADCAST_UPDATE_OPENING_TIME);
 			System.out.println("Special Opening Time for " + day + " updated successfully.");
 			return new ArrayList<Subscriber>(); // Success 
 		}
@@ -647,6 +660,9 @@ public class OpeningTimeController
 		// get old hours and change to new hours in the DB return true if successful 	else false
 		if (DBC.updateOpeningTimeQuery(oldHours,newHours)) 
 		{
+			
+			SendBroadcast( TypeMessage.OPENING_TIME,null,Command.BROADCAST_UPDATE_OPENING_TIME);
+
 			System.out.println("Opening Time for " + day + " updated successfully.");
 			return new ArrayList<Subscriber>(); // Success 
 		}
@@ -714,9 +730,15 @@ public class OpeningTimeController
 		openingHours.setSlots(timeSlotList);//set the time slot list to the opening hours object
 
 
-
 		//updateOpeningTimeQuery insert the new one
-		return DBC.updateOpeningTimeQuery(openingHours);//return to server true if the update was successful, false otherwise
+		//return to server true if the update was successful, false otherwise
+		if (DBC.updateOpeningTimeQuery(openingHours))
+		{
+			SendBroadcast( TypeMessage.OPENING_TIME,null,Command.BROADCAST_UPDATE_OPENING_TIME);
+			System.out.println("New Opening Time for " + day + " added successfully.");
+			return true;
+		}
+		return false;
 	}
 
 	/**
@@ -861,6 +883,8 @@ public class OpeningTimeController
 		// else list is empty , Safe to delete.
 		if (DBC.deleteSpecialOpeningTimeQuery(openingHours)) 
 		{
+			
+			SendBroadcast( TypeMessage.OPENING_TIME,null,Command.BROADCAST_UPDATE_OPENING_TIME);
 			System.out.println("Special Opening Time for date " + day.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")) + " deleted successfully.");
 			return new ArrayList<Subscriber>();
 		}
@@ -951,6 +975,7 @@ public class OpeningTimeController
 		// else list is empty , Safe to delete.
 		if (DBC.deleteOpeningTimeQuery(openingHours)) 
 		{
+			SendBroadcast( TypeMessage.OPENING_TIME,null,Command.BROADCAST_UPDATE_OPENING_TIME);
 			System.out.println("Opening Time for day " + day + " deleted successfully.");
 			return new ArrayList<Subscriber>();
 		}
