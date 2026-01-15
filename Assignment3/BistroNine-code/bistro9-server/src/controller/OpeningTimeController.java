@@ -326,11 +326,15 @@ public class OpeningTimeController
 		//  If conflicts found, return Subscribers of the list of conflicting reservations
 		if (!conflicts.isEmpty()) 
 		{
+			ArrayList<Subscriber> conflictingSubscribers = CustomerController.getSubscribersFromReservations(conflicts);
 			System.out.println("\n====== Close Restaurant Failed: Conflicts Found on " + dateToClose + " ===");
-			for (TableReservation res : conflicts) {
-				System.out.println(" -> Reservation ID: " + res.getReservationId() + " is preventing closure.");
+			if (conflictingSubscribers != null) {
+				for (Subscriber sub : conflictingSubscribers) {
+					String name = (sub.getSubscriberId() > 0) ? sub.getFirstName() + " " + sub.getLastName() : "Guest";
+					System.out.println(" -> " + name + " | Email: " + sub.getEmail() + " | Phone: " + sub.getPhoneNumber());
+				}
 			}
-			return CustomerController.getSubscribersFromReservations(conflicts);
+			return conflictingSubscribers;
 		}
 
 		//  No conflicts - Set hours to 00:00 - 00:00 (Closed) 
@@ -468,12 +472,16 @@ public class OpeningTimeController
 
 			if (!conflicts.isEmpty()) 
 			{
+				ArrayList<Subscriber> conflictingSubscribers = CustomerController.getSubscribersFromReservations(conflicts);
 				System.out.println("\n====== Update Special Opening Time Failed: Conflicts Found ===");
-				for (TableReservation res : conflicts) {
-					System.out.println(" -> Conflict in removed range: Reservation ID: " + res.getReservationId());
+				if (conflictingSubscribers != null) {
+					for (Subscriber sub : conflictingSubscribers) {
+						String name = (sub.getSubscriberId() > 0) ? sub.getFirstName() + " " + sub.getLastName() : "Guest";
+						System.out.println(" -> Conflict: " + name + " | Email: " + sub.getEmail() + " | Phone: " + sub.getPhoneNumber());
+					}
 				}
 				// Return the list of subscribers who are disturbed
-				return CustomerController.getSubscribersFromReservations(conflicts);
+				return conflictingSubscribers;
 			}
 		}
 
@@ -612,12 +620,16 @@ public class OpeningTimeController
 
 			if (!conflicts.isEmpty()) 
 			{
+				ArrayList<Subscriber> conflictingSubscribers = CustomerController.getSubscribersFromReservations(conflicts);
 				System.out.println("\n====== Update Opening Time Failed: Conflicts Found ===");
-				for (TableReservation res : conflicts) {
-					System.out.println(" -> Conflict in removed range: Reservation ID: " + res.getReservationId());
+				if (conflictingSubscribers != null) {
+					for (Subscriber sub : conflictingSubscribers) {
+						String name = (sub.getSubscriberId() > 0) ? sub.getFirstName() + " " + sub.getLastName() : "Guest";
+						System.out.println(" -> Conflict: " + name + " | Email: " + sub.getEmail() + " | Phone: " + sub.getPhoneNumber());
+					}
 				}
 				// Return the list of subscribers who are disturbed
-				return CustomerController.getSubscribersFromReservations(conflicts);
+				return conflictingSubscribers;
 			}
 		}
 
@@ -833,16 +845,15 @@ public class OpeningTimeController
 		// If the list is NOT empty, we have conflicts. 
 		if (!conflicts.isEmpty()) 
 		{
-
+			ArrayList<Subscriber> conflictingSubscribers = CustomerController.getSubscribersFromReservations(conflicts);
 			System.out.println("\n====== Delete Special Opening Time Failed: Conflicts Found ===");
-			for (TableReservation res : conflicts) {
-				System.out.println(
-						" -> Reservation ID: " + res.getReservationId() + " | Date: " + res.getReservationDate()
-						+ " | Diners: " + res.getNumberOfDiners() + " | Customer ID: " + res.getCustomerId());
+			if (conflictingSubscribers != null) {
+				for (Subscriber sub : conflictingSubscribers) {
+					String name = (sub.getSubscriberId() > 0) ? sub.getFirstName() + " " + sub.getLastName() : "Guest";
+					System.out.println(" -> " + name + " | Email: " + sub.getEmail() + " | Phone: " + sub.getPhoneNumber());
+				}
 			}
 			System.out.println("====================================================\n");
-
-			ArrayList<Subscriber> conflictingSubscribers = CustomerController.getSubscribersFromReservations(conflicts);
 
 			return conflictingSubscribers; 
 		}
@@ -924,16 +935,15 @@ public class OpeningTimeController
 		// If the list is NOT empty, we have conflicts. 
 		if (!conflicts.isEmpty()) 
 		{
-
+			ArrayList<Subscriber> conflictingSubscribers = CustomerController.getSubscribersFromReservations(conflicts);
 			System.out.println("\n====== Delete  Opening Time Failed: Conflicts Found ===");
-			for (TableReservation res : conflicts) {
-				System.out.println(
-						" -> Reservation ID: " + res.getReservationId() + " | Date: " + res.getReservationDate()
-						+ " | Diners: " + res.getNumberOfDiners() + " | Customer ID: " + res.getCustomerId());
+			if (conflictingSubscribers != null) {
+				for (Subscriber sub : conflictingSubscribers) {
+					String name = (sub.getSubscriberId() > 0) ? sub.getFirstName() + " " + sub.getLastName() : "Guest";
+					System.out.println(" -> " + name + " | Email: " + sub.getEmail() + " | Phone: " + sub.getPhoneNumber());
+				}
 			}
 			System.out.println("====================================================\n");
-
-			ArrayList<Subscriber> conflictingSubscribers = CustomerController.getSubscribersFromReservations(conflicts);
 
 			return conflictingSubscribers; 
 		}

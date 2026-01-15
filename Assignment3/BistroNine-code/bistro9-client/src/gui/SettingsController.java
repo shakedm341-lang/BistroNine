@@ -501,11 +501,11 @@ public class SettingsController {
         StringBuilder sb = new StringBuilder();
         for (Subscriber sub : conflicts) {
             if (sub.getSubscriberId() > 0) {
-                sb.append("• ").append(sub.getFirstName()).append(" ").append(sub.getLastName())
-                  .append(" (ID: ").append(sub.getSubscriberId()).append(")\n");
+                sb.append("• ").append(sub.getFirstName()).append(" ").append(sub.getLastName()).append("\n");
             } else {
-                sb.append("• Guest #").append(sub.getCustomerId()).append("\n");
+                sb.append("• Guest\n");
             }
+            sb.append("  Email: ").append(sub.getEmail()).append("\n");
             sb.append("  Phone: ").append(sub.getPhoneNumber()).append("\n\n");
         }
 
