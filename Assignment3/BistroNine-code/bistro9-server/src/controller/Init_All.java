@@ -12,21 +12,56 @@ import java.util.Random;
 
 public class Init_All {
 
+    // URL to connect to the specific database (used for creating tables)
     private static final String DB_URL = "jdbc:mysql://localhost:3306/restaurant_db?allowLoadLocalInfile=true&allowPublicKeyRetrieval=true&serverTimezone=Asia/Jerusalem&useSSL=false";
+    
+    // URL to connect to the server root (used for creating the database itself)
+    private static final String SERVER_URL = "jdbc:mysql://localhost:3306/?allowLoadLocalInfile=true&allowPublicKeyRetrieval=true&serverTimezone=Asia/Jerusalem&useSSL=false";
+    
     private static final String USER = "root";
-    private static final String PASSWORD = "Aa123456"; 
+    // Hardcoded PASSWORD removed in favor of dynamic input
 
     private static final Random random = new Random();
 
+    // Main kept for backward compatibility/testing, assumes a default or asks via console if needed,
+    // but here we just leave it empty or pointing to the new method with a default if you strictly want to run it alone.
     public static void main(String[] args) {
+        // For standalone testing, you might want to put a hardcoded password here temporarily
+        // runInitialization("Aa123456"); 
+        System.out.println("Please run via ServerMain GUI to input password.");
+    }
+
+    /**
+     * New entry point for the GUI "Screen Zero".
+     * @param dbPassword The password provided by the user in the GUI.
+     * @return true if initialization was successful, false otherwise.
+     */
+    public static boolean runInitialization(String dbPassword) {
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
-            try (Connection con = DriverManager.getConnection(DB_URL, USER, PASSWORD);
+            
+            // 1. Connect to the Server directly to Drop and Create the DB
+            try (Connection serverCon = DriverManager.getConnection(SERVER_URL, USER, dbPassword);
+                 Statement serverStmt = serverCon.createStatement()) {
+
+                System.out.println("Connected to MySQL server. Resetting database 'restaurant_db'...");
+                
+                // Drop the database if it exists (replaces dropExistingTables)
+                serverStmt.executeUpdate("DROP DATABASE IF EXISTS restaurant_db");
+                
+                // Create the database fresh
+                serverStmt.executeUpdate("CREATE DATABASE restaurant_db");
+                
+                System.out.println("Database created successfully.");
+            }
+
+            // 2. Connect to the newly created restaurant_db to initialize content
+            try (Connection con = DriverManager.getConnection(DB_URL, USER, dbPassword);
                  Statement stmt = con.createStatement()) {
 
-                System.out.println("Starting database initialization...");
+                System.out.println("Starting table and data initialization...");
 
-                dropExistingTables(con, stmt);
+                // Note: dropExistingTables is removed as we just dropped the entire DB.
                 createTables(con, stmt);
                 initDiscounts(con, stmt);
                 initOpeningHours(con, stmt);
@@ -35,21 +70,20 @@ public class Init_All {
                 initUsersAndSubscribers(con);
                 
                 initReservationsAndBills(con);
-                // initWaitingListForToday(con); // מבוטל
                 initLiveDiningForNow(con);
                 
                 initReports(con, stmt);
 
                 System.out.println("Initialization completed successfully.");
+                return true;
             }
-        } catch (Exception e) { e.printStackTrace(); }
-    }
-
-    private static void dropExistingTables(Connection con, Statement stmt) throws SQLException {
-        stmt.executeUpdate("SET FOREIGN_KEY_CHECKS = 0");
-        String[] tables = {"subscriber_report", "time_report", "report_manager", "waiting_list", "bills", "restaurant_discount", "special_hours", "weekly_hours", "table_reservations", "restaurant_tables", "subscriber", "customer"};
-        for (String table : tables) stmt.executeUpdate("DROP TABLE IF EXISTS " + table);
-        stmt.executeUpdate("SET FOREIGN_KEY_CHECKS = 1");
+        } catch (SQLException e) {
+            System.err.println("SQL Error during initialization: " + e.getMessage());
+            return false;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     private static void createTables(Connection con, Statement stmt) throws SQLException {
