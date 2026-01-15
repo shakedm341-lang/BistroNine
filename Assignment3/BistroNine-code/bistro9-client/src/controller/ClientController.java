@@ -11,7 +11,6 @@ import gui.LoginController;
 import gui.MyReservationsController;
 import gui.ReservationBoundry;
 import gui.ReservationManagementController;
-import gui.UpdateReservtionBoundry;
 import gui.ProfileController;
 import gui.SubscribersViewController;
 import gui.TabCurrentDinersController;
@@ -30,9 +29,6 @@ public class ClientController extends AbstractClient {
     // --- Static Fields for GUI Controllers (Route server responses to the correct UI) ---
     /** Flag to indicate if the client is awaiting a response from the server. */
     public static boolean awaitResponse = false;
-    
-    /** Controller for updating reservation details. */
-    public static UpdateReservtionBoundry updatereservationBoundary;
     
     /** Controller for the login screen. */
     public static LoginController loginController;
@@ -213,10 +209,6 @@ public class ClientController extends AbstractClient {
 
             case GET_ALL_RESERVATIONS_BY_CUSTOMER:
                 handleVisitHistoryResponse(message);
-                break;
-
-            case UPDATE_RESERVATION_DETAILS:
-                handleUpdateReservationResponse(message);
                 break;
 
             case CREATE_NEW_RESERVATION:
@@ -467,18 +459,6 @@ public class ClientController extends AbstractClient {
         }
     }
 
-    /**
-     * Handles the response for a reservation update operation.
-     * 
-     * @param message The message containing a Boolean indicating success or failure.
-     */
-    private void handleUpdateReservationResponse(Message message) {
-        if (updatereservationBoundary != null) {
-            Boolean success = (Boolean) message.content;
-            updatereservationBoundary.showUpdateMessage(success); 
-        }
-    }
-    
     /**
      * Handles the response for a reservation deletion request.
      * 

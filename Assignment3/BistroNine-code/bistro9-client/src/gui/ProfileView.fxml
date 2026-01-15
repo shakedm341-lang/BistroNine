@@ -50,17 +50,22 @@
                            styleClass="text-field-modern, text-field-readonly" 
                            prefHeight="35.0" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
 
-                <Separator GridPane.rowIndex="2" GridPane.columnIndex="0" GridPane.columnSpan="2" style="-fx-opacity: 0.5;"/>
+                <Label text="Password" styleClass="input-label" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+                <TextField fx:id="passwordField" editable="false" text="********"
+                           styleClass="text-field-modern, text-field-readonly" 
+                           prefHeight="35.0" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
 
-                <Label text="Email Address *" styleClass="input-label" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+                <Separator GridPane.rowIndex="3" GridPane.columnIndex="0" GridPane.columnSpan="2" style="-fx-opacity: 0.5;"/>
+
+                <Label text="Email Address *" styleClass="input-label" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
                 <TextField fx:id="emailField" promptText="Enter your email" 
                            styleClass="text-field-modern" 
-                           prefHeight="35.0" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+                           prefHeight="35.0" GridPane.rowIndex="4" GridPane.columnIndex="1"/>
 
-                <Label text="Phone Number *" styleClass="input-label" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
+                <Label text="Phone Number *" styleClass="input-label" GridPane.rowIndex="5" GridPane.columnIndex="0"/>
                 <TextField fx:id="phoneField" promptText="Enter your phone number" 
                            styleClass="text-field-modern" 
-                           prefHeight="35.0" GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+                           prefHeight="35.0" GridPane.rowIndex="5" GridPane.columnIndex="1"/>
 
             </GridPane>
 

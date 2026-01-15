@@ -762,26 +762,26 @@
 
 /* DATA SERIES BRANDING */
 
-/* Series 1 (Primary Insight) - Vibrant Orange */
+/* Series 1 (Primary Insight) - Professional Navy */
 .default-color0.chart-series-line { 
-    -fx-stroke: #ED8936; 
-    -fx-stroke-width: 2.5px; 
+    -fx-stroke: -primary-blue; 
+    -fx-stroke-width: 3px; 
 }
 .default-color0.chart-line-symbol { 
-    -fx-background-color: #ED8936; 
+    -fx-background-color: -primary-blue; 
     -fx-background-radius: 5px;
-    -fx-padding: 5px;
+    -fx-padding: 4px;
 }
 
-/* Series 2 (Secondary Insight) - Warm Yellow/Gold */
+/* Series 2 (Secondary Insight) - Elegant Emerald */
 .default-color1.chart-series-line { 
-    -fx-stroke: #ECC94B; 
-    -fx-stroke-width: 2.5px; 
+    -fx-stroke: -success-green; 
+    -fx-stroke-width: 3px; 
 }
 .default-color1.chart-line-symbol { 
-    -fx-background-color: #ECC94B; 
+    -fx-background-color: -success-green; 
     -fx-background-radius: 5px;
-    -fx-padding: 5px;
+    -fx-padding: 4px;
 }
 
 /* Axis and Label Styling */

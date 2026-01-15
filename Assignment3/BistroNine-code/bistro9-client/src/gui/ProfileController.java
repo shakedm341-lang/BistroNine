@@ -31,6 +31,8 @@ public class ProfileController {
 	private TextField phoneField;
 	@FXML
 	private TextField roleField;
+	@FXML
+	private TextField passwordField;
 
 	/** Original email value to track changes and for reversion if update fails */
 	private String originalEmail;
@@ -71,6 +73,7 @@ public class ProfileController {
 			// Set initial values in text fields
 			usernameField.setText(currentUsername);
 			roleField.setText(currentRole);
+			passwordField.setText(currentUser.getPassword());
 			emailField.setText(originalEmail);
 			phoneField.setText(originalPhone);
 			

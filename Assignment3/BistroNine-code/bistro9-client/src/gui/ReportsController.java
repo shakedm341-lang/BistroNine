@@ -73,12 +73,13 @@ public class ReportsController implements Initializable {
         dpStart.setValue(lastMonth.withDayOfMonth(1));
         dpEnd.setValue(lastMonth.withDayOfMonth(lastMonth.lengthOfMonth()));
 
-        // Factory to restrict DatePicker to select only dates up to today (past or present)
+        // Factory to restrict DatePicker to select only dates from completed months
         Callback<DatePicker, DateCell> dayCellFactory = dp -> new DateCell() {
             @Override
             public void updateItem(LocalDate item, boolean empty) {
                 super.updateItem(item, empty);
-                if (item.isAfter(LocalDate.now())) {
+                LocalDate lastAllowedDate = getLastDayOfPreviousMonth();
+                if (item.isAfter(lastAllowedDate)) {
                     setDisable(true);
                     setStyle("-fx-background-color: #eeeeee;");
                 }
@@ -87,6 +88,16 @@ public class ReportsController implements Initializable {
 
         dpStart.setDayCellFactory(dayCellFactory);
         dpEnd.setDayCellFactory(dayCellFactory);
+    }
+
+    /**
+     * Helper method to get the last day of the previous month.
+     * Reports are only available for completed months.
+     * 
+     * @return The last day of the month preceding the current one.
+     */
+    private LocalDate getLastDayOfPreviousMonth() {
+        return LocalDate.now().withDayOfMonth(1).minusDays(1);
     }
 
     /**
@@ -117,8 +128,9 @@ public class ReportsController implements Initializable {
             return;
         }
 
-        if (start.isAfter(LocalDate.now()) || end.isAfter(LocalDate.now())) {
-            TerminalUtils.showError("Invalid Date", "Reports cannot be generated for future dates.");
+        LocalDate lastAllowedDate = getLastDayOfPreviousMonth();
+        if (start.isAfter(lastAllowedDate) || end.isAfter(lastAllowedDate)) {
+            TerminalUtils.showError("Invalid Date", "Reports are only available for completed months. Please select dates up to " + lastAllowedDate + ".");
             return;
         }
 

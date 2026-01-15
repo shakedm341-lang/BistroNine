@@ -24,30 +24,30 @@
             <Insets top="20" right="20" bottom="20" left="20"/>
         </padding>
 
-        <Label text="Reports &amp; Analytics" styleClass="subtitle-text" style="-fx-font-weight: bold; -fx-font-size: 20px;">
+        <Label text="Reports &amp; Analytics" styleClass="title-text">
             <VBox.margin><Insets bottom="5"/></VBox.margin>
         </Label>
         
         <Separator />
 
-        <HBox alignment="CENTER_LEFT" spacing="15.0" style="-fx-background-color: #F8F9FA; -fx-background-radius: 8; -fx-padding: 10;">
+        <HBox alignment="CENTER_LEFT" spacing="15.0" styleClass="content-area" style="-fx-background-radius: 12; -fx-padding: 15; -fx-border-color: #E2E8F0; -fx-border-radius: 12; -fx-border-width: 1;">
             
             <VBox spacing="5.0">
                 <Label text="Report Type" styleClass="input-label"/>
-                <ComboBox fx:id="comboReportType" prefWidth="180.0" promptText="Select Report" prefHeight="35.0"
-                          style="-fx-background-color: white; -fx-border-color: #CBD5E0; -fx-border-radius: 5;"/>
+                <ComboBox fx:id="comboReportType" prefWidth="180.0" promptText="Select Report" prefHeight="40.0"
+                          styleClass="combo-box-modern"/>
             </VBox>
 
             <VBox spacing="5.0">
                 <Label text="Date Range" styleClass="input-label"/>
                 <HBox spacing="10.0" alignment="CENTER_LEFT">
-                    <DatePicker fx:id="dpStart" prefWidth="140.0" prefHeight="35.0" promptText="Start Date"
-                                style="-fx-background-color: white; -fx-border-color: #CBD5E0; -fx-border-radius: 5;"/>
+                    <DatePicker fx:id="dpStart" prefWidth="150.0" prefHeight="40.0" promptText="Start Date"
+                                styleClass="date-picker-modern"/>
                     
-                    <Label text="to" style="-fx-text-fill: -text-secondary;"/>
+                    <Label text="to" styleClass="subtitle-text"/>
                     
-                    <DatePicker fx:id="dpEnd" prefWidth="140.0" prefHeight="35.0" promptText="End Date"
-                                style="-fx-background-color: white; -fx-border-color: #CBD5E0; -fx-border-radius: 5;"/>
+                    <DatePicker fx:id="dpEnd" prefWidth="150.0" prefHeight="40.0" promptText="End Date"
+                                styleClass="date-picker-modern"/>
                 </HBox>
             </VBox>
 
@@ -55,16 +55,16 @@
 
             <VBox alignment="BOTTOM_RIGHT">
                 <Button fx:id="btnFetch" onAction="#handleFetchReport" 
-                        text="Generate" styleClass="btn-primary" prefHeight="35.0" prefWidth="120.0"/>
+                        text="Generate Analysis" styleClass="btn-primary" prefHeight="40.0" prefWidth="150.0"/>
             </VBox>
         </HBox>
 
-        <LineChart fx:id="reportChart" animated="false" legendSide="TOP" VBox.vgrow="ALWAYS">
+        <LineChart fx:id="reportChart" animated="false" legendSide="TOP" VBox.vgrow="ALWAYS" styleClass="chart">
             <xAxis>
-                <CategoryAxis label="Date" side="BOTTOM" tickLabelFill="#555555"/>
+                <CategoryAxis label="Date" side="BOTTOM" />
             </xAxis>
             <yAxis>
-                <NumberAxis fx:id="yAxis" side="LEFT" tickLabelFill="#555555"/>
+                <NumberAxis fx:id="yAxis" side="LEFT" />
             </yAxis>
         </LineChart>
 
