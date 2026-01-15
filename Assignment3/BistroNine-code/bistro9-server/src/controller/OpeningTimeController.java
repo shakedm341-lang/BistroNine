@@ -662,7 +662,6 @@ public class OpeningTimeController
 		{
 			
 			SendBroadcast( TypeMessage.OPENING_TIME,null,Command.BROADCAST_UPDATE_OPENING_TIME);
-
 			System.out.println("Opening Time for " + day + " updated successfully.");
 			return new ArrayList<Subscriber>(); // Success 
 		}
@@ -797,9 +796,17 @@ public class OpeningTimeController
 
 		openingHours.setSlots(timeSlotList);//set the time slot list to the opening hours object
 
-
 		//updateOpeningTimeQuery insert the new one
-		return DBC.addNewSpecialOpeningTimeQuery(openingHours);//return to server true if the update was successful, false otherwise
+		//return to server true if the update was successful, false otherwise
+		if(DBC.addNewSpecialOpeningTimeQuery(openingHours))
+		{
+			SendBroadcast(TypeMessage.OPENING_TIME, null, Command.BROADCAST_UPDATE_OPENING_TIME);
+			System.out.println("New Special Opening Time for " + day + " added successfully.");
+			return true;
+		}
+		
+		
+		return false;
 	}
 
 	/**
