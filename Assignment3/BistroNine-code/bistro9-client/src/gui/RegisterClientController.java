@@ -165,6 +165,27 @@ public class RegisterClientController {
             cmbType.setValue("subscriber");
             cmbType.setDisable(true);
         }
+        
+        // Add filters for first and last name to allow only letters and spaces
+        setupAlphabetOnlyFilter(txtFirstName);
+        setupAlphabetOnlyFilter(txtLastName);
+    }
+    
+    /**
+     * Sets up a filter for a TextField to only allow alphabetic characters and spaces.
+     * 
+     * @param textField The TextField to apply the filter to.
+     */
+    private void setupAlphabetOnlyFilter(TextField textField) {
+        if (textField != null) {
+            textField.setTextFormatter(new TextFormatter<>(change -> {
+                // Regex: Allow only letters (a-z, A-Z) and whitespace
+                if (change.getControlNewText().matches("[a-zA-Z\\s]*")) {
+                    return change;
+                }
+                return null; // Reject the change if it contains invalid characters
+            }));
+        }
     }
     
     /**
