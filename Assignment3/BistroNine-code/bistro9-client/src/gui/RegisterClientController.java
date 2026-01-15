@@ -4,6 +4,9 @@ import javafx.animation.PauseTransition;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.VBox;
 import javafx.util.Duration;
 
 import java.util.ArrayList;
@@ -31,6 +34,10 @@ public class RegisterClientController {
     @FXML private ComboBox<String> cmbType;
     @FXML private Label lblMessage;
     
+    // QR Code components
+    @FXML private VBox vboxQRCode;
+    @FXML private ImageView imgQRCode;
+    
     /** The client controller used to send messages to the server */
     private ClientController client;
 
@@ -44,6 +51,12 @@ public class RegisterClientController {
     @FXML
     void getRegistrationBtn(ActionEvent event) {
         
+        // Hide previous QR code if any
+        if (vboxQRCode != null) {
+            vboxQRCode.setVisible(false);
+            vboxQRCode.setManaged(false);
+        }
+
         // --- Validation Section ---
         
         // Check for empty mandatory fields first
@@ -186,12 +199,30 @@ public class RegisterClientController {
                 lblMessage.setText("Success! Subscriber ID: " + newSub.getSubscriberId() + " added.");
                 lblMessage.setStyle("-fx-text-fill: green;");
                 
+                // Display QR Code for the new subscriber
+                if (vboxQRCode != null && imgQRCode != null) {
+                    String qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=" + newSub.getSubscriberId();
+                    try {
+                        imgQRCode.setImage(new Image(qrUrl, true)); // true = load in background
+                        vboxQRCode.setVisible(true);
+                        vboxQRCode.setManaged(true);
+                    } catch (Exception e) {
+                        System.err.println("Failed to load QR code image: " + e.getMessage());
+                    }
+                }
+
                 // Clear the form for the next entry
                 clearFormFields();
 
                 // Keep success message for 10 seconds, then clear it automatically
                 PauseTransition pause = new PauseTransition(Duration.seconds(10));
-                pause.setOnFinished(e -> lblMessage.setText(""));
+                pause.setOnFinished(e -> {
+                    lblMessage.setText("");
+                    if (vboxQRCode != null) {
+                        vboxQRCode.setVisible(false);
+                        vboxQRCode.setManaged(false);
+                    }
+                });
                 pause.play();
                 
             } else {

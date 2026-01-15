@@ -260,7 +260,7 @@ public class ClientController extends AbstractClient {
                 handleUpdateProfileResponse(message);
                 break;
                 
-            case CHECK_LOGIN_DETAILSֹֹ_BY_TAG_READER:
+            case CHECK_LOGIN_DETAILS_BY_TAG_READER:
                 handleTagIdentificationResponse(message);
                 break;
              

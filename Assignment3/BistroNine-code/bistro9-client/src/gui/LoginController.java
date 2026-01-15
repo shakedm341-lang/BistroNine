@@ -177,7 +177,7 @@ public class LoginController {
                     if (client != null) {
                         // Send identification request to server
                         client.handleMessageFromBoundary(TypeMessage.CUSTOMER, content, 
-                            Command.CHECK_LOGIN_DETAILSֹֹ_BY_TAG_READER);
+                            Command.CHECK_LOGIN_DETAILS_BY_TAG_READER);
                     } else {
                         showAlert(AlertType.ERROR, "Connection Error", "Client is not connected.");
                     }

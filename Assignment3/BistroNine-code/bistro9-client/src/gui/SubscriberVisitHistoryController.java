@@ -162,15 +162,15 @@ public class SubscriberVisitHistoryController implements Initializable, IVisitHi
         }
 
         try {
-            int customerId = Integer.parseInt(idStr);
+            int subscriberId = Integer.parseInt(idStr);
             if (clientController != null) {
                 // Register this instance as the current receiver for visit history data
                 clientController.setVisitHistoryViewer(this);
 
                 // Prepare parameters for the server request
                 ArrayList<Object> params = new ArrayList<>();
-                params.add("subscriber");
-                params.add(customerId);
+                // Now the server expects only the subscriber ID at index 0 for this command
+                params.add(subscriberId);
 
                 // Dispatch the request to the server
                 clientController.handleMessageFromBoundary(

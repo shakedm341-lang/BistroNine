@@ -142,10 +142,10 @@ public class VisitHistoryController implements Initializable, IVisitHistory {
         if (currentUser == null || clientController == null) return;
 
         ArrayList<Object> params = new ArrayList<>();
-        params.add("subscriber");
-        params.add(currentUser.getCustomerId());
+        // Now the server expects only the subscriber ID at index 0 for this command
+        params.add(currentUser.getSubscriberId());
 
-        // Send a request to the server to get all reservations for this customer
+        // Send a request to the server to get all reservations for this subscriber
         clientController.handleMessageFromBoundary(
                 TypeMessage.RESERVATION,
                 params,

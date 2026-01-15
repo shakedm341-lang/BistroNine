@@ -10,6 +10,7 @@
 <?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
@@ -122,6 +123,12 @@
                 </GridPane>
 
                 <Region VBox.vgrow="ALWAYS" />
+
+                <VBox fx:id="vboxQRCode" spacing="10" alignment="CENTER" visible="false" managed="false" style="-fx-padding: 10; -fx-background-color: #f8fafc; -fx-background-radius: 10; -fx-border-color: #e2e8f0; -fx-border-radius: 10;">
+                    <Label text="Subscriber Digital Card" style="-fx-font-weight: bold; -fx-text-fill: -primary-blue;"/>
+                    <ImageView fx:id="imgQRCode" fitWidth="120" fitHeight="120" preserveRatio="true"/>
+                    <Label text="Scan at any BistroNine terminal" style="-fx-font-size: 10px; -fx-text-fill: -text-secondary;"/>
+                </VBox>
 
             </VBox>
         </HBox>
