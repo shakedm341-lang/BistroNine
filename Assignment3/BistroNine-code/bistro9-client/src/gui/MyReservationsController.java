@@ -14,6 +14,7 @@ import data.Subscriber;
 import data.TypeMessage;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Alert;
@@ -59,6 +60,9 @@ public class MyReservationsController implements Initializable, IReservationDele
 	@FXML
 	private TableColumn<HistoryReservation, String> colPayment;
 
+	@FXML
+	private Button btnRefresh;
+
 	/** Action column containing the "Cancel" button */
 	@FXML
 	private TableColumn<HistoryReservation, Void> colAction;
@@ -81,6 +85,17 @@ public class MyReservationsController implements Initializable, IReservationDele
 	public void initialize(URL location, ResourceBundle resources) {
 		initColumns();
 
+	}
+
+	/**
+	 * Handles the refresh button click event.
+	 * Reloads the reservations data from the server.
+	 * 
+	 * @param event The action event.
+	 */
+	@FXML
+	void onRefresh(ActionEvent event) {
+		loadReservationsData();
 	}
 
 	/**
