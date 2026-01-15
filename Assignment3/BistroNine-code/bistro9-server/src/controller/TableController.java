@@ -5,29 +5,34 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 
-
+import data.Command;
 import data.Message;
 import data.Subscriber;
 import data.Table;
 import data.TableReservation;
+import data.TypeMessage;
 import data.WaitList;
 
 public class TableController 
 {
 	private static DataBaseController DBC=DataBaseController.getInstance();//Interfacing with the DB Controller
-
+	private static ServerController server;
+	
 	/**
 	 * constructor for the TableController class
 	 */
-	public  TableController()
+	public  TableController(ServerController server)
 	{
-
+		TableController.server = server;
 	}
 
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//////////////////////////managing messages //////////////////////////////////////////////////////////////////
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	
+	
+	
 	/**
 	 * Handles messages from the server related to table operations.
 	 * @param msg The message received from the server.
@@ -59,6 +64,27 @@ public class TableController
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	////////////////////////////////Helper methods//////////////////////////////////////////////////////////////////
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	/**
+	 * Sends a broadcast message to all connected clients.
+	 *
+	 * @param type    The type of the message.
+	 * @param content The content of the message.
+	 * @param command The command associated with the message.
+	 */
+	public static void SendBroadcast(TypeMessage type, Object content, Command command) 
+	{
+		Message broadcastMsg = new Message();
+        broadcastMsg.type = type;
+        broadcastMsg.content = content;
+        broadcastMsg.command = command;
+
+        
+        if (server != null) 
+        {
+            server.sendToAll(broadcastMsg);
+        }
+	}
+	
 	/**
 	 * Identifies reservations that conflict with a proposed update to a table's seat count.
 	 * Simulates the restaurant state with the updated seat count to verify if all existing reservations 
@@ -823,8 +849,18 @@ public class TableController
 
 		table.setStatus("available");
 
-
-		return DBC.addTableQuery(table);//return the table added to the DB (with tableId given by the DB) or null if failed
+		table=DBC.addTableQuery(table);
+		
+		if (table!=null)//return the table added to the DB (with tableId given by the DB) or null if failed
+		{
+			SendBroadcast(TypeMessage.TABLE, null, Command.BROADCAST_UPDATE_TABLE);
+			System.out.println("Table added successfully.");
+			return table;
+		} else {
+			System.out.println("Failed to add table.");
+			return null;
+		}
+		
 
 	}
 
@@ -884,6 +920,7 @@ public class TableController
 		// else list is empty , Safe to delete.
 		if (DBC.deleteTableQuery(tableId)) 
 		{
+			SendBroadcast(TypeMessage.TABLE, null, Command.BROADCAST_UPDATE_TABLE);
 			System.out.println("Table ID: " + tableId + " deleted successfully.");
 			return new ArrayList<Subscriber>();
 		}
@@ -953,6 +990,7 @@ public class TableController
 		// 3. No conflicts -> Perform Update
 		if (updateTable(tableId, "seatsNumber", seatsNumber)) 
 		{
+			SendBroadcast(TypeMessage.TABLE, null, Command.BROADCAST_UPDATE_TABLE);
 			System.out.println(" Table ID: " + tableId + " updated to " + seatsNumber + " seats successfully.");
 			return new ArrayList<Subscriber>(); // Success
 		}

@@ -43,7 +43,7 @@ public class ServerController extends AbstractServer {
 		this.reservationsController = new ReservationControler();
 		this.customerController = new CustomerController();
 		this.billController = new BillController();
-		this.tableController = new TableController();
+		this.tableController = new TableController(this);
 		this.waitListController = new WaitListController();
 		this.openingTimeController = new OpeningTimeController(this);
 		this.timeReportController = new TimeReportController();
