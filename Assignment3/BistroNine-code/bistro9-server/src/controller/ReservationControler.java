@@ -1231,7 +1231,7 @@ public class ReservationControler
 			{
 				return null;
 			}
-
+			System.out.println("get to here ");
 			return availableTime;//Return to server the list of available times in the requested date else return null      
 		}      
 	}          
@@ -1245,7 +1245,7 @@ public class ReservationControler
 	 *            confirmationCode (Integer)]
 	 * @return true if the reservation was deleted successfully, false otherwise.
 	 */
-	private synchronized static 	boolean  deleteReservation(Message msg)
+	private synchronized static boolean  deleteReservation(Message msg)
 	{
 		@SuppressWarnings("unchecked") 
 		ArrayList<Object> list = (ArrayList<Object>) msg.content;//get the reservation details from the message content

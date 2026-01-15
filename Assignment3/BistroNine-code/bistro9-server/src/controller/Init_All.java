@@ -12,23 +12,20 @@ import java.util.Random;
 
 public class Init_All {
 
-    // URL to connect to the specific database (used for creating tables)
+    // כתובת לחיבור לשרת (לצורך יצירת ה-DB מחדש)
+    private static final String SERVER_URL = "jdbc:mysql://localhost:3306/?allowLoadLocalInfile=true&allowPublicKeyRetrieval=true&serverTimezone=Asia/Jerusalem&useSSL=false";
+    // כתובת לחיבור ל-DB הספציפי (לאחר שנוצר)
     private static final String DB_URL = "jdbc:mysql://localhost:3306/restaurant_db?allowLoadLocalInfile=true&allowPublicKeyRetrieval=true&serverTimezone=Asia/Jerusalem&useSSL=false";
     
-    // URL to connect to the server root (used for creating the database itself)
-    private static final String SERVER_URL = "jdbc:mysql://localhost:3306/?allowLoadLocalInfile=true&allowPublicKeyRetrieval=true&serverTimezone=Asia/Jerusalem&useSSL=false";
-    
     private static final String USER = "root";
-    // Hardcoded PASSWORD removed in favor of dynamic input
+    // סיסמה ברירת מחדל לשימוש ב-main, אך ב-GUI תתקבל סיסמה מהמשתמש
+    private static final String DEFAULT_PASSWORD = "Aa123456"; 
 
     private static final Random random = new Random();
 
-    // Main kept for backward compatibility/testing, assumes a default or asks via console if needed,
-    // but here we just leave it empty or pointing to the new method with a default if you strictly want to run it alone.
+    // Main לשימוש בדיקות עצמאיות (ללא GUI)
     public static void main(String[] args) {
-        // For standalone testing, you might want to put a hardcoded password here temporarily
-        // runInitialization("Aa123456"); 
-        System.out.println("Please run via ServerMain GUI to input password.");
+        runInitialization(DEFAULT_PASSWORD);
     }
 
     /**
@@ -46,7 +43,7 @@ public class Init_All {
 
                 System.out.println("Connected to MySQL server. Resetting database 'restaurant_db'...");
                 
-                // Drop the database if it exists (replaces dropExistingTables)
+                // Drop the database if it exists
                 serverStmt.executeUpdate("DROP DATABASE IF EXISTS restaurant_db");
                 
                 // Create the database fresh
@@ -61,7 +58,7 @@ public class Init_All {
 
                 System.out.println("Starting table and data initialization...");
 
-                // Note: dropExistingTables is removed as we just dropped the entire DB.
+                // createTables מחליף את הצורך ב-dropExistingTables כי מחקנו את כל ה-DB
                 createTables(con, stmt);
                 initDiscounts(con, stmt);
                 initOpeningHours(con, stmt);
@@ -113,26 +110,16 @@ public class Init_All {
     }
 
     private static void initSpecialHours(Connection con, Statement stmt) throws SQLException {
-        // --- ינואר 2026 ---
         stmt.executeUpdate("INSERT INTO special_hours VALUES ('2025-12-25', '00:00:00', '00:00:00')");
-        // 1. ה-1 לינואר (שנה אזרחית) - היה סגור (בדיקת עבר)
         stmt.executeUpdate("INSERT INTO special_hours VALUES ('2026-01-01', '00:00:00', '00:00:00')");
-
-        // 2. ה-15 לינואר (יום קצר) - פתוח רק בבוקר/צהריים (עד 14:00)
         stmt.executeUpdate("INSERT INTO special_hours VALUES ('2026-01-15', '08:00:00', '14:00:00')");
-
-        // 3. ה-20 לינואר (אירוע פרטי בערב) - נפתח רק ב-19:00
         stmt.executeUpdate("INSERT INTO special_hours VALUES ('2026-01-20', '19:00:00', '00:00:00')");
-
-        // 4. ה-28 לינואר (שיפוצים) - סגור כל היום
         stmt.executeUpdate("INSERT INTO special_hours VALUES ('2026-01-28', '00:00:00', '00:00:00')");
-
         stmt.executeUpdate("INSERT INTO special_hours VALUES ('2026-01-25', '08:00:00', '12:00:00')");
         stmt.executeUpdate("INSERT INTO special_hours VALUES ('2026-01-25', '16:00:00', '23:00:00')");
-        // --- תאריכים כלליים נוספים משאר השנה ---
-        stmt.executeUpdate("INSERT INTO special_hours VALUES ('2026-02-14', '10:00:00', '23:59:00')"); // ולנטיין
-        stmt.executeUpdate("INSERT INTO special_hours VALUES ('2026-04-01', '08:00:00', '13:00:00')"); // ערב חג
-        stmt.executeUpdate("INSERT INTO special_hours VALUES ('2026-04-22', '00:00:00', '00:00:00')"); // יום עצמאות
+        stmt.executeUpdate("INSERT INTO special_hours VALUES ('2026-02-14', '10:00:00', '23:59:00')"); 
+        stmt.executeUpdate("INSERT INTO special_hours VALUES ('2026-04-01', '08:00:00', '13:00:00')"); 
+        stmt.executeUpdate("INSERT INTO special_hours VALUES ('2026-04-22', '00:00:00', '00:00:00')"); 
     }
 
     private static void initTables(Connection con, Statement stmt) throws SQLException {
@@ -143,7 +130,6 @@ public class Init_All {
     }
 
     private static void initUsersAndSubscribers(Connection con) throws SQLException {
-        // מאגר שמות ליצירת משתמשים ריאליסטיים
         String[] firstNames = {"Dan", "Noa", "Omer", "Maya", "Idan", "Gal", "Yael", "Tom", "Ron", "Adi"};
         String[] lastNames = {"Cohen", "Levi", "Mizrahi", "Peretz", "Biton", "Dahan", "Katz", "Azulai", "Golan", "Friedman"};
 
@@ -153,37 +139,31 @@ public class Init_All {
         try (PreparedStatement psCust = con.prepareStatement(insertCust, Statement.RETURN_GENERATED_KEYS);
              PreparedStatement psSub = con.prepareStatement(insertSub)) {
 
-            // 1. יצירת מנהל (Manager)
+            // 1. Manager
             psCust.setString(1, "0500000001");
             psCust.setString(2, "manager@rest.com");
             psCust.executeUpdate();
             ResultSet rs = psCust.getGeneratedKeys();
             if (rs.next()) {
                 psSub.setInt(1, rs.getInt(1));
-                psSub.setString(2, "Moti");      
-                psSub.setString(3, "Manager");   
-                psSub.setString(4, "restaurant manager");
-                psSub.setString(5, "man");
-                psSub.setString(6, "1");
+                psSub.setString(2, "Moti"); psSub.setString(3, "Manager"); psSub.setString(4, "restaurant manager");
+                psSub.setString(5, "man"); psSub.setString(6, "1");
                 psSub.executeUpdate();
             }
 
-            // 2. יצירת נציג שירות (Representative)
+            // 2. Representative
             psCust.setString(1, "0500000002");
             psCust.setString(2, "rep@rest.com");
             psCust.executeUpdate();
             rs = psCust.getGeneratedKeys();
             if (rs.next()) {
                 psSub.setInt(1, rs.getInt(1));
-                psSub.setString(2, "Sarah");     
-                psSub.setString(3, "Service");   
-                psSub.setString(4, "restaurant representative");
-                psSub.setString(5, "rep");
-                psSub.setString(6, "1");
+                psSub.setString(2, "Sarah"); psSub.setString(3, "Service"); psSub.setString(4, "restaurant representative");
+                psSub.setString(5, "rep"); psSub.setString(6, "1");
                 psSub.executeUpdate();
             }
 
-            // 3. יצירת 10 לקוחות עם שמות מהרשימה
+            // 3. Customers
             for (int i = 0; i < 10; i++) {
                 psCust.setString(1, "05012345" + i);
                 psCust.setString(2, firstNames[i % firstNames.length] + i + "@mail.com");
@@ -217,14 +197,8 @@ public class Init_All {
              PreparedStatement psWaitHistory = con.prepareStatement(waitSql)) {
 
             int confCode = 5000;
-            
-            // תאריך התחלה: 01.12.2025
             LocalDate startDate = LocalDate.of(2025, 12, 1);
-            
-            // תאריך סיום: היום הנוכחי + חודש אחד קדימה
             LocalDate endDate = LocalDate.now().plusMonths(1);
-
-            // חישוב מספר הימים שיש בין ההתחלה לסיום
             long daysToCreate = ChronoUnit.DAYS.between(startDate, endDate);
 
             for (int i = 0; i <= daysToCreate; i++) { 
@@ -236,7 +210,6 @@ public class Init_All {
     }
 
     private static void createDailyReservations(Connection con, PreparedStatement psRes, PreparedStatement psBill, PreparedStatement psWaitHistory, List<Integer> custIds, LocalDate date, int startConfCode) throws SQLException {
-        // דילוג אם זה יום סגור או היום הנוכחי
         if (isDayClosed(con, date) || date.equals(LocalDate.now())) return;
 
         boolean isFutureDate = date.isAfter(LocalDate.now());
@@ -245,11 +218,9 @@ public class Init_All {
         List<LocalDate> peakDates = Arrays.asList(LocalDate.of(2026, 1, 15), LocalDate.of(2026, 1, 20), LocalDate.of(2026, 1, 25));
         boolean isPeakDay = peakDates.contains(date);
 
-        // 1. עומס מלא (Peak Days) - יוצר 10 הזמנות
+        // 1. Peak Days - יוצר 10 הזמנות בדיוק
         if (isPeakDay) {
             LocalTime peakHour;
-
-            // בחירת שעת שיא לפי היום
             boolean isFriday = date.getDayOfWeek() == java.time.DayOfWeek.FRIDAY;
             boolean isSaturday = date.getDayOfWeek() == java.time.DayOfWeek.SATURDAY;
             boolean isEarlyClosingDate = date.equals(LocalDate.of(2026, 1, 15)) || date.equals(LocalDate.of(2026, 4, 1));
@@ -269,24 +240,26 @@ public class Init_All {
                 psRes.setInt(1, i + 1); psRes.setInt(2, 2); psRes.setInt(3, startConfCode++); psRes.setInt(4, custId);
                 psRes.setTimestamp(5, Timestamp.valueOf(scheduledTime));
                 
-                if (scheduledTime.isBefore(now)) {
-                     // עבר
-                     psRes.setTimestamp(6, Timestamp.valueOf(scheduledTime));
-                     psRes.setTimestamp(7, Timestamp.valueOf(scheduledTime.plusHours(2)));
-                     psRes.setString(8, "completed");
-                     psRes.executeUpdate();
-                     createBill(psBill, psRes, true);
-                } else {
-                     // עתיד
-                     psRes.setNull(6, java.sql.Types.TIMESTAMP); psRes.setNull(7, java.sql.Types.TIMESTAMP);
-                     psRes.setString(8, "active");
-                     psRes.executeUpdate();
+                try {
+                    if (scheduledTime.isBefore(now)) {
+                         psRes.setTimestamp(6, Timestamp.valueOf(scheduledTime));
+                         psRes.setTimestamp(7, Timestamp.valueOf(scheduledTime.plusHours(2)));
+                         psRes.setString(8, "completed");
+                         psRes.executeUpdate();
+                         createBill(psBill, psRes, true);
+                    } else {
+                         psRes.setNull(6, java.sql.Types.TIMESTAMP); psRes.setNull(7, java.sql.Types.TIMESTAMP);
+                         psRes.setString(8, "active");
+                         psRes.executeUpdate();
+                    }
+                } catch (SQLException e) {
+                    System.out.println("Caught overlap/error during Peak Day generation: " + e.getMessage() + ". Skipping.");
                 }
             }
         }
 
-        // 2. הזמנות מפוזרות
-        // אם זה יום שיא, dailyRes = 0 כדי שיהיו בדיוק 10 הזמנות
+        // 2. Scattered Reservations
+        // אם זה יום עמוס - 0 הזמנות נוספות. אחרת רגיל.
         int dailyRes = isPeakDay ? 0 : (isFutureDate ? 6 : (8 + random.nextInt(5)));
         int currentCode = startConfCode;
 
@@ -298,7 +271,6 @@ public class Init_All {
             int custId = custIds.get(random.nextInt(custIds.size()));
             int diners = 2 + random.nextInt(4);
 
-            // גיוון בזמנים
             LocalDateTime actualArrival;
             LocalDateTime actualLeaving;
             double arrChance = random.nextDouble();
@@ -325,35 +297,39 @@ public class Init_All {
             psRes.setInt(4, custId);
             psRes.setTimestamp(5, Timestamp.valueOf(scheduled));
 
-            if (isFutureTime) {
-                psRes.setNull(1, java.sql.Types.INTEGER);
-                psRes.setNull(6, java.sql.Types.TIMESTAMP); psRes.setNull(7, java.sql.Types.TIMESTAMP);
-                psRes.setString(8, "active");
-                psRes.executeUpdate();
-            } else if (isOngoing) {
-                 continue; 
-            } else {
-                boolean cancelled = random.nextDouble() < 0.2; 
-                psRes.setInt(1, 1 + random.nextInt(10));
-                psRes.setTimestamp(6, Timestamp.valueOf(actualArrival)); psRes.setTimestamp(7, Timestamp.valueOf(actualLeaving));
-                psRes.setString(8, cancelled ? "cancelled" : "completed");
-                psRes.executeUpdate();
+            try {
+                if (isFutureTime) {
+                    psRes.setNull(1, java.sql.Types.INTEGER);
+                    psRes.setNull(6, java.sql.Types.TIMESTAMP); psRes.setNull(7, java.sql.Types.TIMESTAMP);
+                    psRes.setString(8, "active");
+                    psRes.executeUpdate();
+                } else if (isOngoing) {
+                     continue; 
+                } else {
+                    boolean cancelled = random.nextDouble() < 0.2; 
+                    psRes.setInt(1, 1 + random.nextInt(10));
+                    psRes.setTimestamp(6, Timestamp.valueOf(actualArrival)); psRes.setTimestamp(7, Timestamp.valueOf(actualLeaving));
+                    psRes.setString(8, cancelled ? "cancelled" : "completed");
+                    psRes.executeUpdate();
 
-                if (!cancelled) createBill(psBill, psRes, true);
+                    if (!cancelled) createBill(psBill, psRes, true);
 
-                if (!date.equals(LocalDate.now()) && random.nextDouble() < 0.3) {
-                    ResultSet rs = psRes.getGeneratedKeys();
-                    if (rs.next()) {
-                        int rid = rs.getInt(1);
-                        psWaitHistory.setInt(1, rid);
-                        psWaitHistory.setInt(2, diners);
-                        psWaitHistory.setString(3, "walk_in");
-                        psWaitHistory.setString(4, cancelled ? "cancelled" : "seated");
-                        psWaitHistory.setTimestamp(5, Timestamp.valueOf(actualArrival.minusMinutes(15)));
-                        psWaitHistory.setTimestamp(6, Timestamp.valueOf(actualArrival));
-                        psWaitHistory.executeUpdate();
+                    if (!date.equals(LocalDate.now()) && random.nextDouble() < 0.3) {
+                        ResultSet rs = psRes.getGeneratedKeys();
+                        if (rs.next()) {
+                            int rid = rs.getInt(1);
+                            psWaitHistory.setInt(1, rid);
+                            psWaitHistory.setInt(2, diners);
+                            psWaitHistory.setString(3, "walk_in");
+                            psWaitHistory.setString(4, cancelled ? "cancelled" : "seated");
+                            psWaitHistory.setTimestamp(5, Timestamp.valueOf(actualArrival.minusMinutes(15)));
+                            psWaitHistory.setTimestamp(6, Timestamp.valueOf(actualArrival));
+                            psWaitHistory.executeUpdate();
+                        }
                     }
                 }
+            } catch (SQLException e) {
+                 System.out.println("Caught overlap/error during Daily generation: " + e.getMessage() + ". Skipping.");
             }
         }
     }
@@ -379,14 +355,10 @@ public class Init_All {
         List<Integer> validCustomerIds = new ArrayList<>();
         try (Statement s = con.createStatement(); 
              ResultSet rs = s.executeQuery("SELECT customerId FROM customer LIMIT 4")) {
-            while (rs.next()) {
-                validCustomerIds.add(rs.getInt(1));
-            }
+            while (rs.next()) validCustomerIds.add(rs.getInt(1));
         }
 
-        while (validCustomerIds.size() < 4) {
-            validCustomerIds.add(1);
-        }
+        while (validCustomerIds.size() < 4) validCustomerIds.add(1);
 
         String resSql = "INSERT INTO table_reservations (tableId, numberOfDiners, confirmationCode, customerId, reservationDate, arrivalTime, status) VALUES (?, ?, ?, ?, ?, ?, ?)";
         String billSql = "INSERT INTO bills (reservationId, totalAmount, totalAmountAfterDiscount, isPaid) VALUES (?, ?, ?, ?)";
@@ -395,7 +367,9 @@ public class Init_All {
              PreparedStatement psBill = con.prepareStatement(billSql)) {
 
             for (int i = 0; i < 4; i++) {
-                con.createStatement().executeUpdate("UPDATE restaurant_tables SET status = 'occupied' WHERE tableId = " + tables[i]);
+                try {
+                    con.createStatement().executeUpdate("UPDATE restaurant_tables SET status = 'occupied' WHERE tableId = " + tables[i]);
+                } catch (SQLException e) { /* Ignore update error */ }
 
                 int minutesOffset = random.nextInt(121) - 60; 
                 LocalDateTime randomTime = now.plusMinutes(minutesOffset);
@@ -404,21 +378,24 @@ public class Init_All {
                 psRes.setInt(2, 2); 
                 psRes.setInt(3, 9000 + i); 
                 psRes.setInt(4, validCustomerIds.get(i)); 
-                
                 psRes.setTimestamp(5, Timestamp.valueOf(randomTime)); 
                 psRes.setTimestamp(6, Timestamp.valueOf(now)); 
                 psRes.setString(7, "arrived");
                 
-                psRes.executeUpdate();
+                try {
+                    psRes.executeUpdate();
 
-                ResultSet rs = psRes.getGeneratedKeys();
-                if (rs.next()) {
-                    int reservationId = rs.getInt(1);
-                    psBill.setInt(1, reservationId);
-                    psBill.setDouble(2, 250.0);
-                    psBill.setDouble(3, 250.0);
-                    psBill.setBoolean(4, false);
-                    psBill.executeUpdate();
+                    ResultSet rs = psRes.getGeneratedKeys();
+                    if (rs.next()) {
+                        int reservationId = rs.getInt(1);
+                        psBill.setInt(1, reservationId);
+                        psBill.setDouble(2, 250.0);
+                        psBill.setDouble(3, 250.0);
+                        psBill.setBoolean(4, false);
+                        psBill.executeUpdate();
+                    }
+                } catch (SQLException e) {
+                     System.out.println("Caught overlap in LiveDining: " + e.getMessage() + ". Skipping.");
                 }
             }
         }
@@ -426,61 +403,45 @@ public class Init_All {
     }
 
     // פונקציה חכמה שמגרילה שעה בהתאם לשעות הפתיחה והחוק של "שעתיים לפני סגירה"
- // פונקציה משודרגת התומכת בדקות (למשל סגירה ב-23:30)
     private static LocalTime getRandomOpenTime(Connection con, LocalDate date) {
-        LocalTime openTime = LocalTime.of(8, 0);   // פתיחה ברירת מחדל
-        LocalTime closeTime = LocalTime.of(23, 0); // סגירה ברירת מחדל
+        LocalTime openTime = LocalTime.of(8, 0);   
+        LocalTime closeTime = LocalTime.of(23, 0); 
 
         java.time.DayOfWeek day = date.getDayOfWeek();
         
-        // --- 1. הגדרת שעות פתיחה וסגירה מדויקות לכל יום ---
-        
+        // 1. בדיקת ימים מיוחדים
         if (date.equals(LocalDate.of(2026, 1, 15)) || date.equals(LocalDate.of(2026, 4, 1))) {
             closeTime = LocalTime.of(14, 0); 
         } else if (date.equals(LocalDate.of(2026, 1, 20))) {
             openTime = LocalTime.of(19, 0);
-            closeTime = LocalTime.of(23, 59); // כמעט חצות
+            closeTime = LocalTime.of(23, 59);
         } else if (date.equals(LocalDate.of(2026, 1, 25))) {
             openTime = LocalTime.of(16, 0);
             closeTime = LocalTime.of(23, 0);
         } 
+        // 2. בדיקת ימי שגרה
         else if (day == java.time.DayOfWeek.FRIDAY) {
             closeTime = LocalTime.of(14, 0);
         } else if (day == java.time.DayOfWeek.SATURDAY) {
             openTime = LocalTime.of(20, 0);
-            // שים לב: אם הסגירה היא אחרי חצות (למשל 01:00), צריך לטפל בזה כיום למחרת
-            // לצורך הפשטות נניח סגירה בחצות או ב-23:59 בקובץ הזה
             closeTime = LocalTime.of(23, 59); 
         } else if (day == java.time.DayOfWeek.TUESDAY) {
-            // יום שלישי מפוצל
             if (random.nextBoolean()) {
                 closeTime = LocalTime.of(12, 0); 
             } else {
                 openTime = LocalTime.of(16, 0); 
-                closeTime = LocalTime.of(23, 30); // הנה דוגמה ל-23:30!
+                closeTime = LocalTime.of(23, 30);
             }
         }
 
-        // --- 2. חישוב הזמן האחרון האפשרי להזמנה (סגירה פחות שעתיים) ---
-        // אם הסגירה היא ב-23:30, המקסימום הוא 21:30
         LocalTime maxStartTime = closeTime.minusHours(2);
 
-        // הגנה: אם זמן הפתיחה מאוחר מהזמן המקסימלי להזמנה
-        if (openTime.isAfter(maxStartTime)) {
-            return null;
-        }
+        if (openTime.isAfter(maxStartTime)) return null;
 
-        // --- 3. הגרלת שעה ודקות בצורה בטוחה ---
-        
-        // חישוב טווח הדקות הכולל בין הפתיחה למקסימום
         long minutesRange = ChronoUnit.MINUTES.between(openTime, maxStartTime);
-        
-        // הגרלת מספר דקות רנדומלי בתוך הטווח
-        // אנחנו רוצים קפיצות של 15 דקות (0, 15, 30, 45)
-        long randomSlots = minutesRange / 15; // כמה "בלוקים" של 15 דקות נכנסים
+        long randomSlots = minutesRange / 15; 
         long chosenSlot = random.nextInt((int) randomSlots + 1);
         
-        // הוספת הדקות שנבחרו לשעת הפתיחה
         return openTime.plusMinutes(chosenSlot * 15);
     }
 

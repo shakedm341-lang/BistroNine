@@ -83,21 +83,25 @@ public class WaitListController
 			res.setTableId(freeTable.getTableId());//update tableId because now we have a table for him and he in the restaurant
 			res.setStatus("arrived");//update status to arrived
 
+			TableController.updateTable(freeTable.getTableId(), "status", "occupied"); 
 			if (!DBC.updateReservation(res)) 
 			{
-System.out.println("Error linking table to reservation. Performing Rollback.");
+				System.out.println("Error linking table to reservation. Performing Rollback.");
 				
 				// ROLLBACK 
-				
+				TableController.updateTable(freeTable.getTableId(), "status", "available"); 
 				waiter.setStatus(originalStatus); // waiting
 				waiter.setExitTimeFromList(originalExitTime); // null or previous time
 				DBC.updateStatusAndExitTimeInWaitingListQuery(waiter);
 				// --- ROLLBACK END ---
+
 				
 				return false; // Error updating reservation
 
 			}
 
+			BillController.createNewBill( res);
+			System.out.println("createNewBill in seatWaiter after rollback for check-in");
 			return true; //Successfully seated the waiter
 
 		} 
@@ -118,15 +122,15 @@ System.out.println("Error linking table to reservation. Performing Rollback.");
 
 			if (!DBC.updateReservation(res)) 
 			{
-System.out.println("Error linking table to reservation. Performing Rollback.");
-				
+				System.out.println("Error linking table to reservation. Performing Rollback.");
+
 				// ROLLBACK
-				
+
 				waiter.setStatus("waiting"); 
 				waiter.setExitTimeFromList(null); 
 				DBC.updateStatusAndExitTimeInWaitingListQuery(waiter);
-				
-				
+
+
 				return false; // Error updating reservation
 			}
 
