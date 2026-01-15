@@ -412,7 +412,7 @@ public class BillController
 
 			if (!DBC.getCustomerByCustomerId(sub))
 			{
-				System.out.println("Error: could not find customer for reservation " + res.getConfirmationCode());
+				System.out.println("Error: could not find customer  " );
 				return false;
 			}
 

@@ -853,6 +853,53 @@ public class TableController
 		
 		if (table!=null)//return the table added to the DB (with tableId given by the DB) or null if failed
 		{
+
+			//find match in the waiting list for the freed table
+			WaitList waiter = WaitListController.findMatchInWaitingList(table);
+			if (waiter!=null)
+			{
+				//status of the table is already  occupied from the last customer that was seated from the waiting list
+				TableReservation waiterRes=new TableReservation();
+				waiterRes.setReservationId(waiter.getReservationId());
+				if (!DBC.getReservationByReservationId(waiterRes))// update the reservation object with the details from the
+					// DB and return true if found else false
+				{
+					System.out.println("Error: could not find reservation for waitlist entry " );
+					return null;
+				}
+
+				ReservationControler.updateReservation(waiterRes, "reservationDate", new Timestamp(System.currentTimeMillis()));// set reservation date to now
+
+
+				Subscriber sub = new Subscriber();
+				sub.setCustomerId( waiterRes.getCustomerId());
+
+				if (!DBC.getCustomerByCustomerId(sub))
+				{
+					System.out.println("Error: could not find customer " );
+					return null;
+				}
+
+				String emailSubject = "Your table is ready 🍽️";
+				String emailBody;
+
+				if (DBC.getCustomerType(sub.getCustomerId()).equals("customer"))
+				{
+					emailBody = "Hey customer, good news! A table has become available for " + waiterRes.getNumberOfDiners() + " diners at Bistro 9 .\r\n"
+							+ "Looking forward to seeing you at the entrance!";
+				}
+				else
+				{
+					emailBody = "Hey " + sub.getFirstName() + " " + sub.getLastName() + ", good news! A table has become available for " + waiterRes.getNumberOfDiners() + " diners at Bistro 9 .\r\n"
+							+ "Looking forward to seeing you at the entrance!";
+				}
+
+				// Send notifications using the variables
+				EmailSendController.sendEmail(sub.getEmail(), emailSubject, emailBody);
+				SmsSendController.sendSms(sub.getPhoneNumber(), emailSubject, emailBody);
+			}
+	
+			
 			SendBroadcast(TypeMessage.TABLE, null, Command.BROADCAST_UPDATE_TABLE);
 			System.out.println("Table added successfully.");
 			return table;

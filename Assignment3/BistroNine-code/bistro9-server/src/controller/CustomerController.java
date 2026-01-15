@@ -42,7 +42,7 @@ public class CustomerController
 		case CHECK_LOGIN_DETAILS:
 			return checkLoginDetails(msg);
 
-		case GET_SUBSCRIBER_REPORT_BY_RANGE_DATE:
+		case CHECK_LOGIN_DETAILS_BY_TAG_READER:
 			return checkLoginDetailsByTagReader(msg);
 
 		case ADD_NEW_SUBSCRIBER:
