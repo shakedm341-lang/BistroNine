@@ -177,13 +177,13 @@ public class UserDashboardController {
     void goToHome(ActionEvent event) {
     	 try {
              setActiveButton((Button) event.getSource());
+             prepareContentArea();
              FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/ProfileView.fxml"));
              Parent root = loader.load();
 
              ProfileController controller = loader.getController();
              controller.setDependencies(this.client, this.currentUser,this);
 
-             prepareContentArea();
              contentArea.getChildren().add(root);
 
          } catch (IOException e) {
@@ -199,13 +199,13 @@ public class UserDashboardController {
     void goToMyReservations(ActionEvent event) {
         try {
             setActiveButton((Button) event.getSource());
+            prepareContentArea();
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/MyReservations.fxml"));
             Parent root = loader.load();
 
             MyReservationsController controller = loader.getController();
             controller.setDependencies(this.currentUser, this.client);
 
-            prepareContentArea();
             contentArea.getChildren().add(root);
 
         } catch (IOException e) {
@@ -221,13 +221,13 @@ public class UserDashboardController {
     void goToVisitHistory(ActionEvent event) {
         try {
             setActiveButton((Button) event.getSource());
+            prepareContentArea();
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/VisitHistory.fxml"));
             Parent root = loader.load();
 
             VisitHistoryController controller = loader.getController();
             controller.setDependencies(this.currentUser, this.client);
 
-            prepareContentArea();
             contentArea.getChildren().add(root);
 
         } catch (IOException e) {
@@ -243,6 +243,7 @@ public class UserDashboardController {
     void openNewReservation(ActionEvent event) {
         try {
             setActiveButton((Button) event.getSource());
+            prepareContentArea();
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/NewReservation.fxml"));
             Parent root = loader.load();
 
@@ -250,7 +251,6 @@ public class UserDashboardController {
             resController.setClient(this.client);
             resController.initData(currentUser,false);
 
-            prepareContentArea();
             contentArea.getChildren().add(root);
 
         } catch (Exception e) {
@@ -311,13 +311,13 @@ public class UserDashboardController {
         System.out.println("DEBUG: Go to Live Dashboard");
          
         try {
+            prepareContentArea();
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/LiveDashboard.fxml"));
             Parent root = loader.load();
             
              LiveDashboardController controller = loader.getController();
              controller.setDependencies(this.client);
 
-            prepareContentArea();
             contentArea.getChildren().add(root);
         } catch (IOException e) {
             e.printStackTrace();
@@ -333,6 +333,7 @@ public class UserDashboardController {
     void goToRestaurantOps(ActionEvent event) {
         setActiveButton((Button) event.getSource());
         try {
+            prepareContentArea();
             // Load the FXML that contains the Tabs (Table Management, Waitlist, etc.)
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/RestaurantManagement.fxml"));
             Parent root = loader.load();
@@ -343,7 +344,6 @@ public class UserDashboardController {
             opsController.setDependencies(this.client, this.currentUser); 
 
             // Show in the center area
-            prepareContentArea();
             contentArea.getChildren().add(root);
 
         } catch (IOException e) {
@@ -360,6 +360,7 @@ public class UserDashboardController {
     void goToViewReports(ActionEvent event) {
         setActiveButton((Button) event.getSource());
         try {
+            prepareContentArea();
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/ReportsScreen.fxml"));
             Parent root = loader.load();
 
@@ -368,7 +369,6 @@ public class UserDashboardController {
             // Register reports controller for server callbacks
             ClientController.reportsController = controller;
 
-            prepareContentArea();
             contentArea.getChildren().add(root);
 
         } catch (IOException e) {
@@ -385,13 +385,13 @@ public class UserDashboardController {
     void goToPayBill(ActionEvent event) {
         setActiveButton((Button) event.getSource());
         try {
+            prepareContentArea();
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/PayBillScreen.fxml"));
             Parent root = loader.load();
 
             PayBillController controller = loader.getController();
             controller.setDependencies(this.client, this.currentUser, this);
 
-            prepareContentArea();
             contentArea.getChildren().add(root);
 
         } catch (IOException e) {

@@ -16,6 +16,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.control.Button;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
@@ -48,6 +49,10 @@ public class VisitHistoryController implements Initializable, IVisitHistory {
     /** Column for the number of guests in the reservation. */
     @FXML
     private TableColumn<TableReservation, Integer> colGuests;
+
+    /** Button to refresh the history data. */
+    @FXML
+    private Button btnRefresh;
 
     /** Data source for the historyTable. */
     private ObservableList<TableReservation> historyList = FXCollections.observableArrayList();
@@ -175,5 +180,14 @@ public class VisitHistoryController implements Initializable, IVisitHistory {
                 historyList.setAll(completedVisits);
             }
         });
+    }
+
+    /**
+     * Handles the refresh button click event.
+     * Re-requests the visit history from the server.
+     */
+    @FXML
+    private void onRefreshClicked() {
+        loadHistoryData();
     }
 }
