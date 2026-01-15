@@ -53,7 +53,7 @@
             <Label text="Add New Table" styleClass="input-label" 
                    style="-fx-font-size: 16px; -fx-text-fill: -primary-blue; -fx-font-weight: bold;"/>
 
-            <HBox alignment="CENTER_LEFT" spacing="25.0">
+            <HBox alignment="BOTTOM_LEFT" spacing="25.0">
                 
                 <VBox spacing="8.0">
                     <Label text="Seats Capacity:" styleClass="input-label"/>
@@ -63,14 +63,17 @@
                 <VBox spacing="8.0">
                     <Label text="Location:" styleClass="input-label"/>
                     <ComboBox fx:id="locationComboBox" prefWidth="180.0" prefHeight="40.0" 
-                              style="-fx-background-color: white; -fx-border-color: #CBD5E0; -fx-border-radius: 5;"/>
+                              styleClass="combo-box-modern"/>
                 </VBox>
 
                 <Region HBox.hgrow="ALWAYS" />
 
-                <Button mnemonicParsing="false" onAction="#handleAddTable" 
-                        text="+ Add Table" styleClass="btn-success" 
-                        prefHeight="45.0" prefWidth="150.0" style="-fx-font-size: 14px;"/>
+                <VBox spacing="8.0">
+                    <Label text=" " styleClass="input-label"/>
+                    <Button mnemonicParsing="false" onAction="#handleAddTable" 
+                            text="+ Add Table" styleClass="btn-success" 
+                            prefHeight="45.0" prefWidth="150.0" style="-fx-font-size: 14px;"/>
+                </VBox>
             </HBox>
         </VBox>
 

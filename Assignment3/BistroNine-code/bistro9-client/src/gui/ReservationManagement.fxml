@@ -26,40 +26,61 @@
         <VBox spacing="10.0">
             <Label text="Reservation Management Operations" styleClass="subtitle-text" style="-fx-font-weight: bold;"/>
             
-            <HBox spacing="15.0" alignment="CENTER_LEFT">
+            <HBox spacing="15.0" alignment="BOTTOM_LEFT">
                 <VBox spacing="5.0">
                     <Label text="Search Mode" style="-fx-font-size: 11px; -fx-text-fill: #777;"/>
                     <ComboBox fx:id="searchModeCombo" prefWidth="180" promptText="Select Search Mode" 
-                              style="-fx-background-color: white; -fx-border-color: #CBD5E0; -fx-border-radius: 5;" />
+                              styleClass="combo-box-modern" />
                 </VBox>
                 
-                <Separator orientation="VERTICAL" />
+                <Separator orientation="VERTICAL" prefHeight="40.0" />
                 
                 <!-- Mode: Show All -->
-                <HBox fx:id="allBox" spacing="10.0" alignment="CENTER_LEFT" visible="false" managed="false">
-                    <Button text="Fetch All Reservations" onAction="#handleGetAll" 
-                            styleClass="btn-secondary" prefWidth="180"/>
+                <HBox fx:id="allBox" spacing="10.0" alignment="BOTTOM_LEFT" visible="false" managed="false">
+                    <VBox spacing="5.0">
+                        <Label text=" " style="-fx-font-size: 11px;"/>
+                        <Button text="Fetch All Reservations" onAction="#handleGetAll" 
+                                styleClass="btn-secondary" prefWidth="180"/>
+                    </VBox>
                 </HBox>
                 
                 <!-- Mode: By Attribute -->
-                <HBox fx:id="attributeBox" spacing="10.0" alignment="CENTER_LEFT" visible="false" managed="false">
-                    <ComboBox fx:id="attributeCombo" promptText="Select Attribute" prefWidth="150" 
-                              style="-fx-background-color: white; -fx-border-color: #CBD5E0; -fx-border-radius: 5;" />
-                    <StackPane>
-                        <TextField fx:id="attributeValueField" promptText="Enter Value" prefWidth="150" styleClass="text-field-modern" />
-                        <ComboBox fx:id="statusComboBox" promptText="Select Status" prefWidth="150" visible="false" managed="false" 
-                                  style="-fx-background-color: white; -fx-border-color: #CBD5E0; -fx-border-radius: 5;" />
-                    </StackPane>
-                    <Button text="Search" onAction="#handleSearchByAttribute" 
-                            styleClass="btn-primary" />
+                <HBox fx:id="attributeBox" spacing="10.0" alignment="BOTTOM_LEFT" visible="false" managed="false">
+                    <VBox spacing="5.0">
+                        <Label text="Search By" style="-fx-font-size: 11px; -fx-text-fill: #777;"/>
+                        <ComboBox fx:id="attributeCombo" promptText="Select Attribute" prefWidth="150" 
+                                  styleClass="combo-box-modern" />
+                    </VBox>
+                    <VBox spacing="5.0">
+                        <Label text="Search Value" style="-fx-font-size: 11px; -fx-text-fill: #777;"/>
+                        <StackPane>
+                            <TextField fx:id="attributeValueField" promptText="Enter Value" prefWidth="150" styleClass="text-field-modern" />
+                            <ComboBox fx:id="statusComboBox" promptText="Select Status" prefWidth="150" visible="false" managed="false" 
+                                      styleClass="combo-box-modern" />
+                        </StackPane>
+                    </VBox>
+                    <VBox spacing="5.0">
+                        <Label text=" " style="-fx-font-size: 11px;"/>
+                        <Button text="Search" onAction="#handleSearchByAttribute" 
+                                styleClass="btn-primary" />
+                    </VBox>
                 </HBox>
                 
                 <!-- Mode: By Date Range -->
-                <HBox fx:id="dateRangeBox" spacing="10.0" alignment="CENTER_LEFT" visible="false" managed="false">
-                    <DatePicker fx:id="startDatePicker" promptText="Start Date" prefWidth="140" styleClass="date-picker-modern" />
-                    <DatePicker fx:id="endDatePicker" promptText="End Date" prefWidth="140" styleClass="date-picker-modern" />
-                    <Button text="Filter by Date" onAction="#handleSearchByDateRange" 
-                            styleClass="btn-primary" />
+                <HBox fx:id="dateRangeBox" spacing="10.0" alignment="BOTTOM_LEFT" visible="false" managed="false">
+                    <VBox spacing="5.0">
+                        <Label text="Start Date" style="-fx-font-size: 11px; -fx-text-fill: #777;"/>
+                        <DatePicker fx:id="startDatePicker" promptText="Start Date" prefWidth="140" styleClass="date-picker-modern" />
+                    </VBox>
+                    <VBox spacing="5.0">
+                        <Label text="End Date" style="-fx-font-size: 11px; -fx-text-fill: #777;"/>
+                        <DatePicker fx:id="endDatePicker" promptText="End Date" prefWidth="140" styleClass="date-picker-modern" />
+                    </VBox>
+                    <VBox spacing="5.0">
+                        <Label text=" " style="-fx-font-size: 11px;"/>
+                        <Button text="Filter by Date" onAction="#handleSearchByDateRange" 
+                                styleClass="btn-primary" />
+                    </VBox>
                 </HBox>
             </HBox>
         </VBox>

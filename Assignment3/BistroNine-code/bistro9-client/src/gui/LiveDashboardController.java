@@ -32,6 +32,12 @@ public class LiveDashboardController implements Initializable {
     /** Tab representing guests currently dining at the restaurant. */
     @FXML 
     private Tab tabCurrentDinersTab;
+    /** Tab representing the list of subscribers. */
+    @FXML 
+    private Tab subscribersTab;
+    /** Tab representing subscriber visit logs search. */
+    @FXML
+    private Tab subscriberHistoryTab;
 
     // =================================================================================
     // Nested Controllers Injection
@@ -50,6 +56,14 @@ public class LiveDashboardController implements Initializable {
     /** Controller for the 'Current Diners' sub-view. */
     @FXML 
     private TabCurrentDinersController tabCurrentDinersController;
+
+    /** Controller for the 'Subscribers List' sub-view. */
+    @FXML
+    private SubscribersViewController subscribersViewController;
+
+    /** Controller for the 'Visit Logs' sub-view. */
+    @FXML
+    private SubscriberVisitHistoryController subscriberVisitHistoryController;
 
     /** The main client controller used for server communication. */
     private ClientController client;
@@ -92,6 +106,12 @@ public class LiveDashboardController implements Initializable {
         if (tabCurrentDinersController != null) {
             tabCurrentDinersController.initData(client);
         }
+        if (subscribersViewController != null) {
+            subscribersViewController.setClientController(client);
+        }
+        if (subscriberVisitHistoryController != null) {
+            subscriberVisitHistoryController.setClientController(client);
+        }
 
         // 2. Initial load for the currently visible tab once dependencies are set.
         Tab selectedTab = mainTabPane.getSelectionModel().getSelectedItem();
@@ -132,6 +152,15 @@ public class LiveDashboardController implements Initializable {
             if (tabCurrentDinersController != null) {
                 tabCurrentDinersController.refreshData();
             }
+        }
+        else if (tab == subscribersTab) {
+            System.out.println("Switched to Subscribers tab");
+            if (subscribersViewController != null) {
+                subscribersViewController.sendRequestToServer();
+            }
+        }
+        else if (tab == subscriberHistoryTab) {
+            System.out.println("Switched to Visit Logs tab");
         }
     }
 }

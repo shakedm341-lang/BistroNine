@@ -17,59 +17,143 @@ import gui.SubscribersViewController;
 import gui.TabCurrentDinersController;
 import gui.TabActiveReservationController;
 
+/**
+ * The ClientController class extends AbstractClient and handles the communication
+ * between the client-side application and the server. It manages incoming messages
+ * from the server and outgoing messages from the various GUI boundaries.
+ * 
+ * This class follows the Singleton-like pattern for various GUI controllers to ensure
+ * that responses from the server are routed to the correct part of the user interface.
+ */
 public class ClientController extends AbstractClient {
 
-    // Define variables
+    // --- Static Fields for GUI Controllers (Route server responses to the correct UI) ---
+    /** Flag to indicate if the client is awaiting a response from the server. */
     public static boolean awaitResponse = false;
+    
+    /** Controller for updating reservation details. */
     public static UpdateReservtionBoundry updatereservationBoundary;
+    
+    /** Controller for the login screen. */
     public static LoginController loginController;
+    
+    /** Controller for the reservation creation boundary. */
     public static ReservationBoundry reservationBoundry;
+    
+    /** Controller for viewing personal reservations. */
     public static MyReservationsController MyReservation;
+    
+    /** Controller for managing reservations (employee view). */
     public static ReservationManagementController reservationManagementController;
+    
+    /** Controller for client registration. */
     public static gui.RegisterClientController registerClientController;
+    
+    /** Controller for the user profile view. */
     public static ProfileController profileController;
+    
+    /** Controller for viewing and managing subscribers. */
     public static SubscribersViewController subscribersViewController;
+    
+    /** Controller for the current diners tab. */
     public static TabCurrentDinersController tabCurrentDinersController;
+    
+    /** Controller for the active reservations tab. */
     public static TabActiveReservationController tabActiveReservationController;
+    
+    /** Controller for application settings. */
     public static gui.SettingsController settingsController;
+    
+    /** Controller for table management. */
     public static gui.TableManagementController tableManagementController;
+    
+    /** Controller for the waiting list tab. */
     public static gui.TabWaitingListController tabWaitingListController;
+    
+    /** Controller for getting a table (check-in). */
     public static gui.GetTableController getTableController;
+    
+    /** Controller for joining the waiting list. */
     public static gui.JoinWaitlistController joinWaitlistController;
+    
+    /** Controller for leaving the waiting list. */
     public static gui.LeaveWaitlistController leaveWaitlistController;
+    
+    /** Controller for paying the bill. */
     public static gui.PayBillController payBillController;
+    
+    /** Controller for the user dashboard. */
     public static gui.UserDashboardController userDashboardController;
+    
+    /** Controller for viewing reports. */
     public static gui.ReportsController reportsController;
+    
+    /** Controller for viewing visit history. */
     public static gui.VisitHistoryController visitHistoryController;
+
+    /** Interface for viewing visit history (generic). */
+    private gui.IVisitHistory currentVisitHistoryViewer;
+    
+    /** Interface for viewing reservations. */
     private gui.IReservationViewer currentReservationViewer;
+    
+    /** Interface for deleting reservations. */
     private gui.IReservationDeleter currentReservationDeleter;
     
-    
-    
-    
-
-    // Constructor
+    /**
+     * Constructs a new ClientController and opens a connection to the server.
+     * 
+     * @param host The server host address.
+     * @param port The server port number.
+     * @throws IOException If an I/O error occurs when opening the connection.
+     */
     public ClientController(String host, int port) throws IOException {
         super(host, port);
         openConnection();
     }
     
+    /**
+     * Sets the current visit history viewer interface.
+     * 
+     * @param viewer The visit history viewer to set.
+     */
+    public void setVisitHistoryViewer(gui.IVisitHistory viewer) {
+        this.currentVisitHistoryViewer = viewer;
+    }
+    
+    /**
+     * Sets the current reservation viewer interface.
+     * 
+     * @param viewer The reservation viewer to set.
+     */
     public void setReservationViewer(gui.IReservationViewer viewer) {
         this.currentReservationViewer = viewer;
     }
+    
+    /**
+     * Sets the current reservation deleter interface.
+     * 
+     * @param deleter The reservation deleter to set.
+     */
     public void setReservationDeleter(gui.IReservationDeleter deleter) {
-    			this.currentReservationDeleter = deleter;
+        this.currentReservationDeleter = deleter;
     }
 
     @Override
-    // Handle message from server
+    /**
+     * Primary entry point for messages received from the server. 
+     * It deserializes the raw byte array into a Message object and routes 
+     * it to specialized handlers based on the message type.
+     * 
+     * @param msg The message received from the server (expected to be byte[] from Kryo).
+     */
     protected void handleMessageFromServer(Object msg) {
-        // Strict check: We only support byte[] (Kryo)
+        // Strict check: We only support byte[] (Kryo) for efficiency and consistency
         if (msg instanceof byte[]) {
             // Deserialize the byte array back to a Message object
             Message message = (Message) KryoUtil.deserialize((byte[]) msg);
 
-            // 1. First Switch: Route by TypeMessage
+            // First-level routing: based on the general category of the message
             switch (message.type) {
                 case RESERVATION:
                     handleReservationResponse(message);
@@ -104,16 +188,20 @@ public class ClientController extends AbstractClient {
                     break;
 
                 default:
-                    System.out.println("Unknown TypeMessage received: " + message.type);
+                    System.err.println("Client received unknown TypeMessage: " + message.type);
                     break;
             }
 
         } else {
-            System.out.println("Client received non-byte[] message. Ignored.");
+            System.err.println("Client received non-byte[] message. Ignored.");
         }
     }
 
-    // 2. Second Switch: Handle Reservation related commands
+    /**
+     * Routes reservation-specific commands to their respective implementation methods.
+     * 
+     * @param message The message containing the reservation command and data.
+     */
     private void handleReservationResponse(Message message) {
         switch (message.command) {
             case GET_ALL_RESERVATIONS:
@@ -135,7 +223,6 @@ public class ClientController extends AbstractClient {
                 handleCreateReservationResponse(message);
                 break;
 
-          
             case CHECK_TABLE_AVAILABILITY: 
                  handleTableAvailabilityResponse(message);
                  break;
@@ -153,12 +240,16 @@ public class ClientController extends AbstractClient {
                 break;   
                 
             default:
-                System.out.println("CLIENT:Unknown Reservation command: " + message.command);
+                System.err.println("CLIENT: Unknown Reservation command: " + message.command);
                 break;
         }
     }
 
-    // 2. Second Switch: Handle Customer related commands
+    /**
+     * Routes customer-related commands to their respective implementation methods.
+     * 
+     * @param message The message containing the customer command and data.
+     */
     private void handleCustomerResponse(Message message) {
         switch (message.command) {
             case CHECK_LOGIN_DETAILS:
@@ -190,16 +281,18 @@ public class ClientController extends AbstractClient {
                 break;    
 
             default:
-                System.out.println("Unknown Customer command: " + message.command);
+                System.err.println("CLIENT: Unknown Customer command: " + message.command);
                 break;
         }
     }
 
-    // 2. Second Switch: Handle Table related commands
+    /**
+     * Routes table-related commands to their respective implementation methods.
+     * 
+     * @param message The message containing the table command and data.
+     */
     private void handleTableResponse(Message message) {
         switch (message.command) {
-            // If the server sends TypeMessage.TABLE for availability, use this case.
-            // Currently mapped in RESERVATION above based on typical flow, but if server uses TABLE:
             case CHECK_TABLE_AVAILABILITY:
                 handleTableAvailabilityResponse(message);
                 break;
@@ -219,12 +312,16 @@ public class ClientController extends AbstractClient {
                 break;
 
             default:
-                System.out.println("Unknown Table command: " + message.command);
+                System.err.println("CLIENT: Unknown Table command: " + message.command);
                 break;
         }
     }
     
-    // 2. Second Switch: Handle Opening Time related commands
+    /**
+     * Routes opening time-related commands to their respective implementation methods.
+     * 
+     * @param message The message containing the opening time command and data.
+     */
     private void handleOpeningTimeResponse(Message message) {
         switch(message.command) {
             case GET_WEEKLY_OPENING_TIME:
@@ -236,6 +333,7 @@ public class ClientController extends AbstractClient {
                 break;
                 
             case UPDATE_OPENING_TIME:
+            case UPDATE_SPECIAL_OPENING_TIME:
             case ADD_NEW_OPENING_TIME:
             case ADD_NEW_SPECIAL_OPENING_TIME:
             case DELETE_OPENING_TIME:
@@ -245,12 +343,16 @@ public class ClientController extends AbstractClient {
                 break;
                 
             default:
-                System.out.println("Unknown Opening Time command: " + message.command);
+                System.err.println("CLIENT: Unknown Opening Time command: " + message.command);
                 break;
         }
     }
     
-    // 2. Second Switch: Handle methods for Waiting List
+    /**
+     * Routes waiting list-related commands to their respective implementation methods.
+     * 
+     * @param message The message containing the waitlist command and data.
+     */
     private void handleWaitListMessage(Message message) {
         switch (message.command) {
             case GET_WAIT_LIST:
@@ -266,12 +368,16 @@ public class ClientController extends AbstractClient {
                 break;    
 
             default:
-                System.out.println("Unknown WaitList command: " + message.command);
+                System.err.println("CLIENT: Unknown WaitList command: " + message.command);
                 break;
         }
     }
     
-    // 2. Second Switch: Handle methods for Bill & Payment
+    /**
+     * Routes bill and payment commands to their respective implementation methods.
+     * 
+     * @param message The message containing the bill command and data.
+     */
     private void handleBillMessage(Message message) {
         switch (message.command) {
             case SHOW_BILL:
@@ -283,21 +389,31 @@ public class ClientController extends AbstractClient {
                 break;
 
             default:
-                System.out.println("Unknown Bill command: " + message.command);
+                System.err.println("CLIENT: Unknown Bill command: " + message.command);
                 break;
         }
     }
 
     // --- Implementation Methods (Logic) ---
 
+    /**
+     * Updates the reservation boundary with a list of available hours for a selected date.
+     * 
+     * @param message The message containing a list of LocalTime objects.
+     */
     private void handleTableAvailabilityResponse(Message message) {
         if (reservationBoundry != null) {
             @SuppressWarnings("unchecked")
             ArrayList<LocalTime> availableTimes = (ArrayList<LocalTime>) message.content;
-            reservationBoundry.updateAvailableHours(availableTimes); // Update available times in boundary
+            reservationBoundry.updateAvailableHours(availableTimes); 
         }
     }
 
+    /**
+     * Handles the server's response to a reservation creation request.
+     * 
+     * @param message The message containing the creation result (e.g., success/fail).
+     */
     private void handleCreateReservationResponse(Message message) {
         if (reservationBoundry != null) {
             Object response = message.content;
@@ -305,14 +421,23 @@ public class ClientController extends AbstractClient {
         }
     }
 
+    /**
+     * Processes the login result from the server.
+     * 
+     * @param message The message containing the Subscriber object (or null if failed).
+     */
     private void handleLoginResponse(Message message) {
         if (loginController != null) {
             Subscriber subscriber = (Subscriber) message.content;
-            loginController.handleServerLoginResponse(subscriber); // Process login response in boundary
+            loginController.handleServerLoginResponse(subscriber); 
         }
     }
 
-    // Helper method for handling the list of reservations (HistoryReservation)
+    /**
+     * Handles a list of reservation history records received from the server.
+     * 
+     * @param message The message containing an ArrayList of HistoryReservation.
+     */
     private void handleReservationListResponse(Message message) {
         if (currentReservationViewer != null) {
             @SuppressWarnings("unchecked")
@@ -322,193 +447,309 @@ public class ClientController extends AbstractClient {
         }
     }
 
+    /**
+     * Processes the customer's visit history response.
+     * 
+     * @param message The message containing an ArrayList of TableReservation.
+     */
     private void handleVisitHistoryResponse(Message message) {
-        if (visitHistoryController != null) {
-            @SuppressWarnings("unchecked")
-            ArrayList<TableReservation> list = (ArrayList<TableReservation>) message.content;
+        @SuppressWarnings("unchecked")
+        ArrayList<TableReservation> list = (ArrayList<TableReservation>) message.content;
+        
+        // Priority 1: Current generic viewer (for specific searches)
+        if (currentVisitHistoryViewer != null) {
+            currentVisitHistoryViewer.setReservationsList(list);
+            currentVisitHistoryViewer = null; // Reset after use
+        } 
+        // Priority 2: Legacy static controller reference
+        else if (visitHistoryController != null) {
             visitHistoryController.setReservationsList(list);
         }
     }
 
-    // Helper method for handling the update response
+    /**
+     * Handles the response for a reservation update operation.
+     * 
+     * @param message The message containing a Boolean indicating success or failure.
+     */
     private void handleUpdateReservationResponse(Message message) {
         if (updatereservationBoundary != null) {
             Boolean success = (Boolean) message.content;
-            updatereservationBoundary.showUpdateMessage(success); // Update message in boundary
+            updatereservationBoundary.showUpdateMessage(success); 
         }
     }
     
+    /**
+     * Handles the response for a reservation deletion request.
+     * 
+     * @param message The message containing a Boolean indicating success or failure.
+     */
     private void handleDeleteReservationResponse(Message message) {
 		if (currentReservationDeleter != null) {
 			Boolean success = (Boolean) message.content;
-			currentReservationDeleter.handleDeleteReservationResponse(success); // Update message in boundary
+			currentReservationDeleter.handleDeleteReservationResponse(success); 
 						currentReservationDeleter = null; // Reset after use
 		}
 	}
     
-    // Helper method for handling the registration response
+    /**
+     * Handles the registration response for a new subscriber.
+     * 
+     * @param message The message containing the registration result.
+     */
     private void handleRegistrationResponse(Message message) {
         if (registerClientController != null) {
-            registerClientController.handleServerResponse(message.content); // Pass response to registration controller
+            registerClientController.handleServerResponse(message.content); 
         }
     }
     
-    // Helper method for handling the list of subscribers response
+    /**
+     * Updates the subscriber management view with a fresh list of subscribers.
+     * 
+     * @param message The message containing an ArrayList of Subscriber.
+     */
     private void handleGetAllSubscribersResponse(Message message) {
         if (subscribersViewController != null) {
             @SuppressWarnings("unchecked")
             ArrayList<Subscriber> list = (ArrayList<Subscriber>) message.content;
             System.out.println("DEBUG: Received " + (list != null ? list.size() : 0) + " subscribers from server.");
-            subscribersViewController.updateSubscriberTable(list); // Update the subscribers table in the boundary
+            subscribersViewController.updateSubscriberTable(list); 
         }
     }
     
-    // Helper method for handling the profile update response
+    /**
+     * Processes the response for a subscriber profile update.
+     * 
+     * @param message The message containing a Boolean success status.
+     */
     private void handleUpdateProfileResponse(Message message) {
         if (profileController != null) {
             Boolean isSuccess = (Boolean) message.content;
-            profileController.updateProfileSuccess(isSuccess); // Pass success status to profile controller
+            profileController.updateProfileSuccess(isSuccess); 
         }
     }
     
-    // Helper method for handling the list of current diners response
+    /**
+     * Updates the GUI with the list of diners currently at the restaurant.
+     * 
+     * @param message The message containing an ArrayList of Customer.
+     */
     private void handleGetAllDinersResponse(Message message) {
         if (tabCurrentDinersController != null) {
             @SuppressWarnings("unchecked")
             ArrayList<Customer> list = (ArrayList<Customer>) message.content;
-            tabCurrentDinersController.updateTableData(list); // Update the diners table in the boundary
+            tabCurrentDinersController.updateTableData(list); 
         }
     }
     
-    // Helper method for handling the list of active reservations response
+    /**
+     * Updates the GUI with the list of currently active reservations.
+     * 
+     * @param message The message containing an ArrayList of TableReservation.
+     */
     private void handleGetActiveReservationsResponse(Message message) {
         if (tabActiveReservationController != null) {
             @SuppressWarnings("unchecked")
             ArrayList<TableReservation> list = (ArrayList<TableReservation>) message.content;
-            tabActiveReservationController.updateTableData(list); // Update the active reservations table in the boundary
+            tabActiveReservationController.updateTableData(list); 
         }
     }
     
-    // Helper method for handling the list of weekly opening hours response
+    /**
+     * Handles the retrieval of standard weekly opening hours.
+     * 
+     * @param message The message containing an ArrayList of OpeningHours.
+     */
     private void handleGetWeeklyHoursResponse(Message message) {
         if (settingsController != null) {
             @SuppressWarnings("unchecked")
             ArrayList<OpeningHours> list = (ArrayList<OpeningHours>) message.content;
-            settingsController.updateWeeklyOpeningHours(list); // Update the weekly opening hours in the boundary
+            settingsController.updateWeeklyOpeningHours(list); 
         }
     }
     
-    // Helper method for handling the list of special opening hours response
+    /**
+     * Handles the retrieval of special/overriding opening hours.
+     * 
+     * @param message The message containing an ArrayList of OpeningHoursPerDay.
+     */
     private void handleGetSpecialHoursResponse(Message message) {
         if (settingsController != null) {
             @SuppressWarnings("unchecked")
             ArrayList<OpeningHoursPerDay> list = (ArrayList<OpeningHoursPerDay>) message.content;
-            settingsController.updateSpecialOpeningHours(list); // Update the special opening hours in the boundary
+            settingsController.updateSpecialOpeningHours(list); 
         }
     }
     
-    // Helper method for handling the save response (update/add) for opening hours
+    /**
+     * Processes the result of a save operation for opening hours.
+     * 
+     * @param message The message containing the save result.
+     */
     private void handleSaveOpeningHoursResponse(Message message) {
         if (settingsController != null) {
             Object response = message.content;
-            settingsController.onSaveResponse(response);// Notify the boundary about the save operation status
+            settingsController.onSaveResponse(response);
         }
     }
     
-    // Helper method for handling the list of tables
+    /**
+     * Updates the table management view with all restaurant tables.
+     * 
+     * @param message The message containing an ArrayList of Table.
+     */
     private void handleGetAllTablesResponse(Message message) {
         if (tableManagementController != null) {
             @SuppressWarnings("unchecked")
             ArrayList<Table> list = (ArrayList<Table>) message.content;
-            tableManagementController.updateTableList(list); // Update the table list in the boundary
+            tableManagementController.updateTableList(list); 
         }
     }
     
+    /**
+     * Processes the result of a table operation (Add, Delete, or Update Seats).
+     * 
+     * @param message The message containing the operation result.
+     */
     private void handleTableOperationResponse(Message message) {
         if (tableManagementController != null) {
             tableManagementController.handleOperationResponse(message.content);
         }
     }
     
-    // Helper method for handling the waiting list (Get or Delete response)   
+    /**
+     * Generic helper to refresh the waitlist display in the employee view.
+     * 
+     * @param message The message containing the current waitlist data.
+     */
     private void passToWaitListController(Message message) {
         if (tabWaitingListController != null) {
             tabWaitingListController.updateTableData(message.content);
         }
     }
     
-    // Helper method for handling tag identification response 
+    /**
+     * Handles the response for customer identification via tag reader.
+     * 
+     * @param message The message containing identification result.
+     */
     private void handleTagIdentificationResponse(Message message) {
         if (loginController != null) {
-            loginController.onIdentificationResponse(message.content); // Pass identification result to the Login controller
+            loginController.onIdentificationResponse(message.content); 
         }
     }
     
-    // Helper method for handling the retrieval of confirmation codes
+    /**
+     * Handles the retrieval of reservation confirmation codes for a customer.
+     * 
+     * @param message The message containing the list of codes.
+     */
     private void handleGetCodesResponse(Message message) {
         if (getTableController != null) {
-            getTableController.onCodesResponse(message.content); // Update the list of codes
+            getTableController.onCodesResponse(message.content); 
         }
     }
     
-    // Helper method for handling the lost code recovery response
+    /**
+     * Processes the result of a "lost confirmation code" recovery request.
+     * 
+     * @param message The message containing the recovery status.
+     */
     private void handleLostCodeResponse(Message message) {
         if (getTableController != null) {
-            getTableController.onRecoverCodesResponse(message.content); // Notify the Kiosk boundary about recovery status
+            getTableController.onRecoverCodesResponse(message.content); 
         }
     }
     
-    // Helper method for handling the check-in (get table) response
+    /**
+     * Handles the response for a walk-in check-in (getting a table).
+     * 
+     * @param message The message containing the assigned Table or Reservation.
+     */
     private void handleCheckInResponse(Message message) {
         if (getTableController != null) {
-            getTableController.onCheckInResponse(message.content); // Pass the check-in result Table/Reservation
+            getTableController.onCheckInResponse(message.content); 
         }
     }
     
-    // Helper method for handling the join waitlist response
+    /**
+     * Processes the result of a request to join the waitlist.
+     * 
+     * @param message The message containing the waitlist entry result.
+     */
     private void handleJoinWaitlistResponse(Message message) {
         if (joinWaitlistController != null) {
-            joinWaitlistController.onJoinResponse(message.content); // Pass the join result Confirmation Code or Table ID to the controller
+            joinWaitlistController.onJoinResponse(message.content); 
         }
     }
     
-    //Handles delete response for BOTH Employee view and Kiosk view
+    /**
+     * Handles delete responses from the waitlist, routing them to either the 
+     * employee view or the kiosk view depending on which is active.
+     * 
+     * @param message The message containing the deletion result.
+     */
     private void handleWaitlistDeleteResponse(Message message) {
         if (tabWaitingListController != null) {
-            tabWaitingListController.updateTableData(message.content); //If the Employee View is active, pass data to refresh the table
+            tabWaitingListController.updateTableData(message.content); 
         }
         if (leaveWaitlistController != null) {
-            leaveWaitlistController.onDeleteResponse(message.content); //If the Kiosk View is active, pass result to show success/fail message
+            leaveWaitlistController.onDeleteResponse(message.content); 
         }
     }
     
-    // Helper method for handling "Show Bill" response
+    /**
+     * Processes the "Show Bill" response from the server.
+     * 
+     * @param message The message containing the Bill object.
+     */
     private void handleShowBillResponse(Message message) {
         if (payBillController != null) {
-            payBillController.handleShowBillResponse((Bill) message.content); // Pass the Bill object to display details in the GUI
+            payBillController.handleShowBillResponse((Bill) message.content); 
         }
     }
     
-    // Helper method for handling "Pay Bill" response
+    /**
+     * Processes the result of a bill payment attempt.
+     * 
+     * @param message The message containing a Boolean success status.
+     */
     private void handlePayBillResponse(Message message) {
         if (payBillController != null) {
-            payBillController.handlePayBillResponse((Boolean) message.content); // Pass payment success status to the controller
+            payBillController.handlePayBillResponse((Boolean) message.content); 
         }
     }
 
+    /**
+     * Displays the generated Subscriber Report in the reports view.
+     * 
+     * @param message The message containing the SubscriberReport object.
+     */
     private void handleSubscriberReportResponse(Message message) {
         if (reportsController != null) {
             reportsController.displaySubscriberReport((SubscriberReport) message.content);
         }
     }
 
+    /**
+     * Displays the generated Time Report in the reports view.
+     * 
+     * @param message The message containing the TimeReport object.
+     */
     private void handleTimeReportResponse(Message message) {
         if (reportsController != null) {
             reportsController.displayTimeReport((TimeReport) message.content);
         }
     }
     
-    // Handle message from boundary
+    /**
+     * Sends a message from a GUI boundary to the server.
+     * The message is wrapped in a Message object, serialized using Kryo, and sent.
+     * 
+     * @param type The type of message (e.g., RESERVATION, CUSTOMER).
+     * @param content The data payload of the message.
+     * @param command The specific command for the server to execute.
+     */
     public void handleMessageFromBoundary(TypeMessage type, Object content, Command command) {
         Message msg = new Message();
         msg.type = type;
@@ -516,22 +757,25 @@ public class ClientController extends AbstractClient {
         msg.command = command;
 
         try {
-            // Ensure connection is open before sending
+            // Ensure connection is open before sending; attempt to reconnect if necessary
             if (!isConnected()) {
                 openConnection();
             }
 
-            // STRICT: Serialize to byte[] before sending
+            // Serialize the Message object to a byte array before transmission
             byte[] data = KryoUtil.serialize(msg);
             sendToServer(data);
 
         } catch (IOException e) {
             e.printStackTrace();
             System.out.println("Could not send message to server: Terminating client." + e);
-            quit(); // Quit client
+            quit(); // Force quit if communication fails
         }
     }
 
+    /**
+     * Gracefully closes the connection and terminates the application.
+     */
     public void quit() {
         try {
             closeConnection();

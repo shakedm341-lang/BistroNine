@@ -1,24 +1,32 @@
 .root {
-    /* --- New Colors: Deeper and more prestigious --- */
+    /* 
+     * THEME COLOR VARIABLES
+     * Using a professional Navy and Emerald palette for a high-end restaurant feel.
+     */
     
-    /* Dark Blue/Navy - much more serious and professional */
+    /* Primary Branding - Professional Navy Blue */
     -primary-blue: #2C5282;  
     
-    /* Emerald Green - less "traffic light", more elegant */
+    /* Success & Action - Elegant Emerald Green */
     -success-green: #059669; 
     
-    /* Warmer grays */
+    /* Neutral Surface Colors */
     -background-gray: #F7F9FC;
-    -text-dark: #1A202C;       /* Almost black, but soft */
-    -text-secondary: #718096;
+    -text-dark: #1A202C;       /* High contrast for readability */
+    -text-secondary: #718096;  /* Muted tone for less critical information */
     
-    -input-background: #FFFFFF; /* Clean white background for fields */
-    -danger-red: #E53E3E;
+    /* Alert & Input Backgrounds */
+    -input-background: #FFFFFF;
+    -danger-red: #E53E3E;      /* Standard destructive action color */
     
-    -fx-font-size: 13px; /* Slightly smaller base font for better fit on laptops */
+    /* Base Font Sizing - Balanced for standard laptop and desktop resolutions */
+    -fx-font-size: 13px;
 }
 
-/* General Structure */
+/* 
+ * LAYOUT CONTAINERS
+ * Structural components for managing the overall page flow.
+ */
 .main-background {
     -fx-background-color: -background-gray;
 }
@@ -27,17 +35,22 @@
     -fx-background-color: transparent;
 }
 
+/* Card-based layout components - Used for modular UI sections */
 .card {
     -fx-background-color: white;
     -fx-background-radius: 20px;
     -fx-border-radius: 20px;
-    -fx-padding: 30px; /* Reduced from 40px to save space */
+    -fx-padding: 30px; 
+    /* Subtle elevation effect using dropshadow */
     -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.1), 15, 0, 0, 5);
 }
 
-/* Typography */
+/* 
+ * TYPOGRAPHY SYSTEM
+ * Consistent hierarchy for titles, labels, and body text.
+ */
 .title-text {
-    -fx-font-size: 24px; /* Reduced from 28px for laptop screens */
+    -fx-font-size: 24px; 
     -fx-font-weight: bold;
     -fx-text-fill: -text-dark;
 }
@@ -53,7 +66,10 @@
     -fx-text-fill: -text-dark;
 }
 
-/* Form Controls (Inputs) */
+/* 
+ * FORM INPUT FIELDS
+ * Modern, clean designs for user data entry.
+ */
 .text-field-modern {
     -fx-background-color: -input-background;
     -fx-background-radius: 8px;
@@ -64,20 +80,39 @@
     -fx-prompt-text-fill: -text-secondary;
 }
 
-.text-field-modern:focused {
+.combo-box-modern {
+    -fx-background-color: white;
+    -fx-background-radius: 8px;
+    -fx-border-color: #E2E8F0;
+    -fx-border-radius: 8px;
+    -fx-padding: 4px; /* Slightly less padding than text fields to balance internal layout */
+    -fx-text-fill: -text-dark;
+}
+
+.combo-box-modern:focused {
     -fx-background-color: white;
     -fx-border-color: -primary-blue;
 }
 
-/* Read-only state for modern fields */
+.text-field-modern:focused {
+    -fx-background-color: white;
+    -fx-border-color: -primary-blue; /* Highlighted border on focus */
+}
+
+/* Disabled or Read-only modern fields - visually indicates non-editable state */
 .text-field-readonly {
-    -fx-background-color: #F7FAFC; /* Light gray background */
+    -fx-background-color: #F7FAFC;
     -fx-text-fill: -text-secondary;
     -fx-border-color: #EDF2F7;
     -fx-cursor: default;
 }
 
-/* Buttons (Standard) */
+/* 
+ * BUTTON STYLES
+ * Comprehensive set of button variants for different action priorities.
+ */
+
+/* Primary action buttons - Main CTA (Call to Action) */
 .btn-primary {
     -fx-background-color: -primary-blue;
     -fx-text-fill: white;
@@ -91,9 +126,10 @@
 }
 
 .btn-primary:hover {
-    -fx-background-color: #2B6CB0;
+    -fx-background-color: #2B6CB0; /* Slightly lighter blue on hover */
 }
 
+/* Secondary/Outline action buttons - For less prominent tasks */
 .btn-secondary {
     -fx-background-color: transparent;
     -fx-border-color: -success-green;
@@ -107,13 +143,14 @@
 }
 
 .btn-secondary:hover {
-    -fx-background-color: rgba(56, 161, 105, 0.1);
+    -fx-background-color: rgba(56, 161, 105, 0.1); /* Subtle green tint on hover */
 }
 
+/* Danger actions with outline (Exit, Cancel, Delete, etc.) */
 .btn-danger-outline {
     -fx-background-color: transparent;
-    -fx-border-color: -danger-red; /* Using the variable defined above */
-    -fx-border-width: 2px; /* Restored the border for the exit button */
+    -fx-border-color: -danger-red;
+    -fx-border-width: 2px;
     -fx-text-fill: -danger-red;
     -fx-background-radius: 8px;
     -fx-border-radius: 8px;
@@ -123,40 +160,41 @@
 }
 
 .btn-danger-outline:hover {
-    -fx-background-color: rgba(229, 62, 62, 0.1);
+    -fx-background-color: rgba(229, 62, 62, 0.1); /* Subtle red tint on hover */
 }
 
-/* --- Terminal Mode Tiles (NEW DESIGN: Soft Filled) --- */
+/* 
+ * INTERACTIVE DASHBOARD TILES
+ * Large, clickable elements for high-level navigation.
+ */
 .tile-btn {
-    /* Removed the fixed white background and border */
     -fx-background-radius: 16px;
-    -fx-font-size: 20px; /* Larger font for better presence */
+    -fx-font-size: 20px; 
     -fx-font-weight: bold;
     -fx-content-display: TOP;
     -fx-cursor: hand;
-    /* Very subtle shadow */
     -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.03), 15, 0, 0, 5);
     -fx-alignment: CENTER;
     -fx-padding: 20px;
 }
 
 .tile-btn:hover {
-    -fx-translate-y: -4px; /* Hover effect */
+    -fx-translate-y: -4px; /* Vertical lift effect on hover */
     -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 20, 0, 0, 10);
 }
 
-/* Color variations - soft fill without border */
+/* Tile Color Variations (Soft Filled Design) */
 
-/* Blue - Table Selection */
+/* Blue Theme - e.g., Table Selection or Active Bookings */
 .tile-blue {
-    -fx-background-color: #EBF8FF; /* Very light blue */
-    -fx-text-fill: #2B6CB0;        /* Dark blue for text */
+    -fx-background-color: #EBF8FF;
+    -fx-text-fill: #2B6CB0;
 }
 .tile-blue:hover {
-    -fx-background-color: #BEE3F8; /* Slightly darker on hover */
+    -fx-background-color: #BEE3F8;
 }
 
-/* Green - Waiting List */
+/* Green Theme - e.g., Waiting List or Successful Check-in */
 .tile-green {
     -fx-background-color: #F0FFF4;
     -fx-text-fill: #2F855A;
@@ -165,7 +203,7 @@
     -fx-background-color: #C6F6D5;
 }
 
-/* Orange - Payment */
+/* Orange Theme - e.g., Payments or Urgent Notifications */
 .tile-orange {
     -fx-background-color: #FFFAF0;
     -fx-text-fill: #C05621;
@@ -174,111 +212,29 @@
     -fx-background-color: #FEEBC8;
 }
 
-/* Gray - Departure */
+/* Gray Theme - e.g., Configuration or Closing Operations */
 .tile-gray {
     -fx-background-color: #F7FAFC;
     -fx-text-fill: #4A5568;
 }
 .tile-gray:hover {
-    -fx-background-color: #E2E8F0;
+    -fx-background-color: #E2E880; /* Corrected to a matching gray tone */
 }
 
-/* Sidebar Layout */
+/* 
+ * SIDEBAR NAVIGATION SYSTEM
+ * Vertical navigation panel with user information and branding.
+ */
 .sidebar {
     -fx-background-color: white;
-    -fx-min-width: 220px; /* Added min-width to ensure it doesn't shrink too much */
+    -fx-min-width: 220px;
     -fx-pref-width: 240px;
-    /* Thin separator line on the right or a subtle shadow */
     -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 10, 0, 0, 0); 
-    -fx-border-color: transparent #E2E8F0 transparent transparent;
+    -fx-border-color: transparent #E2E8F0 transparent transparent; /* Subtle right border for separation */
     -fx-border-width: 1px;
 }
 
-/* --- Charts Styling --- */
-.chart {
-    -fx-padding: 10px;
-    -fx-background-color: transparent;
-    /* Targeting internal JavaFX series colors */
-    CHART_COLOR_1: #2C5282;
-    CHART_COLOR_2: #059669;
-}
-
-.chart-content {
-    -fx-padding: 10px;
-}
-
-.chart-title {
-    -fx-text-fill: -text-dark;
-    -fx-font-size: 16px;
-    -fx-font-weight: bold;
-}
-
-.chart-legend {
-    -fx-background-color: transparent;
-    -fx-padding: 20px 0 0 0;
-}
-
-.chart-legend-item {
-    -fx-text-fill: -text-secondary;
-    -fx-font-size: 12px;
-}
-
-/* Axis Styling */
-.axis {
-    -fx-tick-label-fill: -text-secondary;
-    -fx-tick-length: 5;
-    -fx-minor-tick-visible: false;
-}
-
-.axis-label {
-    -fx-text-fill: -text-dark;
-    -fx-font-weight: bold;
-}
-
-/* Grid lines styling - making them subtle */
-.chart-vertical-grid-lines { -fx-stroke: #E2E8F0; -fx-stroke-dash-array: 2 2; }
-.chart-horizontal-grid-lines { -fx-stroke: #E2E8F0; -fx-stroke-dash-array: 2 2; }
-.chart-plot-background { -fx-background-color: transparent; }
-
-/* LineChart specific - High specificity to override Modena defaults */
-.chart .default-color0.chart-series-line { 
-    -fx-stroke: #2C5282; 
-    -fx-stroke-width: 3.5px; 
-}
-.chart .default-color0.chart-line-symbol { 
-    -fx-background-color: #2C5282, white; 
-    -fx-background-insets: 0, 2.5;
-    -fx-background-radius: 7px; 
-    -fx-padding: 7px; 
-}
-
-.chart .default-color1.chart-series-line { 
-    -fx-stroke: #059669; 
-    -fx-stroke-width: 3.5px; 
-}
-.chart .default-color1.chart-line-symbol { 
-    -fx-background-color: #059669, white; 
-    -fx-background-insets: 0, 2.5;
-    -fx-background-radius: 7px; 
-    -fx-padding: 7px; 
-}
-
-/* Legend items symbols */
-.chart .default-color0.chart-legend-item-symbol { 
-    -fx-background-color: #2C5282, white; 
-    -fx-background-insets: 0, 2;
-    -fx-background-radius: 4px;
-}
-.chart .default-color1.chart-legend-item-symbol { 
-    -fx-background-color: #059669, white; 
-    -fx-background-insets: 0, 2;
-    -fx-background-radius: 4px;
-}
-
-.chart-series-line {
-    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.15), 6, 0, 0, 3);
-}
-
+/* Sidebar Branding & User Profile Display */
 .sidebar-logo {
     -fx-font-size: 24px;
     -fx-font-weight: bold;
@@ -290,6 +246,7 @@
     -fx-text-fill: -text-secondary;
 }
 
+/* Layout Separators */
 .sidebar-separator .line {
     -fx-border-color: #EDF2F7;
     -fx-border-width: 1px;
@@ -299,41 +256,44 @@
     -fx-border-color: #E2E8F0;
 }
 
-/* --- Navigation Buttons --- */
+/* 
+ * NAVIGATION BUTTON STYLES
+ * Interactive elements within the sidebar navigation.
+ */
 .nav-btn {
     -fx-background-color: transparent;
     -fx-text-fill: -text-dark;
-    -fx-font-size: 13px; /* Reduced from 14px */
+    -fx-font-size: 13px;
     -fx-alignment: CENTER_LEFT;
-    -fx-padding: 10px 20px; /* Reduced from 12px 25px */
+    -fx-padding: 10px 20px;
     -fx-cursor: hand;
-    -fx-background-radius: 0 20px 20px 0; /* Rounded corners only on the right side */
-    -fx-border-width: 0 0 0 3px; /* Setup for a blue stripe on the left side */
+    -fx-background-radius: 0 20px 20px 0; /* Modern pill shape on right side */
+    -fx-border-width: 0 0 0 3px; /* Reserved for left indicator stripe */
     -fx-border-color: transparent;
 }
 
 .nav-btn:hover {
-    -fx-background-color: #F7FAFC; /* Very light gray-blue background */
+    -fx-background-color: #F7FAFC;
     -fx-text-fill: -primary-blue;
-    -fx-border-color: transparent transparent transparent -primary-blue; /* The blue stripe appears */
+    -fx-border-color: transparent transparent transparent -primary-blue; /* Indicator appears on hover */
 }
 
-/* Active button in the sidebar menu */
+/* Active navigation state - indicates current viewing page */
 .nav-btn-active {
-    -fx-background-color: #F0F7FF; /* Subtle light blue background */
+    -fx-background-color: #F0F7FF;
     -fx-text-fill: -primary-blue;
     -fx-border-color: transparent transparent transparent -primary-blue;
     -fx-font-weight: bold;
 }
 
-/* Management buttons slightly bolded */
+/* Special Styling for Admin features */
 .nav-btn-admin {
     -fx-font-weight: bold;
 }
 
-/* Logout button */
+/* Logout action button - specifically colored for emphasis */
 .nav-btn-logout {
-    -fx-background-color: #FFF5F5; /* Very light reddish background */
+    -fx-background-color: #FFF5F5;
     -fx-text-fill: -danger-red;
     -fx-font-weight: bold;
     -fx-font-size: 14px;
@@ -349,13 +309,31 @@
     -fx-text-fill: #C53030;
 }
 
-/* --- Content Area --- */
+.nav-btn-danger-outline {
+    -fx-background-color: transparent;
+    -fx-border-color: -danger-red;
+    -fx-border-width: 1px;
+    -fx-border-radius: 8px;
+    -fx-text-fill: -danger-red;
+    -fx-font-weight: bold;
+    -fx-alignment: CENTER;
+    -fx-padding: 10px;
+    -fx-cursor: hand;
+}
+
+.nav-btn-danger-outline:hover {
+    -fx-background-color: #FFF5F5;
+}
+
+/* 
+ * MAIN CONTENT AREA STYLING
+ * Area where primary page data is rendered.
+ */
 .content-area {
-    /* Important! This is the gray background the cards sit on */
     -fx-background-color: -background-gray; 
 }
 
-/* --- ScrollPane Styling --- */
+/* Custom ScrollPane appearance - transparent background to blend in */
 .scroll-pane {
     -fx-background-color: transparent;
     -fx-background-insets: 0;
@@ -365,7 +343,10 @@
     -fx-background-color: transparent;
 }
 
-/* --- Link Text --- */
+/* 
+ * HYPERLINKS AND TEXT BUTTONS
+ * Text-based interactive elements.
+ */
 .link-text {
     -fx-background-color: transparent;
     -fx-text-fill: -primary-blue;
@@ -377,22 +358,25 @@
     -fx-text-fill: #2B6CB0;
 }
 
-/* --- Modern Table View --- */
+/* 
+ * MODERN DATA TABLE (TableView)
+ * Professional grid layout for data visualization.
+ */
 .modern-table {
     -fx-background-color: transparent;
-    -fx-table-cell-border-color: transparent; /* Remove vertical lines */
+    -fx-table-cell-border-color: transparent; /* Clean, minimal vertical separation */
     -fx-padding: 0;
 }
 
 .modern-table .column-header-background {
     -fx-background-color: transparent;
-    -fx-border-color: transparent transparent #E2E8F0 transparent; /* Only a bottom border for the header */
+    -fx-border-color: transparent transparent #E2E8F0 transparent; /* Bottom border separator */
     -fx-border-width: 2px;
 }
 
 .modern-table .column-header {
     -fx-background-color: transparent;
-    -fx-size: 45px; /* Header row height */
+    -fx-size: 45px; /* Fixed height for consistent header look */
 }
 
 .modern-table .column-header .label {
@@ -404,38 +388,41 @@
 
 .modern-table .table-cell {
     -fx-alignment: CENTER_LEFT;
-    -fx-padding: 0 0 0 10; /* Text padding */
+    -fx-padding: 0 0 0 10;
     -fx-text-fill: -text-dark;
     -fx-font-size: 14px;
-    -fx-border-color: transparent transparent #EDF2F7 transparent; /* Very subtle separator line between rows */
+    -fx-border-color: transparent transparent #EDF2F7 transparent; /* Subdued row dividers */
 }
 
 .modern-table .table-row-cell {
     -fx-background-color: white;
-    -fx-pref-height: 40px; /* Row height */
+    -fx-pref-height: 40px;
 }
 
-/* Odd row (Zebra Stripes) - optional, made very subtle here */
+/* Subtle Zebra Striping for better row differentiation */
 .modern-table .table-row-cell:odd {
     -fx-background-color: #FAFAFA;
 }
 
-/* Selected row */
+/* Selected row highlight state */
 .modern-table .table-row-cell:selected {
-    -fx-background-color: #EBF8FF; /* Light blue */
+    -fx-background-color: #EBF8FF;
     -fx-table-cell-border-color: transparent;
 }
 .modern-table .table-row-cell:selected .table-cell {
     -fx-text-fill: -primary-blue;
 }
 
-/* --- Form Background Section --- */
+/* 
+ * FORM COMPONENTS & ADDITIONAL BUTTONS
+ * Utility components for forms and specialized actions.
+ */
 .form-bg {
-    -fx-background-color: -input-background; /* Grayish background for the editing area */
+    -fx-background-color: -input-background;
     -fx-background-radius: 12px;
 }
 
-/* --- Red Button (Danger) --- */
+/* Solid Danger Button - High prominence destructive actions */
 .btn-danger {
     -fx-background-color: -danger-red;
     -fx-text-fill: white;
@@ -447,10 +434,10 @@
 }
 
 .btn-danger:hover {
-    -fx-background-color: #C53030; /* Darker red */
+    -fx-background-color: #C53030;
 }
 
-/* --- Green Button (Success) --- */
+/* Solid Success Button - Primary positive actions */
 .btn-success {
     -fx-background-color: -success-green;
     -fx-text-fill: white;
@@ -461,20 +448,23 @@
 }
 
 .btn-success:hover {
-    -fx-background-color: #2F855A; /* Darker green */
+    -fx-background-color: #2F855A;
 }
 
 .btn-success:disabled {
     -fx-background-color: #CBD5E0;
     -fx-text-fill: #718096;
-    -fx-effect: null;
+    -fx-effect: null; /* Remove shadow when disabled */
 }
 
-/* --- Quantity Selection Component (Stepper Pill) --- */
+/* 
+ * INTERACTIVE STEPPER COMPONENT
+ * Pill-shaped control for numeric adjustments (e.g., guest count).
+ */
 .stepper-container {
     -fx-background-color: white;
     -fx-border-color: #E2E8F0;
-    -fx-border-radius: 20px; /* Very rounded corners - pill shape */
+    -fx-border-radius: 20px; 
     -fx-background-radius: 20px;
     -fx-padding: 0;
 }
@@ -490,7 +480,7 @@
 }
 .stepper-btn:hover {
     -fx-background-color: #EBF8FF;
-    -fx-background-radius: 20px; /* To avoid overflowing the corners */
+    -fx-background-radius: 20px;
 }
 
 .stepper-field {
@@ -498,10 +488,13 @@
     -fx-text-fill: -text-dark;
     -fx-font-weight: bold;
     -fx-font-size: 16px;
-    -fx-border-width: 0; /* No border for the field itself */
+    -fx-border-width: 0;
 }
 
-/* --- Modern List View --- */
+/* 
+ * MODERN LISTVIEW STYLING
+ * Enhanced layout for interactive lists.
+ */
 .modern-list-view {
     -fx-background-color: white;
     -fx-background-insets: 0;
@@ -528,7 +521,10 @@
     -fx-background-radius: 4px;
 }
 
-/* --- Date Picker Modern --- */
+/* 
+ * DATEPICKER STYLING
+ * Modern appearance for calendar components.
+ */
 .date-picker-modern .text-field {
     -fx-background-color: white;
     -fx-background-radius: 8px;
@@ -537,7 +533,7 @@
     -fx-padding: 10px;
 }
 
-/* "Dark" secondary button - for intermediate actions like checking availability */
+/* Dark themed secondary button for specialized utility actions */
 .btn-secondary-dark {
     -fx-background-color: transparent;
     -fx-border-color: -text-secondary;
@@ -550,68 +546,75 @@
 }
 
 .btn-secondary-dark:hover {
-    -fx-background-color: -text-dark; /* Becomes dark on hover */
+    -fx-background-color: -text-dark;
     -fx-border-color: -text-dark;
     -fx-text-fill: white;
 }
 
-/* --- Modern Tab Pane --- */
+/* 
+ * MODERN TAB PANE
+ * Tabbed navigation for content segmentation.
+ */
 
-/* הסרת הרקע האפור המכוער של אזור הכותרות */
+/* Clean header area background */
 .modern-tab-pane .tab-header-area .tab-header-background {
     -fx-background-color: transparent;
 }
 
-/* שינוי: צמצום גובה אזור הכותרות של הטאבים */
+/* Compact layout for the tab header */
 .modern-tab-pane .tab-header-area {
     -fx-padding: 0; 
 }
 
-/* עיצוב הטאב עצמו (הכפתור) */
+/* Individual Tab Styling */
 .modern-tab-pane .tab {
     -fx-background-color: transparent;
     -fx-background-insets: 0;
-    -fx-border-color: transparent transparent transparent transparent; /* אין גבולות */
-    -fx-border-width: 0 0 3px 0; /* הכנה לקו תחתון של 3 פיקסלים */
+    -fx-border-color: transparent transparent transparent transparent; 
+    -fx-border-width: 0 0 3px 0; /* Foundation for bottom indicator stripe */
     -fx-padding: 10 20;
     -fx-cursor: hand;
 }
 
-/* טקסט בטאב */
+/* Text styling for tab labels */
 .modern-tab-pane .tab .tab-label {
     -fx-text-fill: -text-secondary;
     -fx-font-size: 15px;
     -fx-font-weight: bold;
 }
 
-/* --- טאב במעבר עכבר (Hover) --- */
+/* Tab Hover state */
 .modern-tab-pane .tab:hover {
-    -fx-background-color: #F7FAFC; /* רקע עדין מאוד */
+    -fx-background-color: #F7FAFC; 
 }
 .modern-tab-pane .tab:hover .tab-label {
     -fx-text-fill: -primary-blue;
 }
 
-/* --- טאב נבחר (Selected) - הקסם קורה כאן --- */
+/* Active Tab indicator and styling */
 .modern-tab-pane .tab:selected {
     -fx-background-color: transparent;
-    /* קו תחתון בצבע הכחול הראשי */
+    /* Visual stripe indicator on active tab */
     -fx-border-color: transparent transparent -primary-blue transparent; 
 }
 
 .modern-tab-pane .tab:selected .tab-label {
     -fx-text-fill: -primary-blue;
-    -fx-font-size: 16px; /* הגדלה קלה */
+    -fx-font-size: 16px; /* Enhanced visibility for active tab */
 }
 
-/* שינוי: הקטנתי את ה-padding העליון מ-20 ל-5 */
+/* Content area within tab - tightly coupled to the header */
 .modern-tab-pane .tab-content-area {
     -fx-border-color: transparent;
     -fx-background-color: transparent;
-    -fx-padding: 5 0 0 0; /* צמצום הרווח בין הטאב לתוכן */
+    -fx-padding: 5 0 0 0; 
 }
 
-/* כפתור סכנה (קו מתאר בלבד) - למחיקה/ביטול */
+/* 
+ * ADDITIONAL UTILITY COMPONENTS
+ */
+
+/* Danger button (outline only) - Specifically for non-primary destructive actions */
 .btn-danger-outline {
     -fx-background-color: transparent;
     -fx-border-color: -danger-red;
@@ -623,88 +626,90 @@
 }
 
 .btn-danger-outline:hover {
-    -fx-background-color: #FFF5F5; /* רקע אדמדם בהיר מאוד */
+    -fx-background-color: #FFF5F5; 
 }
 
-/* --- Modern Spinner Design --- */
-
+/* 
+ * MODERN SPINNER DESIGN
+ * Precise styling for numeric spinners.
+ */
 .modern-spinner {
     -fx-background-color: -input-background;
     -fx-border-color: #CBD5E0;
     -fx-border-radius: 6px;
     -fx-border-width: 1px;
-    /* ביטול ה-padding החיצוני כדי שהגבולות יהיו צמודים */
     -fx-background-insets: 0; 
 }
 
-/* במצב פוקוס - מסגרת כחולה */
+/* Visual focus indicator for better accessibility */
 .modern-spinner:focused {
     -fx-border-color: -primary-blue;
     -fx-effect: dropshadow(three-pass-box, rgba(66, 153, 225, 0.3), 5, 0, 0, 0);
 }
 
-/* שדה הטקסט בתוך הספינר */
+/* Spinner input field */
 .modern-spinner .text-field {
     -fx-background-color: transparent;
     -fx-background-insets: 0;
-    -fx-padding: 8 10; /* ריווח פנימי לטקסט */
+    -fx-padding: 8 10;
     -fx-alignment: CENTER_LEFT;
     -fx-font-size: 14px;
 }
 
-/* אזור הכפתורים (הימני) */
+/* Increment/Decrement controls */
 .modern-spinner .increment-arrow-button,
 .modern-spinner .decrement-arrow-button {
     -fx-background-color: transparent;
     -fx-background-insets: 0;
-    -fx-padding: 4 8; /* גודל אזור הלחיצה */
+    -fx-padding: 4 8;
     -fx-cursor: hand;
 }
 
-/* קו מפריד עדין בצד שמאל של הכפתורים */
+/* Subtle separators for controls */
 .modern-spinner .increment-arrow-button {
-    -fx-border-color: transparent transparent #E2E8F0 #E2E8F0; /* קו למטה ומשמאל */
+    -fx-border-color: transparent transparent #E2E8F0 #E2E8F0; 
     -fx-border-width: 0 0 1 1; 
 }
 
 .modern-spinner .decrement-arrow-button {
-    -fx-border-color: transparent transparent transparent #E2E8F0; /* קו משמאל בלבד */
+    -fx-border-color: transparent transparent transparent #E2E8F0; 
     -fx-border-width: 0 0 0 1; 
 }
 
-/* צבע החצים */
+/* Visual arrows color */
 .modern-spinner .increment-arrow,
 .modern-spinner .decrement-arrow {
-    -fx-background-color: -text-secondary; /* אפור כהה */
-    -fx-padding: 2px; /* גודל החץ */
+    -fx-background-color: -text-secondary; 
+    -fx-padding: 2px;
 }
 
-/* אפקט Hover על הכפתורים */
+/* Interaction feedback for spinner controls */
 .modern-spinner .increment-arrow-button:hover,
 .modern-spinner .decrement-arrow-button:hover {
-    -fx-background-color: #EDF2F7; /* אפור בהיר מאוד */
+    -fx-background-color: #EDF2F7;
 }
 
 .modern-spinner .increment-arrow-button:hover .increment-arrow,
 .modern-spinner .decrement-arrow-button:hover .decrement-arrow {
-    -fx-background-color: -primary-blue; /* החץ נהיה כחול */
+    -fx-background-color: -primary-blue; /* Highlighted arrow on hover */
 }
 
-/* --- כפתורי פעולה בתוך טבלה (Compact) --- */
-
-/* הגדרה בסיסית לשני הכפתורים */
+/* 
+ * COMPACT ACTION BUTTONS
+ * Tight controls for use within restricted spaces like table cells.
+ */
 .btn-table-action {
-    -fx-font-size: 11px;       /* פונט קטן יותר */
+    -fx-font-size: 11px;       
     -fx-font-weight: bold;
-    -fx-padding: 3 10;         /* ריפוד הדוק מאוד */
+    -fx-padding: 3 10;         
     -fx-background-radius: 4px;
     -fx-cursor: hand;
-    -fx-min-height: 24px;      /* גובה מינימלי קבוע וקטן */
+    -fx-min-height: 24px;      
     -fx-max-height: 24px;
     -fx-alignment: CENTER;
 }
 
-/* כפתור עדכון (כחול) */
+/* Specialized Table Actions */
 .btn-table-update {
     -fx-background-color: transparent;
     -fx-border-color: -primary-blue;
@@ -713,10 +718,9 @@
 }
 
 .btn-table-update:hover {
-    -fx-background-color: #EBF8FF; /* כחול בהיר מאוד ברקע */
+    -fx-background-color: #EBF8FF;
 }
 
-/* כפתור מחיקה (אדום) */
 .btn-table-delete {
     -fx-background-color: transparent;
     -fx-border-color: -danger-red;
@@ -725,61 +729,62 @@
 }
 
 .btn-table-delete:hover {
-    -fx-background-color: #FFF5F5; /* אדום בהיר מאוד ברקע */
+    -fx-background-color: #FFF5F5;
 }
 
-/* --- עיצוב גרפים (Charts) - גרסה מתוקנת --- */
-
-/* הסרת רקע כללי */
+/* 
+ * CHART STYLING
+ * Clean visualization for reporting and dashboard insights.
+ */
 .chart {
     -fx-padding: 10px;
     -fx-background-color: transparent;
 }
 
-/* אזור הציור (הרקע של הקווים) - לבן נקי עם מסגרת */
+/* Main plotting area background */
 .chart-plot-background {
     -fx-background-color: white;
     -fx-border-color: #E2E8F0;
     -fx-border-width: 1px;
 }
 
-/* קווי רשת עדינים */
+/* Grid layout for readability */
 .chart-vertical-grid-lines, .chart-horizontal-grid-lines {
     -fx-stroke: #EDF2F7;
-    -fx-stroke-dash-array: 4 4;
+    -fx-stroke-dash-array: 4 4; /* Dashed lines for minimal distraction */
 }
 
-/* הסרת הרקע האפור של המקרא (Legend) */
+/* Clean legend styling */
 .chart-legend {
     -fx-background-color: transparent;
     -fx-padding: 10px;
 }
 
-/* --- סדרות הנתונים (צבעים) --- */
+/* DATA SERIES BRANDING */
 
-/* סדרה 1 (למשל Reservations) - כתום */
+/* Series 1 (Primary Insight) - Vibrant Orange */
 .default-color0.chart-series-line { 
     -fx-stroke: #ED8936; 
     -fx-stroke-width: 2.5px; 
 }
 .default-color0.chart-line-symbol { 
-    -fx-background-color: #ED8936; /* צבע מלא - מבטיח שיראו במקרא */
+    -fx-background-color: #ED8936; 
     -fx-background-radius: 5px;
     -fx-padding: 5px;
 }
 
-/* סדרה 2 (למשל Waiting) - צהוב/זהב */
+/* Series 2 (Secondary Insight) - Warm Yellow/Gold */
 .default-color1.chart-series-line { 
     -fx-stroke: #ECC94B; 
     -fx-stroke-width: 2.5px; 
 }
 .default-color1.chart-line-symbol { 
-    -fx-background-color: #ECC94B; /* צבע מלא */
+    -fx-background-color: #ECC94B; 
     -fx-background-radius: 5px;
     -fx-padding: 5px;
 }
 
-/* צבעי טקסט בצירים */
+/* Axis and Label Styling */
 .axis-label {
     -fx-text-fill: -text-secondary;
     -fx-font-size: 12px;
@@ -789,7 +794,9 @@
     -fx-font-size: 11px;
 }
 
-/* --- כפתור אורח (Login Screen) --- */
+/* 
+ * LOGIN SCREEN SPECIALTIES
+ */
 .btn-guest {
     -fx-background-color: white;
     -fx-border-color: -primary-blue;
@@ -801,5 +808,5 @@
 }
 
 .btn-guest:hover {
-    -fx-background-color: #EBF8FF; /* כחול בהיר מאוד */
+    -fx-background-color: #EBF8FF;
 }

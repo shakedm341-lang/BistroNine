@@ -8,28 +8,41 @@ import javafx.scene.control.TabPane;
 
 /**
  * Main controller for the Restaurant Management Dashboard.
- * Serves as a container for various operational tabs.
+ * This dashboard serves as a central hub for restaurant staff and managers,
+ * allowing them to access various operational functionalities through a tabbed interface.
+ * 
+ * It manages the lifecycle and dependency injection for several sub-modules:
+ * - Reservation creation and management
+ * - Client registration and subscriber viewing
+ * - Table management and restaurant settings
  */
 public class RestaurantManagementController {
 
+    // =================================================================================
+    // FXML UI Components
+    // =================================================================================
+
+    /** The main container for all operational tabs */
     @FXML
     private TabPane opsTabPane;
 
+    /** Tab for creating a new reservation manually */
     @FXML
     private Tab createReservationTab;
     
+    /** Tab for viewing and managing existing reservations */
     @FXML
     private Tab reservationManagementTab;
 
+    /** Tab for registering a new client into the system */
     @FXML
     private Tab registerClientTab;
     
-    @FXML
-    private Tab subscribersTab;
-
+    /** Tab for managing restaurant table layout and availability */
     @FXML
     private Tab manageTablesTab;
 
+    /** Tab for restaurant-wide settings such as opening hours */
     @FXML
     private Tab settingsTab;
 
@@ -53,15 +66,15 @@ public class RestaurantManagementController {
     @FXML
     private ReservationManagementController reservationViewController;
     
+    /** Controller for the "Register Client" sub-view */
     @FXML
     private RegisterClientController registerClientViewController;
     
-    @FXML
-    private SubscribersViewController subscribersViewController;
-
+    /** Controller for the "Table Management" sub-view */
     @FXML
     private TableManagementController tableManagementViewController;
 
+    /** Controller for the "Restaurant Settings" sub-view */
     @FXML
     private SettingsController settingsViewController;
 
@@ -69,16 +82,24 @@ public class RestaurantManagementController {
     // Data Fields
     // =================================================================================
 
+    /** The network client used for server communication across all tabs */
     private ClientController client;
+    
+    /** The currently authenticated user (staff or manager) */
     private Subscriber currentUser;
 
     // =================================================================================
     // Initialization & Logic
     // =================================================================================
 
+    /**
+     * Called by JavaFX after all FXML fields are injected.
+     * Sets up the tab selection listener to support lazy loading of data.
+     */
     @FXML
     public void initialize() {
         // Add a listener to detect when the user switches tabs
+        // This allows us to only fetch data from the server when a tab is actually viewed
         opsTabPane.getSelectionModel().selectedItemProperty().addListener((obs, oldTab, newTab) -> {
             if (newTab != null) {
                 loadDataForTab(newTab);
@@ -88,33 +109,23 @@ public class RestaurantManagementController {
 
     /**
      * Logic to determine which tab was selected and trigger the specific data refresh.
-     * This implements lazy loading for the restaurant management dashboard.
+     * This implements lazy loading for the restaurant management dashboard to optimize network usage.
+     * 
+     * @param tab The tab that was recently selected by the user.
      */
     private void loadDataForTab(Tab tab) {
+        // Prevent data loading if the client connection hasn't been established yet
         if (this.client == null) {
             System.out.println("DEBUG: Client not yet set, skipping lazy load for tab: " + tab.getText());
             return;
         }
 
-        if (tab == subscribersTab) {
-            System.out.println("DEBUG: Lazy loading Subscribers data");
-            if (subscribersViewController != null) {
-                subscribersViewController.sendRequestToServer();
-            }
-        } else if (tab == manageTablesTab) {
+        // Identify the tab and trigger the corresponding data fetch in its controller
+        if (tab == manageTablesTab) {
             System.out.println("DEBUG: Lazy loading Table Management data");
             if (tableManagementViewController != null) {
-                // Using the specific method in TableManagementController to fetch data
-                // In TableManagementController, fetchTables is private, but it is called by refreshTableData
-                // Wait, looking at TableManagementController.java:
-                // void refreshTableData(ActionEvent event) { fetchTables(); }
-                // and fetchTables() is private.
-                // I should probably make fetchTables public or just call refreshTableData(null).
-                // Actually, let's check if I can call fetchTables. No, it's private.
-                // I'll call refreshTableData(null) or I'll go back and make fetchTables public.
-                // Looking at the code for TableManagementController, refreshTableData is @FXML and package-private (default).
-                // RestaurantManagementController and TableManagementController are in the same package 'gui'.
-                // So I can call fetchTables().
+                // TableManagementController.fetchTables() is package-private, 
+                // allowing us to call it directly from here as we are in the 'gui' package.
                 tableManagementViewController.fetchTables();
             }
         } else if (tab == settingsTab) {
@@ -126,9 +137,11 @@ public class RestaurantManagementController {
     }
 
     /**
-     * Sets external dependencies and propagates them to child controllers.
-     * This method is typically called by the login screen or main app navigator.
-     * * @param client      The network client for server communication.
+     * Sets external dependencies and propagates them to all nested child controllers.
+     * This method is typically called by the login screen or main app navigator after 
+     * this controller's view is loaded.
+     * 
+     * @param client      The network client for server communication.
      * @param currentUser The currently logged-in user.
      */
     public void setDependencies(ClientController client, Subscriber currentUser) {
@@ -138,33 +151,36 @@ public class RestaurantManagementController {
         System.out.println("DEBUG: RestaurantManagementController initialized for user: " 
                            + currentUser.getUsername());
 
-        // Propagate dependencies to the nested "Create Reservation" controller
+        // Propagate the network client and user context to all sub-controllers
+        
+        // 1. Create Reservation Module
         if (createReservationViewController != null) {
             createReservationViewController.setClient(client);
-            createReservationViewController.initData(currentUser,true);
-            // If the child controller needs the user info:
-            // createReservationViewController.setCurrentUser(currentUser); 
+            // Passing true for 'isStaff' mode in the reservation boundary
+            createReservationViewController.initData(currentUser, true);
         }
 
-        // Propagate dependencies to the nested "Reservation Management" controller
+        // 2. Reservation Management Module
         if (reservationViewController != null) {
             reservationViewController.setClient(client);
         }
         
+        // 3. Client Registration Module
         if (registerClientViewController != null) {
             registerClientViewController.setClientController(client);
         }
-        if (subscribersViewController != null) {
-			subscribersViewController.setClientController(client);
-		}
+        
+        // 5. Table Management Module
         if (tableManagementViewController != null) {
             tableManagementViewController.setClient(client);
         }
+        
+        // 6. Restaurant Settings Module
         if (settingsViewController != null) {
             settingsViewController.setDependencies(client, currentUser);
         }
 
-        // Trigger lazy loading for the initially selected tab
+        // Trigger lazy loading for the initially selected tab now that dependencies are set
         Tab selectedTab = opsTabPane.getSelectionModel().getSelectedItem();
         if (selectedTab != null) {
             loadDataForTab(selectedTab);
@@ -173,7 +189,7 @@ public class RestaurantManagementController {
 
     /**
      * Programmatically switches the active tab to "Create Reservation".
-     * Useful for navigation from other parts of the UI.
+     * Useful for navigation from other parts of the application UI.
      */
     public void navigateToCreateReservation() {
         if (opsTabPane != null && createReservationTab != null) {

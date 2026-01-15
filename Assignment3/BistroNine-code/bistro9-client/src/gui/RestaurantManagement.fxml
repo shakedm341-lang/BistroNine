@@ -45,12 +45,6 @@
                     </content>
                 </Tab>
 
-                <Tab fx:id="subscribersTab" text="Subscribers">
-                    <content>
-                        <fx:include fx:id="subscribersView" source="subscribers.fxml" />
-                    </content>
-                </Tab>
-
                 <Tab fx:id="manageTablesTab" text="Tables">
                     <content>
                         <fx:include fx:id="tableManagementView" source="TableManagement.fxml" />

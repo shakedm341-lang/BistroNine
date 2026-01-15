@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<StackPane xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" 
+           fx:controller="gui.SubscriberVisitHistoryController"
+           style="-fx-padding: 10;">
+
+    <VBox spacing="15.0" maxHeight="Infinity" maxWidth="Infinity">
+        
+        <VBox spacing="5.0">
+            <Label text="Visit Logs" styleClass="title-text"/>
+            <Label text="Search for a specific subscriber's visit history by entering their ID below." 
+                   styleClass="subtitle-text"/>
+        </VBox>
+
+        <Separator />
+
+        <HBox spacing="10.0" alignment="CENTER_LEFT">
+            <VBox spacing="5.0">
+                <Label text="Subscriber ID" styleClass="input-label"/>
+                <TextField fx:id="txtCustomerId" promptText="Enter Subscriber ID" styleClass="text-field-modern" prefWidth="200.0"/>
+            </VBox>
+            <Button fx:id="btnSearch" text="Search" onAction="#onSearchClicked" styleClass="btn-primary" translateY="10.0"/>
+        </HBox>
+
+        <TableView fx:id="historyTable" styleClass="modern-table" VBox.vgrow="ALWAYS" minHeight="350.0">
+            <columns>
+                <TableColumn fx:id="colDate" prefWidth="150.0" text="Date" />
+                <TableColumn fx:id="colArrival" prefWidth="120.0" text="Arrival Time" />
+                <TableColumn fx:id="colLeaving" prefWidth="120.0" text="Leaving Time" />
+                <TableColumn fx:id="colGuests" prefWidth="80.0" text="Guests" />
+            </columns>
+            
+            <columnResizePolicy>
+                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+            </columnResizePolicy>
+        </TableView>
+
+    </VBox>
+</StackPane>
+

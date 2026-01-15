@@ -47,9 +47,6 @@
                     <Button fx:id="btnNewReservation" mnemonicParsing="false" onAction="#openNewReservation"
                             styleClass="nav-btn" text="New Reservation" maxWidth="Infinity"/>
                     
-                    <Button fx:id="btnLeaveWaitlist" mnemonicParsing="false" onAction="#handleExitWaitlist"
-                            styleClass="nav-btn" text="Leave Waitlist" maxWidth="Infinity"/>
-
                     <Button fx:id="btnPayBill" mnemonicParsing="false" onAction="#goToPayBill"
                             styleClass="nav-btn" text="Pay Bill" maxWidth="Infinity"/>
                     
@@ -69,10 +66,17 @@
                     
                     <VBox VBox.vgrow="ALWAYS" />
 
+                    <Button fx:id="btnLeaveWaitlist" mnemonicParsing="false" onAction="#handleExitWaitlist"
+                            styleClass="nav-btn-danger-outline" text="Leave Waitlist" maxWidth="Infinity">
+                         <VBox.margin>
+                            <Insets left="20" right="20" bottom="10"/>
+                         </VBox.margin>
+                    </Button>
+
                     <Button mnemonicParsing="false" onAction="#doLogout"
                             styleClass="nav-btn-logout" text="Logout" maxWidth="Infinity">
                          <VBox.margin>
-                            <Insets top="20.0" left="20" right="20"/>
+                            <Insets left="20" right="20" />
                          </VBox.margin>
                     </Button>
 

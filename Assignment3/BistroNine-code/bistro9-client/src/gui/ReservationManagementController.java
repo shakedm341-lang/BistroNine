@@ -35,54 +35,56 @@ import javafx.util.Callback;
  */
 public class ReservationManagementController implements Initializable, IReservationViewer, IReservationDeleter {
 
+    // --- FXML UI Components ---
 	@FXML
-	private ComboBox<String> searchModeCombo; // Dropdown for selecting search mode (All, Attribute, Date Range)
+	private ComboBox<String> searchModeCombo; 
 
 	@FXML
-	private HBox allBox; // Container for "Show All" search options
+	private HBox allBox;
 
 	@FXML
-	private HBox attributeBox; // Container for "By Attribute" search options
+	private HBox attributeBox;
 
 	@FXML
-	private HBox dateRangeBox; // Container for "By Date Range" search options
+	private HBox dateRangeBox;
 
 	@FXML
-	private ComboBox<String> attributeCombo; // Dropdown for selecting which attribute to search by
+	private ComboBox<String> attributeCombo;
 
 	@FXML
-	private TextField attributeValueField; // Input field for numeric or text attribute values
+	private TextField attributeValueField;
 
 	@FXML
-	private ComboBox<String> statusComboBox; // Dropdown for selecting reservation status when searching by "status"
+	private ComboBox<String> statusComboBox;
 
 	@FXML
-	private DatePicker startDatePicker; // Picker for start date in range search
+	private DatePicker startDatePicker;
 
 	@FXML
-	private DatePicker endDatePicker; // Picker for end date in range search
+	private DatePicker endDatePicker;
 
 	@FXML
-	private TableView<HistoryReservation> reservationsTable; // Table for displaying reservation results
+	private TableView<HistoryReservation> reservationsTable;
 
 	@FXML
-	private TableColumn<HistoryReservation, Double> colTotalPaid; // Column for the total paid amount
+	private TableColumn<HistoryReservation, Double> colTotalPaid;
 
 	@FXML
-	private TableColumn<HistoryReservation, Timestamp> colDateTime; // Column for reservation date and time
+	private TableColumn<HistoryReservation, Timestamp> colDateTime;
 
 	@FXML
-	private TableColumn<HistoryReservation, Integer> colGuests; // Column for number of diners
+	private TableColumn<HistoryReservation, Integer> colGuests;
 
 	@FXML
-	private TableColumn<HistoryReservation, Integer> colConfirmationCode; // Column for reservation confirmation code
+	private TableColumn<HistoryReservation, Integer> colConfirmationCode;
 
 	@FXML
-	private TableColumn<HistoryReservation, String> colStatus; // Column for current reservation status
+	private TableColumn<HistoryReservation, String> colStatus;
 
 	@FXML
-	private TableColumn<HistoryReservation, Void> colAction; // Column containing the "Cancel" action button
+	private TableColumn<HistoryReservation, Void> colAction;
 
+    // --- Controller State ---
 	/** List of reservations backed by the TableView */
 	private final ObservableList<HistoryReservation> reservationList = FXCollections.observableArrayList();
 
@@ -95,6 +97,9 @@ public class ReservationManagementController implements Initializable, IReservat
 	/**
 	 * Initializes the controller after its root element has been completely processed.
 	 * Sets up table columns, search UI visibility logic, and initial data bindings.
+	 * 
+	 * @param location The location used to resolve relative paths for the root object.
+	 * @param resources The resources used to localize the root object.
 	 */
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
@@ -187,8 +192,6 @@ public class ReservationManagementController implements Initializable, IReservat
 		colStatus.setCellValueFactory(new PropertyValueFactory<>("status"));
 	}
 
-	/* ================= Cancel Button Column ================= */
-
 	/**
 	 * Dynamically adds a "Cancel" button to the action column of the reservations table.
 	 * The button is only visible for future reservations that are currently "active".
@@ -237,18 +240,15 @@ public class ReservationManagementController implements Initializable, IReservat
 		colAction.setCellFactory(cellFactory);
 	}
 
-	/* ================= Dependency Injection ================= */
-
 	/**
 	 * Sets the ClientController instance and registers this controller as the reservation manager.
+	 * 
 	 * @param client The ClientController to use for server requests.
 	 */
 	public void setClient(ClientController client) {
 		this.client = client;
 		ClientController.reservationManagementController = this;
 	}
-
-	/* ================= UI Actions ================= */
 
 	/**
 	 * Handles the "Get All" search action.
@@ -280,7 +280,7 @@ public class ReservationManagementController implements Initializable, IReservat
 		ArrayList<Object> params = new ArrayList<>();
 		params.add(attribute);
 
-		// Logic to parse and validate attribute values based on their expected type
+		// --- Input Validation Section ---
 		try {
 			if ("status".equals(attribute)) {
 				String status = statusComboBox.getValue();
@@ -308,6 +308,7 @@ public class ReservationManagementController implements Initializable, IReservat
 			return;
 		}
 
+		// --- Server Communication Section ---
 		client.setReservationViewer(this);
 		if(client != null) {
 			client.handleMessageFromBoundary(TypeMessage.RESERVATION, params, Command.GET_RESERVATION_BY_ATTRIBUTE);
@@ -325,6 +326,7 @@ public class ReservationManagementController implements Initializable, IReservat
 		LocalDate startDate = startDatePicker.getValue();
 		LocalDate endDate = endDatePicker.getValue();
 
+		// Validation
 		if (startDate == null || endDate == null) {
 			showError("Please select both start and end dates");
 			return;
@@ -348,11 +350,10 @@ public class ReservationManagementController implements Initializable, IReservat
 		}
 	}
 
-	/* ================= Server Responses ================= */
-
 	/**
 	 * Updates the reservation table with data received from the server.
 	 * Part of the {@link IReservationViewer} interface.
+	 * 
 	 * @param reservations The list of reservations returned by the server.
 	 */
 	@Override
@@ -373,6 +374,7 @@ public class ReservationManagementController implements Initializable, IReservat
 	/**
 	 * Displays an alert based on the success of a reservation cancellation request.
 	 * Part of the {@link IReservationDeleter} interface.
+	 * 
 	 * @param isDeleted True if the reservation was successfully cancelled, false otherwise.
 	 */
 	public void handleDeleteReservationResponse(boolean isDeleted) {
@@ -395,10 +397,9 @@ public class ReservationManagementController implements Initializable, IReservat
 		});
 	}
 
-	/* ================= Helpers ================= */
-
 	/**
 	 * Initiates a cancellation request for a specific reservation.
+	 * 
 	 * @param res The reservation object to cancel.
 	 */
 	private void handleCancelReservation(HistoryReservation res) {
@@ -415,6 +416,7 @@ public class ReservationManagementController implements Initializable, IReservat
 	
 	/**
 	 * Utility method to display an error alert to the user.
+	 * 
 	 * @param msg The error message to display.
 	 */
 	private void showError(String msg) {

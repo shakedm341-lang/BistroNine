@@ -52,6 +52,24 @@
                     </content>
                 </Tab>
 
+                <Tab fx:id="subscribersTab" text="Subscribers">
+                    <content>
+                        <StackPane styleClass="card">
+                            <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
+                            <fx:include fx:id="subscribersView" source="Subscribers.fxml" />
+                        </StackPane>
+                    </content>
+                </Tab>
+
+                <Tab fx:id="subscriberHistoryTab" text="Visit Logs">
+                    <content>
+                        <StackPane styleClass="card">
+                            <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
+                            <fx:include fx:id="subscriberVisitHistory" source="SubscriberVisitHistory.fxml" />
+                        </StackPane>
+                    </content>
+                </Tab>
+
             </tabs>
         </TabPane>
     </VBox>
