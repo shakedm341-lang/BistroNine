@@ -39,6 +39,12 @@ public class ClientController extends AbstractClient {
 			}
 			break;
 
+		case BROADCAST_UPDATE_OPENING_TIME:
+			if (reservationBoundary != null) {
+				reservationBoundary.onOpeningHoursChanged();
+			}
+			break;
+
 		}
 	}
 	//handle message from boundary
