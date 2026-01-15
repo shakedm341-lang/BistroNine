@@ -160,6 +160,14 @@ public class ReservationBoundry {
      */
     @FXML
     void checkAvailability(ActionEvent event) {
+        checkAvailabilityInternal();
+    }
+
+    /**
+     * Internal logic for checking table availability.
+     * Can be called from UI events or triggered by external updates.
+     */
+    private void checkAvailabilityInternal() {
         LocalDate selectedDate = datePicker.getValue();
 
         // Validation: Ensure a date is selected
@@ -374,6 +382,19 @@ public class ReservationBoundry {
     }
 
     /**
+     * Callback method called by ClientController when the server notifies that
+     * opening hours have changed. Displays an informative message and
+     * automatically refreshes availability.
+     */
+    public void onOpeningHoursChanged() {
+        javafx.application.Platform.runLater(() -> {
+            showAlert(AlertType.INFORMATION, "Opening Hours Changed", 
+                "The restaurant's opening hours have changed. We are re-checking availability for you.");
+            checkAvailabilityInternal();
+        });
+    }
+
+    /**
      * Callback method called by ClientController upon receiving a reservation response.
      * Displays success with confirmation code or failure message.
      * 
@@ -404,7 +425,15 @@ public class ReservationBoundry {
      */
     public void setClient(ClientController client) {
         this.client = client;
-        client.reservationBoundry = this;
+        ClientController.subscribeReservationBoundry(this);
+    }
+
+    /**
+     * Explicitly unregisters this boundary from the ClientController.
+     * Should be called when navigating away from this screen.
+     */
+    public void unregister() {
+        ClientController.unsubscribeReservationBoundry(this);
     }
 
     /**
@@ -415,6 +444,9 @@ public class ReservationBoundry {
     @FXML
     void returnToLogin(ActionEvent event) {
         try {
+            // Unsubscribe before navigating away to avoid logical memory leaks
+            unregister();
+
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/LoginScreen.fxml"));
             Parent root = loader.load();
 

@@ -34,7 +34,26 @@ public class ClientController extends AbstractClient {
     public static LoginController loginController;
     
     /** Controller for the reservation creation boundary. */
-    public static ReservationBoundry reservationBoundry;
+    private static ReservationBoundry reservationBoundry;
+    
+    /**
+     * Registers a ReservationBoundry instance to receive server updates.
+     * @param boundry The boundary to subscribe.
+     */
+    public static void subscribeReservationBoundry(ReservationBoundry boundry) {
+        reservationBoundry = boundry;
+    }
+
+    /**
+     * Unregisters a ReservationBoundry instance. 
+     * If null is passed, it forces the reference to be cleared.
+     * @param boundry The boundary to unsubscribe, or null to force clear.
+     */
+    public static void unsubscribeReservationBoundry(ReservationBoundry boundry) {
+        if (boundry == null || reservationBoundry == boundry) {
+            reservationBoundry = null;
+        }
+    }
     
     /** Controller for viewing personal reservations. */
     public static MyReservationsController MyReservation;
@@ -303,6 +322,12 @@ public class ClientController extends AbstractClient {
                 handleCheckInResponse(message);
                 break;
 
+            case BROADCAST_UPDATE_TABLE:
+                if (reservationBoundry != null) {
+                    reservationBoundry.onOpeningHoursChanged();
+                }
+                break;
+
             default:
                 System.err.println("CLIENT: Unknown Table command: " + message.command);
                 break;
@@ -333,7 +358,13 @@ public class ClientController extends AbstractClient {
             case CLOSE_RESTAURANT_ON_SPECIAL_DAY:
                 handleSaveOpeningHoursResponse(message);
                 break;
-                
+
+            case BROADCAST_UPDATE_OPENING_TIME:
+                if (reservationBoundry != null) {
+                    reservationBoundry.onOpeningHoursChanged();
+                }
+                break;
+
             default:
                 System.err.println("CLIENT: Unknown Opening Time command: " + message.command);
                 break;

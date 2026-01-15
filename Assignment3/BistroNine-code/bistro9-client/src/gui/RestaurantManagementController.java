@@ -102,6 +102,16 @@ public class RestaurantManagementController {
         // This allows us to only fetch data from the server when a tab is actually viewed
         opsTabPane.getSelectionModel().selectedItemProperty().addListener((obs, oldTab, newTab) -> {
             if (newTab != null) {
+                // If we navigate away from the Create Reservation tab, unregister it
+                if (oldTab == createReservationTab) {
+                    ClientController.unsubscribeReservationBoundry(createReservationViewController);
+                }
+                
+                // If we navigate TO the Create Reservation tab, re-register it
+                if (newTab == createReservationTab) {
+                    ClientController.subscribeReservationBoundry(createReservationViewController);
+                }
+
                 loadDataForTab(newTab);
             }
         });

@@ -45,6 +45,9 @@ public class GuestTerminalController {
     @FXML
     void goToNewReservation(ActionEvent event) {
         try {
+            // Unsubscribe existing boundary if any before loading new one
+            ClientController.unsubscribeReservationBoundry(null);
+
             // Load the New Reservation FXML
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/NewReservation.fxml"));
             Parent root = loader.load();
@@ -71,6 +74,9 @@ public class GuestTerminalController {
     @FXML
     void goToLeaveWaitlist(ActionEvent event) {
         try {
+            // Unsubscribe existing boundary if any
+            ClientController.unsubscribeReservationBoundry(null);
+
             // Load the Leave Waitlist FXML
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/LeaveWaitlistScreen.fxml"));
             Parent root = loader.load();
@@ -97,6 +103,9 @@ public class GuestTerminalController {
     @FXML
     void goToPayBill(ActionEvent event) {
         try {
+            // Unsubscribe existing boundary if any
+            ClientController.unsubscribeReservationBoundry(null);
+
             // Load the Pay Bill FXML
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/PayBillScreen.fxml"));
             Parent root = loader.load();
@@ -122,6 +131,9 @@ public class GuestTerminalController {
     @FXML
     void handleExit(ActionEvent event) {
         try {
+            // Unsubscribe existing boundary if any
+            ClientController.unsubscribeReservationBoundry(null);
+
             // Load the Login Screen FXML
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/LoginScreen.fxml"));
             Parent root = loader.load();

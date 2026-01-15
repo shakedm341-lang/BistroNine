@@ -157,6 +157,16 @@ public class UserDashboardController {
         }
     }
 
+    /**
+     * Helper to clear the main content area and perform any necessary cleanups
+     * before switching to a new view.
+     */
+    private void prepareContentArea() {
+        contentArea.getChildren().clear();
+        // Unregister reservation boundary to prevent logical memory leaks/alerts on other screens
+        ClientController.unsubscribeReservationBoundry(null);
+    }
+
     // --- Action Methods ---
 
     /**
@@ -173,7 +183,7 @@ public class UserDashboardController {
              ProfileController controller = loader.getController();
              controller.setDependencies(this.client, this.currentUser,this);
 
-             contentArea.getChildren().clear();
+             prepareContentArea();
              contentArea.getChildren().add(root);
 
          } catch (IOException e) {
@@ -195,7 +205,7 @@ public class UserDashboardController {
             MyReservationsController controller = loader.getController();
             controller.setDependencies(this.currentUser, this.client);
 
-            contentArea.getChildren().clear();
+            prepareContentArea();
             contentArea.getChildren().add(root);
 
         } catch (IOException e) {
@@ -217,7 +227,7 @@ public class UserDashboardController {
             VisitHistoryController controller = loader.getController();
             controller.setDependencies(this.currentUser, this.client);
 
-            contentArea.getChildren().clear();
+            prepareContentArea();
             contentArea.getChildren().add(root);
 
         } catch (IOException e) {
@@ -240,7 +250,7 @@ public class UserDashboardController {
             resController.setClient(this.client);
             resController.initData(currentUser,false);
 
-            contentArea.getChildren().clear();
+            prepareContentArea();
             contentArea.getChildren().add(root);
 
         } catch (Exception e) {
@@ -307,7 +317,7 @@ public class UserDashboardController {
              LiveDashboardController controller = loader.getController();
              controller.setDependencies(this.client);
 
-            contentArea.getChildren().clear();
+            prepareContentArea();
             contentArea.getChildren().add(root);
         } catch (IOException e) {
             e.printStackTrace();
@@ -333,7 +343,7 @@ public class UserDashboardController {
             opsController.setDependencies(this.client, this.currentUser); 
 
             // Show in the center area
-            contentArea.getChildren().clear();
+            prepareContentArea();
             contentArea.getChildren().add(root);
 
         } catch (IOException e) {
@@ -358,7 +368,7 @@ public class UserDashboardController {
             // Register reports controller for server callbacks
             ClientController.reportsController = controller;
 
-            contentArea.getChildren().clear();
+            prepareContentArea();
             contentArea.getChildren().add(root);
 
         } catch (IOException e) {
@@ -381,7 +391,7 @@ public class UserDashboardController {
             PayBillController controller = loader.getController();
             controller.setDependencies(this.client, this.currentUser, this);
 
-            contentArea.getChildren().clear();
+            prepareContentArea();
             contentArea.getChildren().add(root);
 
         } catch (IOException e) {
@@ -396,6 +406,9 @@ public class UserDashboardController {
     @FXML
     void doLogout(ActionEvent event) {
         try {
+            // Unregister current active boundary before logout
+            ClientController.unsubscribeReservationBoundry(null);
+
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/LoginScreen.fxml"));
             Parent root = loader.load();
             LoginController controller = loader.getController();
