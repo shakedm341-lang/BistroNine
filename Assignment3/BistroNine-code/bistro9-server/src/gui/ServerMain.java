@@ -9,7 +9,7 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 public class ServerMain extends Application {
-
+	//updated for mock db init.
 	// Static variable to allow access if needed
 	public static ServerController sv;
 	private static Stage primaryStage; // Keep reference to stage
